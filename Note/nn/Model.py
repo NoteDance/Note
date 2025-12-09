@@ -508,184 +508,6 @@ class Model:
         return strategy.run(self._test_step, args=(dataset_inputs, loss_object, test_loss, test_accuracy))
     
     
-    @tf.function(jit_compile=True)
-    def compute_loss_jit(self, train_data, labels, loss_object):
-        with tf.GradientTape(persistent=True) as tape:
-            self.tape = tape
-            output = self.__call__(train_data)
-            loss = loss_object(labels, output)
-        return loss, output
-    
-    
-    @tf.function(jit_compile=True)
-    def opt_jit(self, i):
-        gradients = self.tape[0].gradient(self.loss_[0], self.param[i])
-        self.optimizer[i].apply_gradients(zip(gradients, self.param[i]))
-    
-    
-    @tf.function(jit_compile=True)
-    def compute_loss_jit_(self, train_loss, labels, output, train_accuracy):
-        train_loss(self.loss_[0])
-        if train_accuracy!=None:
-            acc=train_accuracy(labels, output)
-            return self.loss_[0],acc
-    
-    
-    def train_step_p(self, train_data, labels, loss_object, train_loss, train_accuracy, optimizer):
-        self.loss_, output = self.compute_loss_jit(train_data, labels, loss_object)
-        manager=multiprocessing.Manager()
-        self.loss_=manager.list([self.loss_])
-        self.tape=manager.list([self.tape])
-        process_list=[]
-        for i in range(len(optimizer)):
-            process=multiprocessing.Process(target=self.opt_jit,args=(i))
-            process.start()
-            process_list.append(process)
-        for process in process_list:
-            process.join()
-        del self.tape
-        if train_accuracy!=None:
-            loss,acc = self.compute_loss_jit_(train_loss, labels, output)
-            return loss,acc
-        else:
-            self.compute_loss_jit_(train_loss, labels, output)
-            return self.loss_[0],None
-    
-    
-    @tf.function
-    def _compute_loss(self, train_data, labels, loss_object):
-        with tf.GradientTape(persistent=True) as tape:
-            self.tape = tape
-            output = self.__call__(train_data)
-            loss = loss_object(labels, output)
-        return loss, output
-    
-    
-    @tf.function
-    def opt_(self, i):
-        gradients = self.tape[0].gradient(self.loss_[0], self.param[i])
-        self.optimizer[i].apply_gradients(zip(gradients, self.param[i]))
-    
-    
-    @tf.function
-    def compute_loss_(self, train_loss, labels, output, train_accuracy):
-        train_loss(self.loss_[0])
-        if train_accuracy!=None:
-            acc=train_accuracy(labels, output)
-            return self.loss_[0],acc
-    
-    
-    def train_step_p_(self, train_data, labels, loss_object, train_loss, train_accuracy, optimizer):
-        self.loss_, output = self._compute_loss(train_data, labels, loss_object)
-        manager=multiprocessing.Manager()
-        self.loss_=manager.list([self.loss_])
-        self.tape=manager.list([self.tape])
-        process_list=[]
-        for i in range(len(optimizer)):
-            process=multiprocessing.Process(target=self.opt_,args=(i))
-            process.start()
-            process_list.append(process)
-        for process in process_list:
-            process.join()
-        del self.tape
-        if train_accuracy!=None:
-            loss,acc = self.compute_loss_(train_loss, labels, output)
-            return loss,acc
-        else:
-            self.compute_loss_(train_loss, labels, output)
-            return self.loss_[0],None
-    
-    
-    @tf.function(jit_compile=True)
-    def compute_loss_jit_d(self, inputs, train_accuracy):
-        data, labels = inputs
-        with tf.GradientTape(persistent=True) as tape:
-            self.tape = tape
-            output = self.__call__(data)
-            loss = self.compute_loss(labels, output)
-            self.loss_ = loss
-        if train_accuracy!=None:
-            acc=train_accuracy.update_state(labels, output)
-            return loss,acc
-        return loss
-    
-    
-    def opt_jit_d(self, optimizer, i):
-        gradients = self.tape[0].gradient(self.loss_, self.param[i])
-        optimizer.apply_gradients(zip(gradients, self.param[i]))
-    
-    
-    @tf.function(jit_compile=True)
-    def opt_jit_d_(self, i):
-        self.strategy.run(self.opt_jit_d, args=(self.optimizer[i], i))
-        
-
-    def distributed_train_step_p(self, dataset_inputs, optimizer, train_accuracy, strategy):
-        per_replica_losses,acc = strategy.run(self.compute_loss_jit_d, args=(dataset_inputs, train_accuracy))
-        manager=multiprocessing.Manager()
-        self.loss_=manager.list([self.loss_])
-        self.tape=manager.list([self.tape])
-        process_list=[]
-        for i in range(len(optimizer)):
-            process=multiprocessing.Process(target=self.opt_jit_d_,args=(i))
-            process.start()
-            process_list.append(process)
-        for process in process_list:
-            process.join()
-        del self.tape
-        if train_accuracy!=None:
-            return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
-                                 axis=None),acc
-        else:
-            return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
-                                 axis=None),None
-
-
-    @tf.function
-    def compute_loss_d(self, inputs, train_accuracy):
-        data, labels = inputs
-        with tf.GradientTape(persistent=True) as tape:
-            self.tape = tape
-            output = self.__call__(data)
-            loss = self.compute_loss(labels, output)
-            self.loss_ = loss
-        if train_accuracy!=None:
-            acc=train_accuracy.update_state(labels, output)
-            return loss,acc
-        return loss
-    
-    
-    def opt_d(self, optimizer, i):
-        gradients = self.tape[0].gradient(self.loss_[0], self.param[i])
-        optimizer.apply_gradients(zip(gradients, self.param[i]))
-    
-    
-    @tf.function
-    def opt_d_(self, i):
-        self.strategy.run(self.opt_d, args=(self.optimizer[i], i))
-        
-
-    def distributed_train_step_p_(self, dataset_inputs, optimizer, train_accuracy, strategy):
-        per_replica_losses,acc = strategy.run(self.compute_loss_d, args=(dataset_inputs, train_accuracy))
-        manager=multiprocessing.Manager()
-        self.loss_=manager.list([self.loss_])
-        self.tape=manager.list([self.tape])
-        process_list=[]
-        for i in range(len(optimizer)):
-            process=multiprocessing.Process(target=self.opt_d_,args=(i))
-            process.start()
-            process_list.append(process)
-        for process in process_list:
-            process.join()
-        del self.tape
-        if train_accuracy!=None:
-            return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
-                                 axis=None),acc
-        else:
-            return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
-                                 axis=None),None
-    
-    
     def test(self, test_ds, loss_object, test_loss, test_accuracy=None, processes=None, mp=None, jit_compile=True):
         if mp==None:
             self.training()
@@ -964,7 +786,7 @@ class Model:
             return train_ds.batch(new_batch)
     
     
-    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, parallel_test=None, opt_p=False, jit_compile=True, callbacks=None, p=None):
+    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
         if p!=0:
             if p==None:
                 p_=9
@@ -997,11 +819,6 @@ class Model:
             self.test_batch_size=test_ds._batch_size.numpy()
         self.processes=processes
         self.parallel_test_=parallel_test
-        self.opt_p=opt_p
-        if opt_p:
-            manager=mp.Manager()
-            self.param=manager.list(self.param)
-            self.optimizer=manager.list(self.optimizer)
         self.jit_compile=jit_compile
         self.p=p
         self.info_flag=0
@@ -1039,15 +856,9 @@ class Model:
                         if hasattr(callback, 'on_batch_begin'):
                             callback.on_batch_begin(batch, logs={})
                     if jit_compile==True:
-                        if not opt_p:
-                            loss,acc=self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
-                        else:
-                            loss,acc=self.train_step_p(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
+                        loss,acc=self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
                     else:
-                        if not opt_p:
-                            loss,acc=self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
-                        else:
-                            loss,acc=self.train_step_p_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
+                        loss,acc=self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
                     batch_logs = {'loss': loss.numpy()}
                     if train_accuracy != None:
                         batch_logs['accuracy'] = acc.numpy()
@@ -1162,15 +973,9 @@ class Model:
                         if hasattr(callback, 'on_batch_begin'):
                             callback.on_batch_begin(batch, logs={})
                     if jit_compile==True:
-                        if not opt_p:
-                            loss,acc=self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
-                        else:
-                            loss,acc=self.train_step_p(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
+                        loss,acc=self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
                     else:
-                        if not opt_p:
-                            loss,acc=self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
-                        else:
-                            loss,acc=self.train_step_p_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
+                        loss,acc=self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
                     batch_logs = {'loss': loss.numpy()}
                     if train_accuracy != None:
                         batch_logs['accuracy'] = acc.numpy()
@@ -1270,7 +1075,7 @@ class Model:
         return
     
     
-    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, opt_p=False, jit_compile=True, callbacks=None, p=None):
+    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
         if num_epochs!=None:
             epochs=num_epochs
         if p!=0:
@@ -1301,11 +1106,6 @@ class Model:
         self.test_accuracy=test_accuracy
         self.global_test_batch_size=global_test_batch_size
         self.eval_steps_per_epoch=eval_steps_per_epoch
-        self.opt_p=opt_p
-        if opt_p:
-            manager=multiprocessing.Manager()
-            self.param=manager.list(self.param)
-            self.optimizer=manager.list(self.optimizer)
         self.jit_compile=jit_compile
         self.p=p
         self.info_flag=1
@@ -1356,15 +1156,9 @@ class Model:
                             if hasattr(callback, 'on_batch_begin'):
                                 callback.on_batch_begin(batch, logs={})
                         if jit_compile==True:
-                            if not opt_p:
-                                loss,acc = self.distributed_train_step(x, self.optimizer, train_accuracy, strategy)
-                            else:
-                                loss,acc = self.distributed_train_step_p(x, self.optimizer, train_accuracy, strategy)
+                            loss,acc = self.distributed_train_step(x, self.optimizer, train_accuracy, strategy)
                         else:
-                            if not opt_p:
-                                loss,acc = self.distributed_train_step_(x, self.optimizer, train_accuracy, strategy)
-                            else:
-                                loss,acc = self.distributed_train_step_p_(x, self.optimizer, train_accuracy, strategy)
+                            loss,acc = self.distributed_train_step_(x, self.optimizer, train_accuracy, strategy)
                         total_loss += loss
                         
                         batch_logs = {'loss': loss.numpy()}
@@ -1509,15 +1303,9 @@ class Model:
                             if hasattr(callback, 'on_batch_begin'):
                                 callback.on_batch_begin(batch, logs={})
                         if jit_compile==True:
-                            if not opt_p:
-                                loss,acc = self.distributed_train_step(x, self.optimizer, train_accuracy, strategy)
-                            else:
-                                loss,acc = self.distributed_train_step_p(x, self.optimizer, train_accuracy, strategy)
+                            loss,acc = self.distributed_train_step(x, self.optimizer, train_accuracy, strategy)
                         else:
-                            if not opt_p:
-                                loss,acc = self.distributed_train_step_(x, self.optimizer, train_accuracy, strategy)
-                            else:
-                                loss,acc = self.distributed_train_step_p_(x, self.optimizer, train_accuracy, strategy)
+                            loss,acc = self.distributed_train_step_(x, self.optimizer, train_accuracy, strategy)
                         total_loss += loss
                         
                         batch_logs = {'loss': loss.numpy()}
@@ -2070,15 +1858,9 @@ class Model:
                 if hasattr(callback, 'on_batch_begin'):
                     callback.on_batch_begin(batch, logs={})
             if jit_compile==True:
-                if not self.opt_p:
-                    loss,acc = self.distributed_train_step(next(iterator), self.optimizer, train_accuracy, strategy)
-                else:
-                    loss,acc = self.distributed_train_step_P(next(iterator), self.optimizer, train_accuracy, strategy)
+                loss,acc = self.distributed_train_step(next(iterator), self.optimizer, train_accuracy, strategy)
             else:
-                if not self.opt_p:
-                    loss,acc = self.distributed_train_step_(next(iterator), self.optimizer, train_accuracy, strategy)
-                else:
-                    loss,acc = self.distributed_train_step_p_(next(iterator), self.optimizer, train_accuracy, strategy)
+                loss,acc = self.distributed_train_step_(next(iterator), self.optimizer, train_accuracy, strategy)
             total_loss += loss
             batch_logs = {'loss': loss.numpy()}
             if train_accuracy != None:
@@ -2146,15 +1928,9 @@ class Model:
                 if hasattr(callback, 'on_batch_begin'):
                     callback.on_batch_begin(batch, logs={})
             if jit_compile==True:
-                if not self.opt_p:
-                    loss,acc = coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer, train_accuracy, strategy))
-                else:
-                    loss,acc = coordinator.schedule(self.distributed_train_step_p, args=(next(per_worker_iterator), self.optimizer, train_accuracy, strategy))
+                loss,acc = coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer, train_accuracy, strategy))
             else:
-                if not self.opt_p:
-                    loss,acc = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer, train_accuracy, strategy))
-                else:
-                    loss,acc = coordinator.schedule(self.distributed_train_step_p_, args=(next(per_worker_iterator), self.optimizer, train_accuracy, strategy))
+                loss,acc = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer, train_accuracy, strategy))
             total_loss += loss
             batch_logs = {'loss': loss.fetch()}
             if train_accuracy != None:
