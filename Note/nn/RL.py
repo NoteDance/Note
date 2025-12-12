@@ -808,12 +808,12 @@ class RL:
             length=len(self.done_pool[7])
             TD_list=[]
             ratio_list=[]
-            length_list=[]
+            self.length_list=[]
             for p in range(self.processes):
-                length_list.append(len(self.TD_list[p]))
-                TD_list.append(self.TD_list[p][:length_list[p]])
+                self.length_list.append(len(self.TD_list[p]))
+                TD_list.append(self.TD_list[p][:self.length_list[p]])
                 if self.PPO:
-                    ratio_list.append(self.ratio_list[p][:length_list[p]])
+                    ratio_list.append(self.ratio_list[p][:self.length_list[p]])
             self.share_TD[7]=np.concat(TD_list, axis=0)
             if self.PPO:
                 self.share_ratio[7]=np.concat(ratio_list, axis=0)
@@ -831,26 +831,6 @@ class RL:
             done_pool=self.share_done_pool[7][:length]
             self.prioritized_replay.TD=self.share_TD[7][:length]
             self.prioritized_replay.ratio=self.share_ratio[7][:length]
-            for p in range(self.processes):
-                if p==0:
-                    self.TD_list[:length_list[p]]=self.prioritized_replay.TD[0:length_list[p]]
-                else:
-                    index1=0
-                    index2=0
-                    for i in range(p):
-                        index1+=length_list[i]
-                    index2=index1+length_list[i]
-                    self.TD_list[:length_list[p]]=self.prioritized_replay.TD[index1-1:index2]
-                if self.PPO:
-                    if p==0:
-                        self.ratio_list[:length_list[p]]=self.prioritized_replay.ratio[0:length_list[p]]
-                    else:
-                        index1=0
-                        index2=0
-                        for i in range(p):
-                            index1+=length_list[i]
-                        index2=index1+length_list[p]
-                        self.ratio_list[:length_list[p]]=self.prioritized_replay.ratio[index1-1:index2]
             lock.release()
         if self.PR:
             if self.processes_pr!=None:
@@ -1312,36 +1292,51 @@ class RL:
     
     
     def clear_pool(self):
-        for index in range(self.processes):
-            if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
+        for p in range(self.processes):
+            if p==0:
+                self.TD_list[:self.length_list[p]]=self.prioritized_replay.TD[0:self.length_list[p]]
+            else:
+                index1=0
+                index2=0
+                for i in range(p):
+                    index1+=self.length_list[i]
+                index2=index1+self.length_list[i]
+                self.TD_list[:self.length_list[p]]=self.prioritized_replay.TD[index1-1:index2]
+            if self.PPO:
+                if p==0:
+                    self.ratio_list[:self.length_list[p]]=self.prioritized_replay.ratio[0:self.length_list[p]]
+                else:
+                    index1=0
+                    index2=0
+                    for i in range(p):
+                        index1+=self.length_list[i]
+                    index2=index1+self.length_list[p]
+                    self.ratio_list[:self.length_list[p]]=self.prioritized_replay.ratio[index1-1:index2]
+            if len(self.state_pool_list[p])>math.ceil(self.pool_size/self.processes):
                 if type(self.window_size)!=int:
-                    window_size=int(self.window_size(index))
+                    window_size=int(self.window_size(p))
                 else:
                     window_size=self.window_size
                 if window_size!=None:
-                    self.state_pool_list[index]=self.state_pool_list[index][window_size:]
-                    self.action_pool_list[index]=self.action_pool_list[index][window_size:]
-                    self.next_state_pool_list[index]=self.next_state_pool_list[index][window_size:]
-                    self.reward_pool_list[index]=self.reward_pool_list[index][window_size:]
-                    self.done_pool_list[index]=self.done_pool_list[index][window_size:]
+                    self.state_pool_list[p]=self.state_pool_list[p][window_size:]
+                    self.action_pool_list[p]=self.action_pool_list[p][window_size:]
+                    self.next_state_pool_list[p]=self.next_state_pool_list[p][window_size:]
+                    self.reward_pool_list[p]=self.reward_pool_list[p][window_size:]
+                    self.done_pool_list[p]=self.done_pool_list[p][window_size:]
                     if self.PR:
+                        self.TD_list[p]=self.TD_list[p][window_size:]
                         if self.PPO:
-                            self.ratio_list[index]=self.ratio_list[index][window_size:]
-                            self.TD_list[index]=self.TD_list[index][window_size:]
-                        else:
-                            self.TD_list[index]=self.TD_list[index][window_size:]
+                            self.ratio_list[p]=self.ratio_list[p][window_size:]
                 else:
-                    self.state_pool_list[index]=self.state_pool_list[index][len(self.state_pool_list[index])-math.ceil(self.pool_size/self.processes):]
-                    self.action_pool_list[index]=self.action_pool_list[index][len(self.state_pool_list[index])-math.ceil(self.pool_size/self.processes):]
-                    self.next_state_pool_list[index]=self.next_state_pool_list[index][len(self.state_pool_list[index])-math.ceil(self.pool_size/self.processes):]
-                    self.reward_pool_list[index]=self.reward_pool_list[index][len(self.state_pool_list[index])-math.ceil(self.pool_size/self.processes):]
-                    self.done_pool_list[index]=self.done_pool_list[index][len(self.state_pool_list[index])-math.ceil(self.pool_size/self.processes):]
+                    self.state_pool_list[p]=self.state_pool_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                    self.action_pool_list[p]=self.action_pool_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                    self.next_state_pool_list[p]=self.next_state_pool_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                    self.reward_pool_list[p]=self.reward_pool_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                    self.done_pool_list[p]=self.done_pool_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
                     if self.PR:
+                        self.TD_list[p]=self.TD_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
                         if self.PPO:
-                            self.ratio_list[index]=self.ratio_list[index][len(self.state_pool_list[index])-math.ceil(self.pool_size/self.processes):]
-                            self.TD_list[index]=self.TD_list[index][len(self.state_pool_list[index])-math.ceil(self.pool_size/self.processes):]
-                        else:
-                            self.TD_list[index]=self.TD_list[index][len(self.state_pool_list[index])-math.ceil(self.pool_size/self.processes):]
+                            self.ratio_list[p]=self.ratio_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
         
     
     def build_opt(self, optimizer=None):
@@ -1422,9 +1417,9 @@ class RL:
                         if not self.parallel_store_and_training:
                             self.prioritized_replay.update()
                         else:
-                            self.share_TD[7][self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
+                            self.prioritized_replay.TD[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                             if self.PPO:
-                                self.share_ration[7][self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
+                                self.prioritized_replay.ration[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
                             lock.acquire()
                             self.clear_pool()
                             lock.release()
