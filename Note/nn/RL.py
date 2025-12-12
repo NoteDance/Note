@@ -943,19 +943,10 @@ class RL:
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
-            if self.parallel_store_and_training:
-                
-                state_dict = dict()
-                optimizer.save_own_variables(state_dict)
-                self.share_opt_variables[7] = state_dict
         else:
             for i in range(len(optimizer)):
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
-                if self.parallel_store_and_training:
-                    state_dict = dict()
-                    optimizer[i].save_own_variables(state_dict)
-                    self.share_opt_variables[7][i] = state_dict
         train_loss(loss)
         return loss
       
@@ -967,18 +958,10 @@ class RL:
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
-            if self.parallel_store_and_training:
-                state_dict = dict()
-                optimizer.save_own_variables(state_dict)
-                self.share_opt_variables[7] = state_dict
         else:
             for i in range(len(optimizer)):
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
-                if self.parallel_store_and_training:
-                    state_dict = dict()
-                    optimizer[i].save_own_variables(state_dict)
-                    self.share_opt_variables[7][i] = state_dict
         train_loss(loss)
         return loss
     
@@ -990,18 +973,10 @@ class RL:
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
-            if self.parallel_store_and_training:
-                state_dict = dict()
-                optimizer.save_own_variables(state_dict)
-                self.share_opt_variables[7] = state_dict
         else:
             for i in range(len(optimizer)):
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
-                if self.parallel_store_and_training:
-                    state_dict = dict()
-                    optimizer[i].save_own_variables(state_dict)
-                    self.share_opt_variables[7][i] = state_dict
         return loss 
     
     
@@ -1328,6 +1303,31 @@ class RL:
                             self.ratio_list[p]=self.ratio_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
     
     
+    def get_trainable_variables(self, optimizer):
+        if self.parallel_store_and_training:
+            if self.share_trainable_variables[7] is None:
+                self.share_trainable_variables[7] = optimizer._trainable_variables
+        else:
+            for i in range(len(optimizer)):
+                if self.parallel_store_and_training:
+                    if self.share_trainable_variables[7][i] is None:
+                        self.share_trainable_variables[7][i] = optimizer[i]._trainable_variables
+                        
+    
+    def get_opt_variables(self, optimizer):
+        if type(optimizer)!=list:
+            if self.parallel_store_and_training:
+                state_dict = dict()
+                optimizer.save_own_variables(state_dict)
+                self.share_opt_variables[7] = state_dict
+        else:
+            for i in range(len(optimizer)):
+                if self.parallel_store_and_training:
+                    state_dict = dict()
+                    optimizer[i].save_own_variables(state_dict)
+                    self.share_opt_variables[7][i] = state_dict
+        
+    
     def build_opt(self, optimizer=None):
         if optimizer is None:
             if type(self.optimizer)==list:
@@ -1339,8 +1339,9 @@ class RL:
                     else:
                         optimizer.append(self.share_opt_class[7][i]())
                     optimizer.from_config(self.share_opt.config[7][i])
-                    optimizer.build(self.param[i])
-                    optimizer.load_own_variables(self.share_opt_variables[7][i])
+                    if self.share_trainable_variables[7][i] is not None:
+                        optimizer.build(self.share_trainable_variables[7][i])
+                        optimizer.load_own_variables(self.share_opt_variables[7][i])
             else:
                 if self.strategy is not None:
                     with self.strategy.scope():
@@ -1348,16 +1349,17 @@ class RL:
                 else:
                     optimizer = self.share_opt_class[7]()
                 optimizer.from_config(self.share_opt.config[7])
-                optimizer.build(self.param)
-                optimizer.load_own_variables(self.share_opt_variables[7])
+                if self.share_trainable_variables[7] is not None:
+                    optimizer.build(self.share_trainable_variables[7])
+                    optimizer.load_own_variables(self.share_opt_variables[7])
             return optimizer
         else:
             if type(optimizer)==list:
                 for i in range(len(optimizer)):
-                    optimizer.build(self.param[i])
+                    optimizer.build(self.share_trainable_variables[7][i])
                     optimizer.load_own_variables(self.share_opt_variables[7][i])
             else:
-                optimizer.build(self.param)
+                optimizer.build(self.share_trainable_variables[7])
                 optimizer.load_own_variables(self.share_opt_variables[7])
     
     
@@ -1386,16 +1388,8 @@ class RL:
                         return self.train_loss.result().numpy()
                 if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                     break
-                if self.parallel_store_and_training:
-                    if type(optimizer)==list:
-                        for i in range(len(optimizer)):
-                            if self.parallel_store_and_training:
-                                if self.share_trainable_variables[7][i] is None and optimizer[i].built==True:
-                                    self.share_trainable_variables[7][i] = optimizer[i]._trainable_variables
-                    else:
-                        if self.parallel_store_and_training:
-                            if self.share_trainable_variables[7] is None and optimizer.built==True:
-                                self.share_trainable_variables[7] = optimizer._trainable_variables
+                self.get_trainable_variables(optimizer)
+                self.get_opt_variables(optimizer)
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_batch_begin'):
                         callback.on_batch_begin(batch, logs={})
@@ -1794,6 +1788,8 @@ class RL:
                             return (total_loss / num_batches).numpy()
                         if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                             break
+                        self.get_trainable_variables(optimizer)
+                        self.get_opt_variables(optimizer)
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_batch_begin'):
                                 callback.on_batch_begin(batch, logs={})
@@ -1873,6 +1869,8 @@ class RL:
                         return self.train_loss.result().numpy() 
                     if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                         break
+                    self.get_trainable_variables(optimizer)
+                    self.get_opt_variables(optimizer)
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_batch_begin'):
                             callback.on_batch_begin(batch, logs={})
@@ -2442,10 +2440,12 @@ class RL:
                 self.share_TD=manager.dict()
             if type(self.optimizer)==list:
                 self.share_opt_class[7]=[opt.__class__ for opt in self.optimizer]
+                self.share_trainable_variables[7]=[None for _ in self.optimizer]
                 self.share_opt.config[7]=[opt.get_config() for opt in self.optimizer]
                 self.share_opt_variables[7]=[None for _ in self.optimizer]
             else:
                 self.share_opt_class[7]=self.optimizer.__class__
+                self.share_trainable_variables[7]=None
                 self.share_opt.config[7]=self.optimizer.get_config()
                 self.share_opt_variables[7]=None
             self.num_store=mp.Value('i',self.num_store)
@@ -2748,10 +2748,12 @@ class RL:
                 self.share_TD=manager.dict()
             if type(self.optimizer)==list:
                 self.share_opt_class[7]=[opt.__class__ for opt in self.optimizer]
+                self.share_trainable_variables[7]=[None for _ in self.optimizer]
                 self.share_opt.config[7]=[opt.get_config() for opt in self.optimizer]
                 self.share_opt_variables[7]=[None for _ in self.optimizer]
             else:
                 self.share_opt_class[7]=self.optimizer.__class__
+                self.share_trainable_variables[7]=None
                 self.share_opt.config[7]=self.optimizer.get_config()
                 self.share_opt_variables[7]=None
             self.num_store=mp.Value('i',self.num_store)
