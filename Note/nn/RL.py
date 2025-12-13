@@ -830,6 +830,7 @@ class RL:
             done_pool=self.share_done_pool[7][:length]
             self.prioritized_replay.TD=self.share_TD[7][:length]
             self.prioritized_replay.ratio=self.share_ratio[7][:length]
+            self.length_list[-1]=self.length_list[-1]-(len(self.share_TD[7])-len(self.prioritized_replay.TD))
         if self.PR:
             if self.processes_pr!=None:
                 process_list=[]
