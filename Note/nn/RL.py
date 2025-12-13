@@ -1510,11 +1510,18 @@ class RL:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                                 else:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                                    self.state_pool=np.concatenate(self.state_pool_list)
-                                    self.action_pool=np.concatenate(self.action_pool_list)
-                                    self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                                    self.reward_pool=np.concatenate(self.reward_pool_list)
-                                    self.done_pool=np.concatenate(self.done_pool_list)
+                                    if not self.parallel_store_and_training:
+                                        self.state_pool=np.concatenate(self.state_pool_list)
+                                        self.action_pool=np.concatenate(self.action_pool_list)
+                                        self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                        self.reward_pool=np.concatenate(self.reward_pool_list)
+                                        self.done_pool=np.concatenate(self.done_pool_list)
+                                    else:
+                                        self.share_state_pool[7]=np.concatenate(self.state_pool_list)
+                                        self.share_action_pool[7]=np.concatenate(self.action_pool_list)
+                                        self.share_next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                                        self.share_reward_pool[7]=np.concatenate(self.reward_pool_list)
+                                        self.share_done_pool[7]=np.concatenate(self.done_pool_list)
                             if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                                 self.adjust_func()
                             if self.PPO and self.batch_counter%self.update_batches==0:
@@ -1529,11 +1536,18 @@ class RL:
                     if self.PPO and self.batch_counter%self.update_batches==0:
                         return (total_loss / num_batches).numpy()
                 elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
-                    self.state_pool_[:self.batch].assign(state_batch)
-                    self.action_pool_[:self.batch].assign(action_batch)
-                    self.next_state_pool_[:self.batch].assign(next_state_batch)
-                    self.reward_pool_[:self.batch].assign(reward_batch)
-                    self.done_pool_[:self.batch].assign(done_batch)
+                    if not self.parallel_store_and_training:
+                        self.state_pool_[:self.batch].assign(state_batch)
+                        self.action_pool_[:self.batch].assign(action_batch)
+                        self.next_state_pool_[:self.batch].assign(next_state_batch)
+                        self.reward_pool_[:self.batch].assign(reward_batch)
+                        self.done_pool_[:self.batch].assign(done_batch)
+                    else:
+                        self.share_state_pool[7][:self.batch].assign(state_batch)
+                        self.share_action_pool[7][:self.batch].assign(action_batch)
+                        self.share_next_state_pool[7][:self.batch].assign(next_state_batch)
+                        self.share_reward_pool[7][:self.batch].assign(reward_batch)
+                        self.share_done_pool[7][:self.batch].assign(done_batch)
                     self.batch_.assign(self.batch)
                     loss=self.CTL_param(self.coordinator)
                     total_loss+=loss
@@ -1599,11 +1613,18 @@ class RL:
                                 else:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                                     if self.processes_her==None and self.processes_pr==None:
-                                        self.state_pool=np.concatenate(self.state_pool_list)
-                                        self.action_pool=np.concatenate(self.action_pool_list)
-                                        self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                                        self.reward_pool=np.concatenate(self.reward_pool_list)
-                                        self.done_pool=np.concatenate(self.done_pool_list)
+                                        if not self.parallel_store_and_training:
+                                            self.state_pool=np.concatenate(self.state_pool_list)
+                                            self.action_pool=np.concatenate(self.action_pool_list)
+                                            self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                            self.reward_pool=np.concatenate(self.reward_pool_list)
+                                            self.done_pool=np.concatenate(self.done_pool_list)
+                                        else:
+                                            self.share_state_pool[7]=np.concatenate(self.state_pool_list)
+                                            self.share_action_pool[7]=np.concatenate(self.action_pool_list)
+                                            self.share_next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                                            self.share_reward_pool[7]=np.concatenate(self.reward_pool_list)
+                                            self.share_done_pool[7]=np.concatenate(self.done_pool_list)
                                     else:
                                         self.state_pool[7]=np.concatenate(self.state_pool_list)
                                         self.action_pool[7]=np.concatenate(self.action_pool_list)
@@ -1705,11 +1726,18 @@ class RL:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                                 else:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                                    self.state_pool=np.concatenate(self.state_pool_list)
-                                    self.action_pool=np.concatenate(self.action_pool_list)
-                                    self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                                    self.reward_pool=np.concatenate(self.reward_pool_list)
-                                    self.done_pool=np.concatenate(self.done_pool_list)
+                                    if not self.parallel_store_and_training:
+                                        self.state_pool=np.concatenate(self.state_pool_list)
+                                        self.action_pool=np.concatenate(self.action_pool_list)
+                                        self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                        self.reward_pool=np.concatenate(self.reward_pool_list)
+                                        self.done_pool=np.concatenate(self.done_pool_list)
+                                    else:
+                                        self.share_state_pool[7]=np.concatenate(self.state_pool_list)
+                                        self.share_action_pool[7]=np.concatenate(self.action_pool_list)
+                                        self.share_next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                                        self.share_reward_pool[7]=np.concatenate(self.reward_pool_list)
+                                        self.share_done_pool[7]=np.concatenate(self.done_pool_list)
                             if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                                 self.adjust_func()
                             if self.PPO and self.batch_counter%self.update_batches==0:
@@ -1724,11 +1752,18 @@ class RL:
                     if self.PPO and self.batch_counter%self.update_batches==0:
                         return (total_loss / num_batches).numpy()
                 elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
-                    self.state_pool_[:self.batch].assign(state_batch)
-                    self.action_pool_[:self.batch].assign(action_batch)
-                    self.next_state_pool_[:self.batch].assign(next_state_batch)
-                    self.reward_pool_[:self.batch].assign(reward_batch)
-                    self.done_pool_[:self.batch].assign(done_batch)
+                    if not self.parallel_store_and_training:
+                        self.state_pool_[:self.batch].assign(state_batch)
+                        self.action_pool_[:self.batch].assign(action_batch)
+                        self.next_state_pool_[:self.batch].assign(next_state_batch)
+                        self.reward_pool_[:self.batch].assign(reward_batch)
+                        self.done_pool_[:self.batch].assign(done_batch)
+                    else:
+                        self.share_state_pool[7][:self.batch].assign(state_batch)
+                        self.share_action_pool[7][:self.batch].assign(action_batch)
+                        self.share_next_state_pool[7][:self.batch].assign(next_state_batch)
+                        self.share_reward_pool[7][:self.batch].assign(reward_batch)
+                        self.share_done_pool[7][:self.batch].assign(done_batch)
                     self.batch_.assign(self.batch)
                     loss=self.CTL_param(self.coordinator)
                     total_loss+=loss
@@ -1793,11 +1828,18 @@ class RL:
                             else:
                                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)  
                                 if self.processes_her==None and self.processes_pr==None:
-                                    self.state_pool=np.concatenate(self.state_pool_list)
-                                    self.action_pool=np.concatenate(self.action_pool_list)
-                                    self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                                    self.reward_pool=np.concatenate(self.reward_pool_list)
-                                    self.done_pool=np.concatenate(self.done_pool_list)
+                                    if not self.parallel_store_and_training:
+                                        self.state_pool=np.concatenate(self.state_pool_list)
+                                        self.action_pool=np.concatenate(self.action_pool_list)
+                                        self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                        self.reward_pool=np.concatenate(self.reward_pool_list)
+                                        self.done_pool=np.concatenate(self.done_pool_list)
+                                    else:
+                                        self.share_state_pool[7]=np.concatenate(self.state_pool_list)
+                                        self.share_action_pool[7]=np.concatenate(self.action_pool_list)
+                                        self.share_next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                                        self.share_reward_pool[7]=np.concatenate(self.reward_pool_list)
+                                        self.share_done_pool[7]=np.concatenate(self.done_pool_list)
                                 else:
                                     self.state_pool[7]=np.concatenate(self.state_pool_list)
                                     self.action_pool[7]=np.concatenate(self.action_pool_list)
@@ -1874,21 +1916,35 @@ class RL:
                             if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                                 self.adjust_func()
                                 if self.num_updates!=None and self.batch_counter%self.update_batches==0:
-                                    self.state_pool=np.concatenate(self.state_pool_list)
-                                    self.action_pool=np.concatenate(self.action_pool_list)
-                                    self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                                    self.reward_pool=np.concatenate(self.reward_pool_list)
-                                    self.done_pool=np.concatenate(self.done_pool_list)
+                                    if not self.parallel_store_and_training:
+                                        self.state_pool=np.concatenate(self.state_pool_list)
+                                        self.action_pool=np.concatenate(self.action_pool_list)
+                                        self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                        self.reward_pool=np.concatenate(self.reward_pool_list)
+                                        self.done_pool=np.concatenate(self.done_pool_list)
+                                    else:
+                                        self.share_state_pool[7]=np.concatenate(self.state_pool_list)
+                                        self.share_action_pool[7]=np.concatenate(self.action_pool_list)
+                                        self.share_next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                                        self.share_reward_pool[7]=np.concatenate(self.reward_pool_list)
+                                        self.share_done_pool[7]=np.concatenate(self.done_pool_list)
                                     self.pool_size_=self.num_updates*self.batch
                                     if len(self.state_pool)>=self.pool_size_:
                                         idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
                                     else:
                                         idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
-                                    self.state_pool=self.state_pool[idx]
-                                    self.action_pool=self.action_pool[idx]
-                                    self.next_state_pool=self.next_state_pool[idx]
-                                    self.reward_pool=self.reward_pool[idx]
-                                    self.done_pool=self.done_pool[idx]
+                                    if not self.parallel_store_and_training:
+                                        self.state_pool=self.state_pool[idx]
+                                        self.action_pool=self.action_pool[idx]
+                                        self.next_state_pool=self.next_state_pool[idx]
+                                        self.reward_pool=self.reward_pool[idx]
+                                        self.done_pool=self.done_pool[idx]
+                                    else:
+                                        self.share_state_pool[7]=self.share_state_pool[7][idx]
+                                        self.share_action_pool[7]=self.share_action_pool[7][idx]
+                                        self.share_next_state_pool[7]=self.share_next_state_pool[7][idx]
+                                        self.share_reward_pool[7]=self.share_reward_pool[7][idx]
+                                        self.share_done_pool[7]=self.share_done_pool[7][idx]
                                     train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).batch(self.batch)
                             if self.PPO and self.batch_counter%self.update_batches==0:
                                 break
@@ -1955,21 +2011,35 @@ class RL:
                             self.adjust_func()
                             if self.num_updates!=None and self.batch_counter%self.update_batches==0:
                                 if self.processes_her==None and self.processes_pr==None:
-                                    self.state_pool=np.concatenate(self.state_pool_list)
-                                    self.action_pool=np.concatenate(self.action_pool_list)
-                                    self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                                    self.reward_pool=np.concatenate(self.reward_pool_list)
-                                    self.done_pool=np.concatenate(self.done_pool_list)
+                                    if not self.parallel_store_and_training:
+                                        self.state_pool=np.concatenate(self.state_pool_list)
+                                        self.action_pool=np.concatenate(self.action_pool_list)
+                                        self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                        self.reward_pool=np.concatenate(self.reward_pool_list)
+                                        self.done_pool=np.concatenate(self.done_pool_list)
+                                    else:
+                                        self.share_state_pool[7]=np.concatenate(self.state_pool_list)
+                                        self.share_action_pool[7]=np.concatenate(self.action_pool_list)
+                                        self.share_next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                                        self.share_reward_pool[7]=np.concatenate(self.reward_pool_list)
+                                        self.share_done_pool[7]=np.concatenate(self.done_pool_list)
                                     self.pool_size_=self.num_updates*self.batch
                                     if len(self.state_pool)>=self.pool_size_:
                                         idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
                                     else:
                                         idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
-                                    self.state_pool=self.state_pool[idx]
-                                    self.action_pool=self.action_pool[idx]
-                                    self.next_state_pool=self.next_state_pool[idx]
-                                    self.reward_pool=self.reward_pool[idx]
-                                    self.done_pool=self.done_pool[idx]
+                                    if not self.parallel_store_and_training:
+                                        self.state_pool=self.state_pool[idx]
+                                        self.action_pool=self.action_pool[idx]
+                                        self.next_state_pool=self.next_state_pool[idx]
+                                        self.reward_pool=self.reward_pool[idx]
+                                        self.done_pool=self.done_pool[idx]
+                                    else:
+                                        self.share_state_pool[7]=self.share_state_pool[7][idx]
+                                        self.share_action_pool[7]=self.share_action_pool[7][idx]
+                                        self.share_next_state_pool[7]=self.share_next_state_pool[7][idx]
+                                        self.share_reward_pool[7]=self.share_reward_pool[7][idx]
+                                        self.share_done_pool[7]=self.share_done_pool[7][idx]
                                     train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).batch(self.batch)
                                 else:
                                     self.state_pool[7]=np.concatenate(self.state_pool_list)
