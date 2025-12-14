@@ -440,10 +440,15 @@ class RL:
         if batch_params['max'] is None:
             batch_params['max'] = max(1, buf_len)
             
+        if not self.parallel_store_and_training:
+            ess = self.ess
+        else:
+            ess = self.ess.value
+            
         if not self.parallel_store_and_training or self.batch_counter == self.num_updates:
-            batch = int(round(self.batch * ema / self.ess * float(batch_params['scale'])))
+            batch = int(round(self.batch * ema / ess * float(batch_params['scale'])))
         elif self.end_flag.value and self.batch_counter != self.num_updates:
-            batch = int(round(self.batch * ema / (self.ess * self.num_updates / (self.num_updates - self.batch_counter)) * float(batch_params['scale'])))
+            batch = int(round(self.batch * ema / (ess * self.num_updates / (self.num_updates - self.batch_counter)) * float(batch_params['scale'])))
         batch = int(np.clip(batch, batch_params['min'], batch_params['max']))
         
         if batch_params['align'] is None:
@@ -461,11 +466,15 @@ class RL:
         smooth = alpha_params.get('smooth', 0.2)
         if ema is None:
             ema = self.compute_ess(self.ema_alpha, smooth)
+        if not self.parallel_store_and_training:
+            ess = self.ess
+        else:
+            ess = self.ess.value
         if not GNS:
             if not self.parallel_store_and_training or self.batch_counter == self.num_updates:
-                target_alpha = self.alpha + alpha_params['rate'] * (ema / self.ess - 1.0)
+                target_alpha = self.alpha + alpha_params['rate'] * (ema / ess - 1.0)
             elif self.end_flag.value and self.batch_counter != self.num_updates:
-                target_alpha = self.alpha + alpha_params['rate'] * (ema / (self.ess * self.num_updates / (self.num_updates - self.batch_counter)) - 1.0)
+                target_alpha = self.alpha + alpha_params['rate'] * (ema / (ess * self.num_updates / (self.num_updates - self.batch_counter)) - 1.0)
         else:
             target_alpha = self.alpha + alpha_params['rate'] * (target - ema) / target
         alpha = np.clip(target_alpha, alpha_params['min'], alpha_params['max'])
@@ -525,25 +534,29 @@ class RL:
             self.original_num_store = self.num_store
         scale = (1.0 - len(self.prioritized_replay.TD) / self.pool_size)
         if not self.parallel_store_and_training:
-            ess = self._ess
+            _ess = self._ess
         elif self.batch_counter == self.num_updates:
-            ess = self._ess_.value
-        if scale > 0:
-            if not self.parallel_store_and_training or self.batch_counter == self.num_updates:
-                if not self.parallel_store_and_training:
-                    num_store = store_params['scale'] * self.ess / ess * self.num_store * scale
-                else:
-                    num_store = store_params['scale'] * self.ess / ess * self.num_store.value * scale
-            elif self.end_flag.value and self.batch_counter != self.num_updates:
-                num_store = store_params['scale'] * (self.ess * self.num_updates / (self.num_updates - self.batch_counter)) / ess * self.num_store.value * scale
+            _ess = self._ess_.value
+        if not self.parallel_store_and_training:
+            ess = self.ess
         else:
-            if not self.parallel_store_and_training or self.batch_counter == self.num_updates:
+            ess = self.ess.value
+        if scale > 0:
+            if not self.parallel_store_and_training or (self.parallel_store_and_training and self.batch_counter == self.num_updates):
                 if not self.parallel_store_and_training:
-                    num_store = store_params['scale'] * self.ess / ess * self.num_store
+                    num_store = store_params['scale'] * ess / _ess * self.num_store * scale
                 else:
-                    num_store = store_params['scale'] * self.ess / ess * self.num_store.value
+                    num_store = store_params['scale'] * ess / _ess * self.num_store.value * scale
             elif self.end_flag.value and self.batch_counter != self.num_updates:
-                num_store = store_params['scale'] * (self.ess * self.num_updates / (self.num_updates - self.batch_counter)) / ess * self.num_store.value
+                num_store = store_params['scale'] * (ess * self.num_updates / (self.num_updates - self.batch_counter)) / _ess * self.num_store.value * scale
+        else:
+            if not self.parallel_store_and_training or (self.parallel_store_and_training and self.batch_counter == self.num_updates):
+                if not self.parallel_store_and_training:
+                    num_store = store_params['scale'] * ess / _ess * self.num_store
+                else:
+                    num_store = store_params['scale'] * ess / _ess * self.num_store.value
+            elif self.end_flag.value and self.batch_counter != self.num_updates:
+                num_store = store_params['scale'] * (ess * self.num_updates / (self.num_updates - self.batch_counter)) / _ess * self.num_store.value
         num_store = np.clip(num_store, store_params['min'], store_params['max'])
         if not self.parallel_store_and_training:
             self.num_store = int(max(store_params['min'], num_store))
@@ -636,14 +649,16 @@ class RL:
                 if not hasattr(self, 'original_eps'):
                     self.original_eps = [None for _ in range(len(self.policy))]
                 for i, policy in enumerate(self.policy):
-                    policy.eps = self.adjust_eps(eps_params, policy.eps, ema, target_ess)
-                    if self.original_eps[i] is None:
-                        self.original_eps[i] = policy.eps
+                    if hasattr(policy, 'eps'):
+                        policy.eps = self.adjust_eps(eps_params, policy.eps, ema, target_ess)
+                        if self.original_eps[i] is None:
+                            self.original_eps[i] = policy.eps
             else:
                 if not hasattr(self, 'original_eps'):
                     self.original_eps = None
-                self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
-                if self.original_eps is None:
+                if hasattr(self.policy, 'eps'):
+                    self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
+                    if self.original_eps is None:
                         self.original_eps = self.policy.eps
         
         if tau_params is not None and target_ess is not None:
@@ -734,14 +749,16 @@ class RL:
                 if not hasattr(self, 'original_eps'):
                     self.original_eps = [None for _ in range(len(self.policy))]
                 for i, policy in enumerate(self.policy):
-                    policy.eps = self.adjust_eps(eps_params, policy.eps, ema_noise, target_noise, True)
-                    if self.original_eps[i] is None:
-                        self.original_eps[i] = policy.eps
+                    if hasattr(policy, 'eps'):
+                        policy.eps = self.adjust_eps(eps_params, policy.eps, ema_noise, target_noise, True)
+                        if self.original_eps[i] is None:
+                            self.original_eps[i] = policy.eps
             else:
                 if not hasattr(self, 'original_eps'):
                     self.original_eps = None
-                self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema_noise, target_noise, True)
-                if self.original_eps is None:
+                if hasattr(self.policy, 'eps'):
+                    self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema_noise, target_noise, True)
+                    if self.original_eps is None:
                         self.original_eps = self.policy.eps
         
         if tau_params is not None:
@@ -775,7 +792,11 @@ class RL:
             self.gamma.assign(self.original_gamma)
             self.ema_gamma = None
         if hasattr(self, 'original_num_store'):
-            self.num_store = self.original_num_store 
+            if not self.parallel_store_and_training:
+                self.num_store = self.original_num_store 
+            else:
+                if self.num_store.value != self.original_num_store:
+                    self.num_store.value = self.original_num_store
         if hasattr(self, 'original_clip'):
             self.clip.assign(self.original_clip)
             self.ema_clip = None
@@ -1308,27 +1329,29 @@ class RL:
             return total_loss,num_batches
     
     
-    def clear_pool(self):
+    def clear_pool(self, lock):
         for p in range(self.processes):
             if p==0:
-                self.TD_list[:self.length_list[p]]=self.prioritized_replay.TD[0:self.length_list[p]]
+                self.TD_list[p][:self.length_list[p]]=self.prioritized_replay.TD[0:self.length_list[p]]
             else:
                 index1=0
                 index2=0
                 for i in range(p):
                     index1+=self.length_list[i]
                 index2=index1+self.length_list[i]
-                self.TD_list[:self.length_list[p]]=self.prioritized_replay.TD[index1-1:index2]
+                self.TD_list[p][:self.length_list[p]]=self.prioritized_replay.TD[index1-1:index2]
             if self.PPO:
                 if p==0:
-                    self.ratio_list[:self.length_list[p]]=self.prioritized_replay.ratio[0:self.length_list[p]]
+                    self.ratio_list[p][:self.length_list[p]]=self.prioritized_replay.ratio[0:self.length_list[p]]
                 else:
                     index1=0
                     index2=0
                     for i in range(p):
                         index1+=self.length_list[i]
                     index2=index1+self.length_list[p]
-                    self.ratio_list[:self.length_list[p]]=self.prioritized_replay.ratio[index1-1:index2]
+                    self.ratio_list[p][:self.length_list[p]]=self.prioritized_replay.ratio[index1-1:index2]
+        lock.acquire()
+        for p in range(self.processes):
             if len(self.state_pool_list[p])>math.ceil(self.pool_size/self.processes):
                 if type(self.window_size)!=int:
                     window_size=int(self.window_size(p))
@@ -1354,6 +1377,7 @@ class RL:
                         self.TD_list[p]=self.TD_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
                         if self.PPO:
                             self.ratio_list[p]=self.ratio_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+        lock.release()
     
     
     def get_trainable_variables(self, optimizer):
@@ -1464,9 +1488,7 @@ class RL:
                             self.prioritized_replay.TD[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                             if self.PPO:
                                 self.prioritized_replay.ration[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
-                            lock.acquire()
-                            self.clear_pool()
-                            lock.release()
+                            self.clear_pool(lock)
                         total_loss+=loss
                         num_batches += 1
                         self.batch_counter+=1
@@ -1568,9 +1590,7 @@ class RL:
                             self.share_TD[7][self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                             if self.PPO:
                                 self.share_ration[7][self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
-                            lock.acquire()
-                            self.clear_pool()
-                            lock.release()
+                            self.clear_pool(lock)
                         self.batch_counter+=1
                         if self.pool_network==True:
                             if self.batch_counter%self.update_batches==0:
@@ -1680,9 +1700,7 @@ class RL:
                             self.share_TD[7][self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                             if self.PPO:
                                 self.share_ration[7][self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
-                            lock.acquire()
-                            self.clear_pool()
-                            lock.release()
+                            self.clear_pool(lock)
                         total_loss+=loss
                         num_batches += 1
                         self.batch_counter+=1
@@ -1783,9 +1801,7 @@ class RL:
                         self.share_TD[7][self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                         if self.PPO:
                             self.share_ration[7][self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
-                        lock.acquire()
-                        self.clear_pool()
-                        lock.release()
+                        self.clear_pool(lock)
                     self.batch_counter+=1
                     if self.pool_network==True:
                         if self.batch_counter%self.update_batches==0:
@@ -2502,17 +2518,20 @@ class RL:
                 else:
                     weights = self.TD_list[p] + 1e-7
                 self.ess_[p] = self.compute_ess_from_weights(weights)
-            if self.parallel_store_and_training:
-                self.end_flag.value=True
         self.initialize_adjusting()
         if self.PR==True:
-            if self.PPO:
-                self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
-                self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-            else:
-                self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
+            if not self.parallel_store_and_training:
+                if self.PPO:
+                    self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
+                    self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
+                else:
+                    self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
             if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
-                self.ess=self.compute_ess(None,None)
+                if not self.parallel_store_and_training:
+                    self.ess=self.compute_ess(None,None)
+                else:
+                    self.ess.value=self.compute_ess(None,None)
+                    self.end_flag.value=True
         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
         if len(self.reward_list)>self.trial_count:
             del self.reward_list[0]
@@ -2568,6 +2587,8 @@ class RL:
                 self.share_trainable_variables[7]=None
                 self.share_opt.config[7]=self.optimizer.get_config()
                 self.share_opt_variables[7]=None
+            self.ess=mp.Value('f',0)
+            self.original_num_store=self.num_store
             self.num_store=mp.Value('i',self.num_store)
             self._ess_=mp.Value('f',0)
             self.ess_=manager.list([None for _ in range(processes)])
@@ -2876,6 +2897,8 @@ class RL:
                 self.share_trainable_variables[7]=None
                 self.share_opt.config[7]=self.optimizer.get_config()
                 self.share_opt_variables[7]=None
+            self.ess=mp.Value('f',0)
+            self.original_num_store=self.num_store
             self.num_store=mp.Value('i',self.num_store)
             self._ess_=mp.Value('f',0)
             self.ess_=manager.list([None for _ in range(processes)])
