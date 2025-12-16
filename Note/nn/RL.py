@@ -2439,8 +2439,8 @@ class RL:
                 for process in process_list:
                     process.join()
             counter+=1
-            if self.parallel_store_and_training and counter<num_store:
-                continue
+            if self.parallel_store_and_training and counter==num_store:
+                break
             if not self.parallel_store_and_training:
                 if self.state_pool is not None and len(self.state_pool)>=self.batch and counter<num_store:
                         continue
