@@ -2620,7 +2620,7 @@ class RL:
                 del self.reward_list[0]
     
     
-    def train(self, train_loss, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
+    def train(self, train_loss, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
         avg_reward=None
         if p!=0:
             if p==None:
@@ -2930,7 +2930,7 @@ class RL:
         return
     
     
-    def distributed_training(self, optimizer=None, strategy=None, episodes=None, num_episodes=None, pool_network=True, parallel_store_and_training=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
+    def distributed_training(self, optimizer=None, strategy=None, episodes=None, num_episodes=None, pool_network=True, parallel_store_and_training=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
         avg_reward=None
         if num_episodes!=None:
             episodes=num_episodes
