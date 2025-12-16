@@ -2536,6 +2536,8 @@ class RL:
         if not self.end_flag_:
             if all(self.end_flag):
                 self.end_flag_=True
+                for p in range(self.processes):
+                    self.done_length[p]=0
             if self.processes_her==None and self.processes_pr==None:
                 state_pool=np.concatenate(self.state_pool_list)
                 action_pool=np.concatenate(self.action_pool_list)
@@ -2786,8 +2788,6 @@ class RL:
                             process_list.append(process)
                         while True:
                             if sum(self.done_length)>=self.batch:
-                                for p in range(processes):
-                                    self.done_length[p]=0
                                 break
                         process=mp.Process(target=self.train1,args=(lock_list))
                         process.start()
@@ -2859,8 +2859,6 @@ class RL:
                             process_list.append(process)
                         while True:
                             if sum(self.done_length)>=self.batch:
-                                for p in range(processes):
-                                    self.done_length[p]=0
                                 break
                         process=mp.Process(target=self.train1,args=(lock_list))
                         process.start()
@@ -3102,8 +3100,6 @@ class RL:
                                 process_list.append(process)
                             while True:
                                 if sum(self.done_length)>=self.batch:
-                                    for p in range(processes):
-                                        self.done_length[p]=0
                                     break
                             process=mp.Process(target=self.train1,args=(lock_list))
                             process.start()
@@ -3174,8 +3170,6 @@ class RL:
                                 process_list.append(process)
                             while True:
                                 if sum(self.done_length)>=self.batch:
-                                    for p in range(processes):
-                                        self.done_length[p]=0
                                     break
                             process=mp.Process(target=self.train1,args=(lock_list))
                             process.start()
@@ -3249,8 +3243,6 @@ class RL:
                                 process_list.append(process)
                             while True:
                                 if sum(self.done_length)>=self.batch:
-                                    for p in range(processes):
-                                        self.done_length[p]=0
                                     break
                             process=mp.Process(target=self.train1,args=(lock_list))
                             process.start()
@@ -3329,8 +3321,6 @@ class RL:
                                 process_list.append(process)
                             while True:
                                 if sum(self.done_length)>=self.batch:
-                                    for p in range(processes):
-                                        self.done_length[p]=0
                                     break
                             process=mp.Process(target=self.train1,args=(lock_list))
                             process.start()
@@ -3407,8 +3397,6 @@ class RL:
                                 process_list.append(process)
                             while True:
                                 if sum(self.done_length)>=self.batch:
-                                    for p in range(processes):
-                                        self.done_length[p]=0
                                     break
                             process=mp.Process(target=self.train1,args=(lock_list))
                             process.start()
