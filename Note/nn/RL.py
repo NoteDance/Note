@@ -398,7 +398,7 @@ class RL:
                 
                 if not self.parallel_store_and_training:
                     ess = self.compute_ess_from_weights(weights)
-                elif self.end_flag_:
+                elif self.end_flag:
                     ess = self.compute_ess_from_weights(weights)
                 ema = ess
             else:
@@ -419,7 +419,7 @@ class RL:
         
         if not self.parallel_store_and_training:
             window_size = int((1.0 - ema / ess) * scale * len(weights))
-        elif self.end_flag_:
+        elif self.end_flag:
             if self.batch_counter != self.num_updates:
                 window_size = int((1.0 - ema / (ess * self.num_updates / (self.num_updates - self.batch_counter))) * scale * len(weights))
             else:
@@ -450,7 +450,7 @@ class RL:
             
         if not self.parallel_store_and_training:
             batch = int(round(self.batch * ema / ess * float(batch_params['scale'])))
-        elif self.end_flag_:
+        elif self.end_flag:
             if self.batch_counter != self.num_updates:
                 batch = int(round(self.batch * ema / (ess * self.num_updates / (self.num_updates - self.batch_counter)) * float(batch_params['scale'])))
             else:
@@ -479,7 +479,7 @@ class RL:
         if not GNS:
             if not self.parallel_store_and_training:
                 target_alpha = self.alpha + alpha_params['rate'] * (ema / ess - 1.0)
-            elif self.end_flag_:
+            elif self.end_flag:
                 if self.batch_counter != self.num_updates:
                     target_alpha = self.alpha + alpha_params['rate'] * (ema / (ess * self.num_updates / (self.num_updates - self.batch_counter)) - 1.0)
                 else:
@@ -549,7 +549,7 @@ class RL:
         if scale > 0:
             if not self.parallel_store_and_training:
                 num_store = store_params['scale'] * ess / self._ess * self.num_store * scale
-            elif self.end_flag_:
+            elif self.end_flag:
                 if self.batch_counter != self.num_updates:
                     num_store = store_params['scale'] * (ess * self.num_updates / (self.num_updates - self.batch_counter)) / self._ess * self.num_store.value * scale
                 else:
@@ -557,7 +557,7 @@ class RL:
         else:
             if not self.parallel_store_and_training:
                 num_store = store_params['scale'] * ess / self._ess * self.num_store
-            elif self.end_flag_:
+            elif self.end_flag:
                 if self.batch_counter != self.num_updates:
                     num_store = store_params['scale'] * (ess * self.num_updates / (self.num_updates - self.batch_counter)) / self._ess * self.num_store.value
                 else:
@@ -1447,7 +1447,7 @@ class RL:
     
     def train1(self, lock_list=None):
         self.step_counter+=1
-        self.end_flag_=False
+        self.end_flag=False
         batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
         if len(self.state_pool)%self.batch!=0:
             batches+=1
@@ -2401,6 +2401,9 @@ class RL:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward[p]=r+self.reward[p]
             if (self.num_steps==None and done) or (self.num_steps!=None and done_):
+                self.reward_list.append(self.reward[p])
+                if len(self.reward_list)>self.trial_count:
+                    del self.reward_list[0]
                 return
             s=next_s
             if (self.num_steps!=None and counter%self.num_steps==0) or (self.num_steps!=None and done):
@@ -2525,18 +2528,16 @@ class RL:
                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                 if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                     self.ess=self.compute_ess(None,None)
-            self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
-            if len(self.reward_list)>self.trial_count:
-                del self.reward_list[0]
         else:
-            self.end_flag[p]=True
+            self.end_flag_list[p]=True
     
     
     def update_pool(self):
-        if not self.end_flag_:
-            if all(self.end_flag):
-                self.end_flag_=True
+        if not self.end_flag:
+            if all(self.end_flag_list):
+                self.end_flag=True
                 for p in range(self.processes):
+                    self.end_flag_list[p]=False
                     self.done_length[p]=0
             if self.processes_her==None and self.processes_pr==None:
                 state_pool=np.concatenate(self.state_pool_list)
@@ -2602,7 +2603,7 @@ class RL:
                     self.share_next_state_pool[7]=self.next_state_pool_
                     self.share_reward_pool[7]=self.reward_pool_
                     self.share_done_pool[7]=self.done_pool_
-        if self.end_flag_:
+        if self.end_flag:
             if hasattr(self,'window_size_func'):
                 for p in range(self.processes):
                     if not hasattr(self,'ess_'):
@@ -2617,9 +2618,6 @@ class RL:
             if self.PR==True:
                 if hasattr(self, 'adjust_func') and len(done_pool)>=self.pool_size_:
                     self.ess.value=self.compute_ess(None,None)
-            self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
-            if len(self.reward_list)>self.trial_count:
-                del self.reward_list[0]
     
     
     def train(self, train_loss, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
@@ -2676,7 +2674,7 @@ class RL:
             self.original_num_store=self.num_store
             self.num_store=mp.Value('i',self.num_store)
             self.ess_=manager.list([None for _ in range(processes)])
-            self.end_flag=manager.list([False for _ in range(processes)])
+            self.end_flag_list=manager.list([False for _ in range(processes)])
         self.processes=processes
         self.num_store=num_store
         self.processes_her=processes_her
@@ -2721,8 +2719,7 @@ class RL:
                     self.done_pool_list.append(None)
                     if self.clearing_freq!=None:
                         self.store_counter.append(0)
-            self.reward=np.zeros(processes,dtype='float32')
-            self.reward=Array('f',self.reward)
+            self.reward=manager.list([0 for _ in range(processes)])
             if self.HER!=True or self.TRL!=True:
                 lock_list=[mp.Lock() for _ in range(processes)]
             else:
@@ -2985,7 +2982,7 @@ class RL:
             self.original_num_store=self.num_store
             self.num_store=mp.Value('i',self.num_store)
             self.ess_=manager.list([None for _ in range(processes)])
-            self.end_flag=manager.list([False for _ in range(processes)])
+            self.end_flag_list=manager.list([False for _ in range(processes)])
         self.processes=processes
         self.num_store=num_store
         self.processes_her=processes_her
@@ -3030,8 +3027,7 @@ class RL:
                     self.done_pool_list.append(None)
                     if self.clearing_freq!=None:
                         self.store_counter.append(0)
-            self.reward=np.zeros(processes,dtype='float32')
-            self.reward=Array('f',self.reward)
+            self.reward=manager.list([0 for _ in range(processes)])
             if self.HER!=True or self.TRL!=True:
                 lock_list=[mp.Lock() for _ in range(processes)]
             else:
