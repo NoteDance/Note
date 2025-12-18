@@ -1460,6 +1460,9 @@ class RL:
             batch = 0
             for j in range(batches):
                 if self.stop_training==True:
+                    if self.parallel_store_and_training:
+                        self.get_trainable_variables(optimizer)
+                        self.get_opt_variables(optimizer)
                     if self.distributed_flag==True:
                         if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
                             self.coordinator.join()
@@ -1677,6 +1680,9 @@ class RL:
                 batch += 1
             if len(self.state_pool)%self.batch!=0:
                 if self.stop_training==True:
+                    if self.parallel_store_and_training:
+                        self.get_trainable_variables(optimizer)
+                        self.get_opt_variables(optimizer)
                     if self.distributed_flag==True:
                         if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
                             self.coordinator.join()
@@ -1926,6 +1932,9 @@ class RL:
                     train_ds=self.strategy.experimental_distribute_dataset(train_ds)
                     for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                         if self.stop_training==True:
+                            if self.parallel_store_and_training:
+                                self.get_trainable_variables(optimizer)
+                                self.get_opt_variables(optimizer)
                             return (total_loss / num_batches).numpy()
                         if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                             break
@@ -2028,6 +2037,9 @@ class RL:
                         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                 for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                     if self.stop_training==True:
+                        if self.parallel_store_and_training:
+                            self.get_trainable_variables(optimizer)
+                            self.get_opt_variables(optimizer)
                         return self.train_loss.result().numpy() 
                     if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                         break
