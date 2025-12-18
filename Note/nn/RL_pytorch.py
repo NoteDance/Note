@@ -3,9 +3,7 @@ from torch.utils.data import DataLoader
 import multiprocessing as mp
 from Note.RL import rl
 from Note.RL.rl.prioritized_replay import pr
-from multiprocessing import Array
 import numpy as np
-import numpy.ctypeslib as npc
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import math
@@ -87,49 +85,50 @@ class RL_pytorch:
                 self.next_state_pool_list[index]=np.concatenate((self.next_state_pool_list[index],np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool_list[index]=np.concatenate((self.reward_pool_list[index],np.expand_dims(r,axis=0)),0)
                 self.done_pool_list[index]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
-            if self.clearing_freq!=None:
-                self.store_counter[index]+=1
-                if self.store_counter[index]%self.clearing_freq==0:
-                    self.state_pool_list[index]=self.state_pool_list[index][self.window_size_:]
-                    self.action_pool_list[index]=self.action_pool_list[index][self.window_size_:]
-                    self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size_:]
-                    self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size_:]
-                    self.done_pool_list[index]=self.done_pool_list[index][self.window_size_:]
-                    if self.PR:
-                        if self.PPO:
-                            self.ratio_list[index]=self.ratio_list[index][self.window_size_:]
-                            self.TD_list[index]=self.TD_list[index][self.window_size_:]
-                        else:
-                            self.TD_list[index]=self.TD_list[index][self.window_size_:]
-            if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
-                if type(self.window_size)!=int:
-                    window_size=int(self.window_size(index))
-                else:
-                    window_size=self.window_size
-                if window_size!=None:
-                    self.state_pool_list[index]=self.state_pool_list[index][window_size:]
-                    self.action_pool_list[index]=self.action_pool_list[index][window_size:]
-                    self.next_state_pool_list[index]=self.next_state_pool_list[index][window_size:]
-                    self.reward_pool_list[index]=self.reward_pool_list[index][window_size:]
-                    self.done_pool_list[index]=self.done_pool_list[index][window_size:]
-                    if self.PR:
-                        if self.PPO:
-                            self.ratio_list[index]=self.ratio_list[index][window_size:]
-                            self.TD_list[index]=self.TD_list[index][window_size:]
-                        else:
-                            self.TD_list[index]=self.TD_list[index][window_size:]
-                else:
-                    self.state_pool_list[index]=self.state_pool_list[index][1:]
-                    self.action_pool_list[index]=self.action_pool_list[index][1:]
-                    self.next_state_pool_list[index]=self.next_state_pool_list[index][1:]
-                    self.reward_pool_list[index]=self.reward_pool_list[index][1:]
-                    self.done_pool_list[index]=self.done_pool_list[index][1:]
-                    if self.PR:
-                        if self.PPO:
-                            self.ratio_list[index]=self.ratio_list[index][1:]
-                            self.TD_list[index]=self.TD_list[index][1:]
-                        else:
-                            self.TD_list[index]=self.TD_list[index][1:]
+            if not self.parallel_store_and_training or (self.parallel_store_and_training and not self.PR):
+                if self.clearing_freq!=None:
+                    self.store_counter[index]+=1
+                    if self.store_counter[index]%self.clearing_freq==0:
+                        self.state_pool_list[index]=self.state_pool_list[index][self.window_size_:]
+                        self.action_pool_list[index]=self.action_pool_list[index][self.window_size_:]
+                        self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size_:]
+                        self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size_:]
+                        self.done_pool_list[index]=self.done_pool_list[index][self.window_size_:]
+                        if self.PR:
+                            if self.PPO:
+                                self.ratio_list[index]=self.ratio_list[index][self.window_size_:]
+                                self.TD_list[index]=self.TD_list[index][self.window_size_:]
+                            else:
+                                self.TD_list[index]=self.TD_list[index][self.window_size_:]
+                if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
+                    if type(self.window_size)!=int:
+                        window_size=int(self.window_size(index))
+                    else:
+                        window_size=self.window_size
+                    if window_size!=None:
+                        self.state_pool_list[index]=self.state_pool_list[index][window_size:]
+                        self.action_pool_list[index]=self.action_pool_list[index][window_size:]
+                        self.next_state_pool_list[index]=self.next_state_pool_list[index][window_size:]
+                        self.reward_pool_list[index]=self.reward_pool_list[index][window_size:]
+                        self.done_pool_list[index]=self.done_pool_list[index][window_size:]
+                        if self.PR:
+                            if self.PPO:
+                                self.ratio_list[index]=self.ratio_list[index][window_size:]
+                                self.TD_list[index]=self.TD_list[index][window_size:]
+                            else:
+                                self.TD_list[index]=self.TD_list[index][window_size:]
+                    else:
+                        self.state_pool_list[index]=self.state_pool_list[index][1:]
+                        self.action_pool_list[index]=self.action_pool_list[index][1:]
+                        self.next_state_pool_list[index]=self.next_state_pool_list[index][1:]
+                        self.reward_pool_list[index]=self.reward_pool_list[index][1:]
+                        self.done_pool_list[index]=self.done_pool_list[index][1:]
+                        if self.PR:
+                            if self.PPO:
+                                self.ratio_list[index]=self.ratio_list[index][1:]
+                                self.TD_list[index]=self.TD_list[index][1:]
+                            else:
+                                self.TD_list[index]=self.TD_list[index][1:]
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -264,45 +263,44 @@ class RL_pytorch:
         return float(ess)
 
 
-    def adjust_window_size(self, p=None, scale=1.0, smooth=0.2):
+    def adjust_window_size(self, p=None, scale=1.0, ema=None):
         if self.pool_network==True:
-            if not hasattr(self, 'ema_ess'):
-                self.ema_ess = [None] * self.processes
-            
-            if self.PPO:
-                scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * torch.abs(self.ratio_list[p] - 1.0)
-                weights = scores + 1e-7
-            else:
-                weights = self.TD_list[p] + 1e-7
+            if ema is None:
+                if self.PPO:
+                    scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * torch.abs(self.ratio_list[p] - 1.0)
+                    weights = scores + 1e-7
+                else:
+                    weights = self.TD_list[p] + 1e-7
     
-            ess = self.compute_ess_from_weights(weights)
-    
-            if self.ema_ess[p] is None:
+                if not self.parallel_store_and_training:
+                    ess = self.compute_ess_from_weights(weights)
+                elif self.end_flag:
+                    ess = self.compute_ess_from_weights(weights)
                 ema = ess
             else:
-                ema = smooth * ess + (1.0 - smooth) * self.ema_ess[p]
-            self.ema_ess[p] = ema
+                ema = ema[p]
+            
             ess = self.ess_[p]
         else:
-            if not hasattr(self, 'ema_ess'):
-                self.ema_ess = None
-            
-            if self.PPO:
-                scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * torch.abs(self.prioritized_replay.ratio - 1.0)
-                weights = scores + 1e-7
-            else:
-                weights = self.prioritized_replay.TD + 1e-7
-            
-            ess = self.compute_ess_from_weights(weights)
-            
-            if self.ema_ess is None:
+            if ema is None:
+                if self.PPO:
+                    scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * torch.abs(self.prioritized_replay.ratio - 1.0)
+                    weights = scores + 1e-7
+                else:
+                    weights = self.prioritized_replay.TD + 1e-7
+                
+                ess = self.compute_ess_from_weights(weights)
+                
                 ema = ess
-            else:
-                ema = smooth * ess + (1.0 - smooth) * self.ema_ess
-            self.ema_ess = ema
             ess = self.ess_
             
-        window_size = int((1.0 - ema / ess) * scale * len(weights))
+        if not self.parallel_store_and_training:
+            window_size = int((1.0 - ema / ess) * scale * len(weights))
+        elif self.end_flag:
+            if self.batch_counter != self.num_updates:
+                window_size = int((1.0 - ema / (ess * self.num_updates / (self.num_updates - self.batch_counter))) * scale * len(weights))
+            else:
+                window_size = int((1.0 - ema / (ess * self.num_updates / (self.num_updates - (self.batch_counter - 1)))) * scale * len(weights))
          
         if window_size > 0:
             window_size = np.clip(window_size, 1, len(weights) - 1)
@@ -322,7 +320,18 @@ class RL_pytorch:
         if batch_params['max'] is None:
             batch_params['max'] = max(1, buf_len)
             
-        batch = int(round(self.batch * ema / self.ess * float(batch_params['scale'])))
+        if self.parallel_store_and_training:
+            ess = self.ess.value
+        else:
+            ess = self.ess
+            
+        if not self.parallel_store_and_training:
+            batch = int(round(self.batch * ema / ess * float(batch_params['scale'])))
+        elif self.end_flag:
+            if self.batch_counter != self.num_updates:
+                batch = int(round(self.batch * ema / (ess * self.num_updates / (self.num_updates - self.batch_counter)) * float(batch_params['scale'])))
+            else:
+                batch = int(round(self.batch * ema / (ess * self.num_updates / (self.num_updates - (self.batch_counter - 1))) * float(batch_params['scale'])))
         batch = int(np.clip(batch, batch_params['min'], batch_params['max']))
         
         if batch_params['align'] is None:
@@ -339,8 +348,18 @@ class RL_pytorch:
         smooth = alpha_params.get('smooth', 0.2)
         if ema is None:
             ema = self.compute_ess(self.ema_alpha, smooth)
+        if self.parallel_store_and_training:
+            ess = self.ess.value
+        else:
+            ess = self.ess
         if not GNS:
-            target_alpha = self.alpha + alpha_params['rate'] * (ema / self.ess - 1.0)
+            if not self.parallel_store_and_training:
+                target_alpha = self.alpha + alpha_params['rate'] * (ema / ess - 1.0)
+            elif self.end_flag:
+                if self.batch_counter != self.num_updates:
+                    target_alpha = self.alpha + alpha_params['rate'] * (ema / (ess * self.num_updates / (self.num_updates - self.batch_counter)) - 1.0)
+                else:
+                    target_alpha = self.alpha + alpha_params['rate'] * (ema / (ess * self.num_updates / (self.num_updates - (self.batch_counter - 1)) - 1.0))
         else:
             target_alpha = self.alpha + alpha_params['rate'] * (target - ema) / target
         alpha = np.clip(target_alpha, alpha_params['min'], alpha_params['max'])
@@ -399,12 +418,31 @@ class RL_pytorch:
         if not hasattr(self, 'original_num_store'):
             self.original_num_store = self.num_store
         scale = (1.0 - len(self.prioritized_replay.TD) / self.pool_size)
-        if scale > 0:
-            num_store = store_params['scale'] * self.ess / self._ess * self.num_store * scale
+        if self.parallel_store_and_training:
+            ess = self.ess.value
         else:
-            num_store = store_params['scale'] * self.ess / self._ess * self.num_store
+            ess = self.ess
+        if scale > 0:
+            if not self.parallel_store_and_training:
+                num_store = store_params['scale'] * ess / self._ess * self.num_store * scale
+            elif self.end_flag:
+                if self.batch_counter != self.num_updates:
+                    num_store = store_params['scale'] * (ess * self.num_updates / (self.num_updates - self.batch_counter)) / self._ess * self.num_store.value * scale
+                else:
+                    num_store = store_params['scale'] * (ess * self.num_updates / (self.num_updates - (self.batch_counter - 1))) / self._ess * self.num_store.value * scale
+        else:
+            if not self.parallel_store_and_training:
+                num_store = store_params['scale'] * ess / self._ess * self.num_store
+            elif self.end_flag:
+                if self.batch_counter != self.num_updates:
+                    num_store = store_params['scale'] * (ess * self.num_updates / (self.num_updates - self.batch_counter)) / self._ess * self.num_store.value
+                else:
+                    num_store = store_params['scale'] * (ess * self.num_updates / (self.num_updates - (self.batch_counter - 1))) / self._ess * self.num_store.value
         num_store = np.clip(num_store, store_params['min'], store_params['max'])
-        self.num_store = int(max(store_params['min'], num_store))
+        if not self.parallel_store_and_training:
+            self.num_store = int(max(store_params['min'], num_store))
+        else:
+            self.num_store.value = int(max(store_params['min'], num_store))
     
     
     def adjust_clip(self, clip_params, ema=None, target=None, GNS=False):  
@@ -492,14 +530,16 @@ class RL_pytorch:
                 if not hasattr(self, 'original_eps'):
                     self.original_eps = [None for _ in range(len(self.policy))]
                 for i, policy in enumerate(self.policy):
-                    policy.eps = self.adjust_eps(eps_params, policy.eps, ema, target_ess)
-                    if self.original_eps[i] is None:
-                        self.original_eps[i] = policy.eps
+                    if hasattr(policy, 'eps'):
+                        policy.eps = self.adjust_eps(eps_params, policy.eps, ema, target_ess)
+                        if self.original_eps[i] is None:
+                            self.original_eps[i] = policy.eps
             else:
                 if not hasattr(self, 'original_eps'):
                     self.original_eps = None
-                self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
-                if self.original_eps is None:
+                if hasattr(self.policy, 'eps'):
+                    self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
+                    if self.original_eps is None:
                         self.original_eps = self.policy.eps
         
         if tau_params is not None and target_ess is not None:
@@ -573,10 +613,20 @@ class RL_pytorch:
     
         if eps_params is not None:
             if type(self.policy) == list:
-                for policy in self.policy:
-                    policy.eps = self.adjust_eps(eps_params, policy.eps, ema_noise, target_noise, True)
+                if not hasattr(self, 'original_eps'):
+                    self.original_eps = [None for _ in range(len(self.policy))]
+                for i, policy in enumerate(self.policy):
+                    if hasattr(policy, 'eps'):
+                        policy.eps = self.adjust_eps(eps_params, policy.eps, ema_noise, target_noise, True)
+                        if self.original_eps[i] is None:
+                            self.original_eps[i] = policy.eps
             else:
-                self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema_noise, target_noise, True)
+                if not hasattr(self, 'original_eps'):
+                    self.original_eps = None
+                if hasattr(self.policy, 'eps'):
+                    self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema_noise, target_noise, True)
+                    if self.original_eps is None:
+                        self.original_eps = self.policy.eps
         
         if tau_params is not None:
             self.adjust_tau(tau_params, ema_noise, target_noise, True)
@@ -609,7 +659,11 @@ class RL_pytorch:
             self.gamma.assign(self.original_gamma)
             self.ema_gamma = None
         if hasattr(self, 'original_num_store'):
-            self.num_store = self.original_num_store 
+            if self.parallel_store_and_training:
+                if self.num_store.value != self.original_num_store:
+                    self.num_store.value = self.original_num_store
+            else:
+                self.num_store = self.original_num_store 
         if hasattr(self, 'original_clip'):
             self.clip.assign(self.original_clip)
             self.ema_clip = None
@@ -626,18 +680,45 @@ class RL_pytorch:
     
     
     def data_func(self):
-        if not self.parallel_store_and_training:
-            state_pool=self.state_pool
-            action_pool=self.action_pool
-            next_state_pool=self.next_state_pool
-            reward_pool=self.reward_pool
-            done_pool=self.done_pool
-        else:
+        if self.parallel_store_and_training:
             state_pool=self.share_state_pool[7]
             action_pool=self.share_action_pool[7]
             next_state_pool=self.share_next_state_pool[7]
             reward_pool=self.share_reward_pool[7]
             done_pool=self.share_done_pool[7]
+            done_length=len(self.done_pool[7])
+            TD_list=[]
+            ratio_list=[]
+            self.length_list=[]
+            for p in range(self.processes):
+                TD_list.append(self.TD_list[p])
+                self.length_list.append(len(TD_list[p]))
+                if self.PPO:
+                    ratio_list.append(self.ratio_list[p][:self.length_list[p]])
+            self.share_TD[7]=np.concat(TD_list, axis=0)
+            if self.PPO:
+                self.share_ratio[7]=np.concat(ratio_list, axis=0)
+            if self.PPO:
+                TD_length=len(self.share_TD[7])
+                ratio_length=len(self.share_ration[7])
+                length=min(done_length,TD_length,ratio_length)
+            else:
+                TD_length=len(self.share_TD[7])
+                length=min(done_length,TD_length)
+            state_pool=self.share_state_pool[7][:length]
+            action_pool=self.share_action_pool[7][:length]
+            next_state_pool=self.share_next_state_pool[7][:length]
+            reward_pool=self.share_reward_pool[7][:length]
+            done_pool=self.share_done_pool[7][:length]
+            self.prioritized_replay.TD=self.share_TD[7][:length]
+            self.prioritized_replay.ratio=self.share_ratio[7][:length]
+            self.length_list[-1]=self.length_list[-1]-(len(self.share_TD[7])-len(self.prioritized_replay.TD))
+        else:
+            state_pool=self.state_pool
+            action_pool=self.action_pool
+            next_state_pool=self.next_state_pool
+            reward_pool=self.reward_pool
+            done_pool=self.done_pool
         if self.PR:
             if self.processes_pr!=None:
                 process_list=[]
@@ -749,23 +830,114 @@ class RL_pytorch:
         return loss
     
     
-    def train1(self, lock_list_=None):
+    def clear_pool(self, lock_list):
+        for p in range(self.processes):
+            if p==0:
+                self.TD_list[p][:self.length_list[p]]=self.prioritized_replay.TD[0:self.length_list[p]]
+            else:
+                index1=0
+                index2=0
+                for i in range(p):
+                    index1+=self.length_list[i]
+                index2=index1+self.length_list[i]
+                self.TD_list[p][:self.length_list[p]]=self.prioritized_replay.TD[index1-1:index2]
+            if self.PPO:
+                if p==0:
+                    self.ratio_list[p][:self.length_list[p]]=self.prioritized_replay.ratio[0:self.length_list[p]]
+                else:
+                    index1=0
+                    index2=0
+                    for i in range(p):
+                        index1+=self.length_list[i]
+                    index2=index1+self.length_list[p]
+                    self.ratio_list[p][:self.length_list[p]]=self.prioritized_replay.ratio[index1-1:index2]
+        for p in range(self.processes):
+            if len(self.state_pool_list[p])>math.ceil(self.pool_size/self.processes):
+                lock_list[p].acquire()
+                if type(self.window_size)!=int:
+                    window_size=int(self.window_size(p))
+                else:
+                    window_size=self.window_size
+                if window_size!=None:
+                    self.state_pool_list[p]=self.state_pool_list[p][window_size:]
+                    self.action_pool_list[p]=self.action_pool_list[p][window_size:]
+                    self.next_state_pool_list[p]=self.next_state_pool_list[p][window_size:]
+                    self.reward_pool_list[p]=self.reward_pool_list[p][window_size:]
+                    self.done_pool_list[p]=self.done_pool_list[p][window_size:]
+                    if self.PR:
+                        self.TD_list[p]=self.TD_list[p][window_size:]
+                        if self.PPO:
+                            self.ratio_list[p]=self.ratio_list[p][window_size:]
+                else:
+                    self.state_pool_list[p]=self.state_pool_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                    self.action_pool_list[p]=self.action_pool_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                    self.next_state_pool_list[p]=self.next_state_pool_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                    self.reward_pool_list[p]=self.reward_pool_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                    self.done_pool_list[p]=self.done_pool_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                    if self.PR:
+                        self.TD_list[p]=self.TD_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                        if self.PPO:
+                            self.ratio_list[p]=self.ratio_list[p][len(self.state_pool_list[p])-math.ceil(self.pool_size/self.processes):]
+                lock_list[p].release()
+            
+            
+    def get_state_dict(self, optimizer):
+        if type(optimizer)!=list:
+            if self.parallel_store_and_training:
+                self.share_state_dict[7] = optimizer.state_dict()
+        else:
+            for i in range(len(optimizer)):
+                if self.parallel_store_and_training:
+                    self.share_state_dict[7][i] = optimizer[i].state_dict()
+    
+    
+    def build_opt(self, optimizer=None):
+        if optimizer is None:
+            if type(self.optimizer)==list:
+                optimizer=[]
+                for i in range(len(self.optimizer)):
+                    optimizer.append(self.share_opt_class[7][i]())
+                    if self.share_state_dict[7][i] is not None:
+                        optimizer.load_state_dict(self.share_state_dict[7][i])
+            else:
+                optimizer = self.share_opt_class[7]()
+                if self.share_state_dict[7] is not None:
+                    optimizer.load_state_dict(self.share_state_dict[7])
+            return optimizer
+        else:
+            if type(optimizer)==list:
+                for i in range(len(optimizer)):
+                    optimizer.load_state_dict(self.share_state_dict[7][i])
+            else:
+                optimizer.load_state_dict(self.share_state_dict[7])
+    
+    
+    def train1(self, lock_list=None):
         loss=0
         self.step_counter+=1
+        self.end_flag=False
         batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
         if len(self.state_pool)%self.batch!=0:
             batches+=1
-        if not self.parallel_store_and_training:
-            optimizer=self.optimizer
+        if self.parallel_store_and_training:
+            optimizer=self.build_opt()
         else:
-            optimizer=self.optimizer[7]
+            optimizer=self.optimizer
         if self.PR==True or self.HER==True or self.TRL==True:
             for j in range(batches):
                 if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                     break
+                if self.parallel_store_and_training:
+                    self.update_pool()
                 state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                 loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
-                self.prioritized_replay.update()
+                if self.parallel_store_and_training:
+                    self.prioritized_replay.TD[self.prioritized_replay.index]=torch.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
+                    if self.PPO:
+                        self.prioritized_replay.ration[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
+                    self.clear_pool(lock_list)
+                else:
+                    self.prioritized_replay.update()
                 self.batch_counter+=1
                 if self.pool_network==True:
                     if self.batch_counter%self.update_batches==0:
@@ -779,7 +951,7 @@ class RL_pytorch:
                             self._ess = self.compute_ess(None, None)
                         for p in range(self.processes):
                             if self.parallel_store_and_training:
-                                lock_list_[p].acquire()
+                                lock_list[p].acquire()
                             if hasattr(self,'window_size_func'):
                                 window_size=int(self.window_size_func(p))
                                 if self.PPO:
@@ -802,18 +974,25 @@ class RL_pytorch:
                                     weights = self.TD_list[p] + 1e-7
                                     self.ess_[p] = self.compute_ess_from_weights(weights)
                             if self.parallel_store_and_training:
-                                lock_list_[p].release()
+                                lock_list[p].release()
                         if self.PPO:
                             self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                         else:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                             if self.processes_her==None and self.processes_pr==None:
-                                self.state_pool=np.concatenate(self.state_pool_list)
-                                self.action_pool=np.concatenate(self.action_pool_list)
-                                self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                                self.reward_pool=np.concatenate(self.reward_pool_list)
-                                self.done_pool=np.concatenate(self.done_pool_list)
+                                if self.parallel_store_and_training:
+                                    self.share_state_pool[7]=np.concatenate(self.state_pool_list)
+                                    self.share_action_pool[7]=np.concatenate(self.action_pool_list)
+                                    self.share_next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                                    self.share_reward_pool[7]=np.concatenate(self.reward_pool_list)
+                                    self.share_done_pool[7]=np.concatenate(self.done_pool_list)
+                                else:
+                                    self.state_pool=np.concatenate(self.state_pool_list)
+                                    self.action_pool=np.concatenate(self.action_pool_list)
+                                    self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                    self.reward_pool=np.concatenate(self.reward_pool_list)
+                                    self.done_pool=np.concatenate(self.done_pool_list)
                             else:
                                 self.state_pool[7]=np.concatenate(self.state_pool_list)
                                 self.action_pool[7]=np.concatenate(self.action_pool_list)
@@ -823,13 +1002,23 @@ class RL_pytorch:
                     if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                         self.adjust_func()
                     if self.PPO and self.batch_counter%self.update_batches==0:
+                        if self.parallel_store_and_training:
+                            self.get_state_dict(optimizer)
                         return loss.detach().numpy()/batches
             if len(self.state_pool)%self.batch!=0:
                 if self.num_updates!=None and self.batch_counter%self.num_updates==0:
+                    if self.parallel_store_and_training:
+                        self.get_state_dict(optimizer)
                     return loss.detach().numpy()/batches
                 state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                 loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
-                self.prioritized_replay.update()
+                if self.parallel_store_and_training:
+                    self.share_TD[7][self.prioritized_replay.index]=torch.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
+                    if self.PPO:
+                        self.share_ration[7][self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
+                    self.clear_pool(lock_list)
+                else:
+                    self.prioritized_replay.update()
                 self.batch_counter+=1
                 if self.pool_network==True:
                     if self.batch_counter%self.update_batches==0:
@@ -843,7 +1032,7 @@ class RL_pytorch:
                             self._ess = self.compute_ess(None, None)
                         for p in range(self.processes):
                             if self.parallel_store_and_training:
-                                lock_list_[p].acquire()
+                                lock_list[p].acquire()
                             if hasattr(self,'window_size_func'):
                                 window_size=int(self.window_size_func(p))
                                 if self.PPO:
@@ -866,18 +1055,25 @@ class RL_pytorch:
                                     weights = self.TD_list[p] + 1e-7
                                     self.ess_[p] = self.compute_ess_from_weights(weights)
                             if self.parallel_store_and_training:
-                                lock_list_[p].release()
+                                lock_list[p].release()
                         if self.PPO:
                             self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                         else:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                             if self.processes_her==None and self.processes_pr==None:
-                                self.state_pool=np.concatenate(self.state_pool_list)
-                                self.action_pool=np.concatenate(self.action_pool_list)
-                                self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                                self.reward_pool=np.concatenate(self.reward_pool_list)
-                                self.done_pool=np.concatenate(self.done_pool_list)
+                                if self.parallel_store_and_training:
+                                    self.share_state_pool[7]=np.concatenate(self.state_pool_list)
+                                    self.share_action_pool[7]=np.concatenate(self.action_pool_list)
+                                    self.share_next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                                    self.share_reward_pool[7]=np.concatenate(self.reward_pool_list)
+                                    self.share_done_pool[7]=np.concatenate(self.done_pool_list)
+                                else:
+                                    self.state_pool=np.concatenate(self.state_pool_list)
+                                    self.action_pool=np.concatenate(self.action_pool_list)
+                                    self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                    self.reward_pool=np.concatenate(self.reward_pool_list)
+                                    self.done_pool=np.concatenate(self.done_pool_list)
                             else:
                                 self.state_pool[7]=np.concatenate(self.state_pool_list)
                                 self.action_pool[7]=np.concatenate(self.action_pool_list)
@@ -887,19 +1083,26 @@ class RL_pytorch:
                     if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                         self.adjust_func()
                     if self.PPO and self.batch_counter%self.update_batches==0:
+                        if self.parallel_store_and_training:
+                            self.get_state_dict(optimizer)
                         return loss.detach().numpy()/batches
         else:
+            if self.parallel_store_and_training:
+                self.update_pool()
             if self.pool_network==True:
-                if not self.parallel_store_and_training:
-                    train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
+                if self.parallel_store_and_training:
+                    length=len(self.share_done_pool[7])
+                    train_ds=DataLoader((self.share_state_pool[7][:length],self.share_action_pool[7][:length],self.share_next_state_pool[7][:length],self.share_reward_pool[7][:length],self.share_done_pool[7][:length]),batch_size=self.batch)
                 else:
-                    train_ds=DataLoader((self.share_state_pool[7],self.share_action_pool[7],self.share_next_state_pool[7],self.share_reward_pool[7],self.share_done_pool[7]),batch_size=self.batch)
+                    train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
             else:
                 if self.num_updates!=None:
                     train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
                 else:
                     train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch,shuffle=True)
             for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
+                if self.num_updates!=None and self.batch_counter%self.num_updates==0:
+                    break
                 loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
                 self.batch_counter+=1
                 if self.pool_network==True:
@@ -908,34 +1111,49 @@ class RL_pytorch:
                         if self.PPO:
                             for p in range(self.processes):
                                 if self.parallel_store_and_training:
-                                    lock_list_[p].acquire()
+                                    lock_list[p].acquire()
                                 self.state_pool_list[p]=None
                                 self.action_pool_list[p]=None
                                 self.next_state_pool_list[p]=None
                                 self.reward_pool_list[p]=None
                                 self.done_pool_list[p]=None
                                 if self.parallel_store_and_training:
-                                    lock_list_[p].release()
+                                    lock_list[p].release()
                     if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                         self.adjust_func()
                         if self.num_updates!=None and self.batch_counter%self.update_batches==0:
                             if self.processes_her==None and self.processes_pr==None:
-                                self.state_pool=np.concatenate(self.state_pool_list)
-                                self.action_pool=np.concatenate(self.action_pool_list)
-                                self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                                self.reward_pool=np.concatenate(self.reward_pool_list)
-                                self.done_pool=np.concatenate(self.done_pool_list)
+                                if self.parallel_store_and_training:
+                                    self.share_state_pool[7]=np.concatenate(self.state_pool_list)
+                                    self.share_action_pool[7]=np.concatenate(self.action_pool_list)
+                                    self.share_next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                                    self.share_reward_pool[7]=np.concatenate(self.reward_pool_list)
+                                    self.share_done_pool[7]=np.concatenate(self.done_pool_list)
+                                else:
+                                    self.state_pool=np.concatenate(self.state_pool_list)
+                                    self.action_pool=np.concatenate(self.action_pool_list)
+                                    self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                    self.reward_pool=np.concatenate(self.reward_pool_list)
+                                    self.done_pool=np.concatenate(self.done_pool_list)
                                 self.pool_size_=self.num_updates*self.batch
                                 if len(self.state_pool)>=self.pool_size_:
                                     idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
                                 else:
                                     idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
-                                self.state_pool=self.state_pool[idx]
-                                self.action_pool=self.action_pool[idx]
-                                self.next_state_pool=self.next_state_pool[idx]
-                                self.reward_pool=self.reward_pool[idx]
-                                self.done_pool=self.done_pool[idx]
-                                train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
+                                if self.parallel_store_and_training:
+                                    self.share_state_pool[7]=self.share_state_pool[7][idx]
+                                    self.share_action_pool[7]=self.share_action_pool[7][idx]
+                                    self.share_next_state_pool[7]=self.share_next_state_pool[7][idx]
+                                    self.share_reward_pool[7]=self.share_reward_pool[7][idx]
+                                    self.share_done_pool[7]=self.share_done_pool[7][idx]
+                                    train_ds=DataLoader((self.share_state_pool[7],self.share_action_pool[7],self.share_next_state_pool[7],self.share_reward_pool[7],self.share_done_pool[7]),batch_size=self.batch)
+                                else:
+                                    self.state_pool=self.state_pool[idx]
+                                    self.action_pool=self.action_pool[idx]
+                                    self.next_state_pool=self.next_state_pool[idx]
+                                    self.reward_pool=self.reward_pool[idx]
+                                    self.done_pool=self.done_pool[idx]
+                                    train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
                             else:
                                 self.state_pool[7]=np.concatenate(self.state_pool_list)
                                 self.action_pool[7]=np.concatenate(self.action_pool_list)
@@ -1012,6 +1230,8 @@ class RL_pytorch:
                 return loss.detach().numpy()/batches
         else:
             self.update_param()
+        if self.parallel_store_and_training:
+            self.get_state_dict(optimizer)
         return loss.detach().numpy()/batches
     
     
@@ -1187,7 +1407,7 @@ class RL_pytorch:
         return
             
             
-    def store_in_parallel(self,p,lock_list,lock_list_):
+    def store_in_parallel(self,p,lock_list):
         self.reward[p]=0
         s=self.env_(initial=True,p=p)
         s=np.array(s)
@@ -1219,8 +1439,6 @@ class RL_pytorch:
             next_s=np.array(next_s)
             r=np.array(r)
             done=np.array(done)
-            if self.parallel_store_and_training:
-                lock_list_[index].acquire()
             if self.random or (self.PR!=True and self.HER!=True and self.TRL!=True):
                 lock_list[index].acquire()
                 if self.num_steps!=None:
@@ -1236,6 +1454,8 @@ class RL_pytorch:
                     self.pool(s,a,next_s,r,done,index)
                 lock_list[index].release()
             else:
+                if self.parallel_store_and_training:
+                    lock_list[index].acquire()
                 if self.num_steps!=None:
                     if counter==0:
                         next_s_=next_s
@@ -1256,23 +1476,26 @@ class RL_pytorch:
                     else:
                         if len(self.state_pool_list[index])>1:
                             self.TD_list[index]=np.append(self.TD_list[index],np.max(self.prioritized_replay.TD))
-            if self.parallel_store_and_training:
-                lock_list_[index].release()
+                if self.parallel_store_and_training:
+                    lock_list[index].release()
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward[p]=r+self.reward[p]
             if (self.num_steps==None and done) or (self.num_steps!=None and done_):
+                self.reward_list.append(self.reward[p])
+                if len(self.reward_list)>self.trial_count:
+                    del self.reward_list[0]
                 return
             s=next_s
             if (self.num_steps!=None and counter%self.num_steps==0) or (self.num_steps!=None and done):
                 s=next_s_
     
     
-    def prepare(self, lock_list, lock_list_=None):
+    def prepare(self, lock_list, p=None):
         process_list=[]
-        if self.PPO:
+        if not self.parallel_store_and_training and self.PPO:
             self.modify_ratio_TD()
-        else:
+        elif not self.parallel_store_and_training:
             self.modify_TD()
         counter=0
         if hasattr(self, 'original_batch'):
@@ -1285,44 +1508,123 @@ class RL_pytorch:
             self.num_updates = self.original_num_updates
             self.ema_num_updates = None
             self.batch_counter = 0
+        if self.parallel_store_and_training:
+            num_store = self.num_store.value
+        else:
+            num_store = self.num_store
         while True:
-            for p in range(self.processes):
-                process=mp.Process(target=self.store_in_parallel,args=(p,lock_list,lock_list_))
-                process.start()
-                process_list.append(process)
-            for process in process_list:
-                process.join()
+            if self.parallel_store_and_training:
+                self.store_in_parallel(p,lock_list)
+            else:
+                for p in range(self.processes):
+                    process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
+                    process.start()
+                    process_list.append(process)
+                for process in process_list:
+                    process.join()
             counter+=1
-            if self.state_pool is not None and len(self.state_pool)>=self.batch and counter<self.num_store:
-                    continue
-            if self.processes_her==None and self.processes_pr==None:
-                self.state_pool=np.concatenate(self.state_pool_list)
-                self.action_pool=np.concatenate(self.action_pool_list)
-                self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                self.reward_pool=np.concatenate(self.reward_pool_list)
-                self.done_pool=np.concatenate(self.done_pool_list)
-                if counter<self.num_store and len(self.state_pool)<self.batch:
-                    continue
-                if not self.PR and self.num_updates!=None:
-                    if len(self.state_pool)>=self.pool_size_:
-                        idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
+            if self.parallel_store_and_training and counter==num_store:
+                break
+            if not self.parallel_store_and_training:
+                if self.state_pool is not None and len(self.state_pool)>=self.batch and counter<self.num_store:
+                        continue
+                if self.processes_her==None and self.processes_pr==None:
+                    self.state_pool=np.concatenate(self.state_pool_list)
+                    self.action_pool=np.concatenate(self.action_pool_list)
+                    self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                    self.reward_pool=np.concatenate(self.reward_pool_list)
+                    self.done_pool=np.concatenate(self.done_pool_list)
+                    if counter<self.num_store and len(self.state_pool)<self.batch:
+                        continue
+                    if not self.PR and self.num_updates!=None:
+                        if len(self.state_pool)>=self.pool_size_:
+                            idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
+                        else:
+                            idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
+                        self.state_pool=self.state_pool[idx]
+                        self.action_pool=self.action_pool[idx]
+                        self.next_state_pool=self.next_state_pool[idx]
+                        self.reward_pool=self.reward_pool[idx]
+                        self.done_pool=self.done_pool[idx]
+                else:
+                    self.state_pool[7]=np.concatenate(self.state_pool_list)
+                    self.action_pool[7]=np.concatenate(self.action_pool_list)
+                    self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                    self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                    self.done_pool[7]=np.concatenate(self.done_pool_list)
+                    if counter<self.num_store and len(self.state_pool[7])<self.batch:
+                        continue
+                    if not self.PR and self.num_updates!=None:
+                        if len(self.state_pool)>=self.pool_size_:
+                            idx=np.random.choice(self.state_pool[7].shape[0], size=self.pool_size_, replace=False)
+                        else:
+                            idx=np.random.choice(self.state_pool[7].shape[0], size=self.state_pool[7].shape[0], replace=False)
+                        self.state_pool[7]=self.state_pool[7][idx]
+                        self.action_pool[7]=self.action_pool[7][idx]
+                        self.next_state_pool[7]=self.next_state_pool[7][idx]
+                        self.reward_pool[7]=self.reward_pool[7][idx]
+                        self.done_pool[7]=self.done_pool[7][idx]
+                if self.processes_her==None and self.processes_pr==None:
+                    if len(self.state_pool)>=self.batch:
+                        break
+                else:
+                    if len(self.state_pool[7])>=self.batch:
+                        break
+        if not self.parallel_store_and_training:
+            if hasattr(self,'window_size_func'):
+                for p in range(self.processes):
+                    if not hasattr(self,'ess_'):
+                        self.ess_ = [None] * self.processes
+                    if self.PPO:
+                        scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * torch.abs(self.ratio_list[p] - 1.0)
+                        weights = scores + 1e-7
                     else:
-                        idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
-                    self.state_pool=self.state_pool[idx]
-                    self.action_pool=self.action_pool[idx]
-                    self.next_state_pool=self.next_state_pool[idx]
-                    self.reward_pool=self.reward_pool[idx]
-                    self.done_pool=self.done_pool[idx]
+                        weights = self.TD_list[p] + 1e-7
+                    self.ess_[p] = self.compute_ess_from_weights(weights)
+            self.initialize_adjusting()    
+            if self.PR==True:
+                if self.PPO:
+                    self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
+                    self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
+                else:
+                    self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
+                if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                    self.ess=self.compute_ess(None,None)
+        else:
+            self.end_flag_list[p]=True
+    
+    
+    def update_pool(self):
+        if not self.end_flag:
+            if all(self.end_flag_list):
+                self.end_flag=True
+                for p in range(self.processes):
+                    self.end_flag_list[p]=False
+                    self.done_length[p]=0
+            if self.processes_her==None and self.processes_pr==None:
+                state_pool=np.concatenate(self.state_pool_list)
+                action_pool=np.concatenate(self.action_pool_list)
+                next_state_pool=np.concatenate(self.next_state_pool_list)
+                reward_pool=np.concatenate(self.reward_pool_list)
+                done_pool=np.concatenate(self.done_pool_list)
+                if not self.PR and self.num_updates!=None:
+                    if len(done_pool)>=self.pool_size_:
+                        idx=np.random.choice(done_pool.shape[0], size=self.pool_size_, replace=False)
+                    else:
+                        idx=np.random.choice(done_pool.shape[0], size=done_pool.shape[0], replace=False)
+                    state_pool=state_pool[idx]
+                    action_pool=action_pool[idx]
+                    next_state_pool=next_state_pool[idx]
+                    reward_pool=reward_pool[idx]
+                    done_pool=done_pool[idx]
             else:
                 self.state_pool[7]=np.concatenate(self.state_pool_list)
                 self.action_pool[7]=np.concatenate(self.action_pool_list)
                 self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                 self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                 self.done_pool[7]=np.concatenate(self.done_pool_list)
-                if counter<self.num_store and len(self.state_pool[7])<self.batch:
-                    continue
                 if not self.PR and self.num_updates!=None:
-                    if len(self.state_pool)>=self.pool_size_:
+                    if len(done_pool)>=self.pool_size_:
                         idx=np.random.choice(self.state_pool[7].shape[0], size=self.pool_size_, replace=False)
                     else:
                         idx=np.random.choice(self.state_pool[7].shape[0], size=self.state_pool[7].shape[0], replace=False)
@@ -1331,46 +1633,30 @@ class RL_pytorch:
                     self.next_state_pool[7]=self.next_state_pool[7][idx]
                     self.reward_pool[7]=self.reward_pool[7][idx]
                     self.done_pool[7]=self.done_pool[7][idx]
-            if self.processes_her==None and self.processes_pr==None:
-                if len(self.state_pool)>=self.batch:
-                    break
-            else:
-                if len(self.state_pool[7])>=self.batch:
-                    break
-        if self.parallel_store_and_training:
-            self.share_state_pool[7]=self.state_pool
-            self.share_action_pool[7]=self.action_pool
-            self.share_next_state_pool[7]=self.next_state_pool
-            self.share_reward_pool[7]=self.reward_pool
-            self.share_done_pool[7]=self.done_pool
-        if hasattr(self,'window_size_func'):
-            for p in range(self.processes):
-                if not hasattr(self,'ess_'):
-                    self.ess_ = [None] * self.processes
-                if self.PPO:
-                    scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * torch.abs(self.ratio_list[p] - 1.0)
-                    weights = scores + 1e-7
-                else:
-                    weights = self.TD_list[p] + 1e-7
-                self.ess_[p] = self.compute_ess_from_weights(weights)
-        self.initialize_adjusting()    
-        if self.PR==True:
-            if self.PPO:
-                self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
-                self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-            else:
-                self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-            if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
-                self.ess=self.compute_ess(None,None)
-                self.prepare_flag=True
-                self.adjust_func()
-                self.prepare_flag=False
-        self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
-        if len(self.reward_list)>self.trial_count:
-            del self.reward_list[0]
+            if self.parallel_store_and_training:
+                self.share_state_pool[7]=state_pool
+                self.share_action_pool[7]=action_pool
+                self.share_next_state_pool[7]=next_state_pool
+                self.share_reward_pool[7]=reward_pool
+                self.share_done_pool[7]=done_pool
+        if self.end_flag:
+            if hasattr(self,'window_size_func'):
+                for p in range(self.processes):
+                    if not hasattr(self,'ess_'):
+                        self.ess_ = [None] * self.processes
+                    if self.PPO:
+                        scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * torch.abs(self.ratio_list[p] - 1.0)
+                        weights = scores + 1e-7
+                    else:
+                        weights = self.TD_list[p] + 1e-7
+                    self.ess_[p] = self.compute_ess_from_weights(weights)
+            self.initialize_adjusting()
+            if self.PR==True:
+                if hasattr(self, 'adjust_func') and len(done_pool)>=self.pool_size_:
+                    self.ess.value=self.compute_ess(None,None)
     
     
-    def train(self, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, p=None):
+    def train(self, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -1390,18 +1676,31 @@ class RL_pytorch:
             manager=mp.Manager()
         self.parallel_store_and_training=parallel_store_and_training
         if parallel_store_and_training:
-            lock_list_=[mp.Lock() for _ in range(processes)]
-            lock_list_=[mp.Lock() for _ in range(processes)]
-            optimizer=manager.dict()
-            optimizer[7]=self.optimizer
-            self.optimizer=optimizer
+            self.param=manager.list(self.param)
             self.share_state_pool=manager.dict()
-            self.share_action_pool_list=manager.dict()
-            self.share_next_state_pool_list=manager.dict()
-            self.share_reward_pool_list=manager.dict()
-            self.share_done_pool_list=manager.dict()
-        else:
-            lock_list_=None
+            self.share_action_pool=manager.dict()
+            self.share_next_state_pool=manager.dict()
+            self.share_reward_pool=manager.dict()
+            self.share_done_pool=manager.dict()
+            self.share_opt_class=manager.dict()
+            self.share_state_dict=manager.dict()
+            if self.PR and self.PPO:
+                self.share_TD=manager.dict()
+                self.share_ratio=manager.dict()
+            elif self.PR:
+                self.share_TD=manager.dict()
+            if type(self.optimizer)==list:
+                self.share_opt_class[7]=[opt.__class__ for opt in self.optimizer]
+                self.share_state_dict[7]=[None for _ in self.optimizer]
+            else:
+                self.share_opt_class[7]=self.optimizer.__class__
+                self.share_state_dict[7]=None
+            self.done_length=manager.list([0 for _ in range(processes)])
+            self.ess=mp.Value('f',0)
+            self.original_num_store=self.num_store
+            self.num_store=mp.Value('i',self.num_store)
+            self.ess_=manager.list([None for _ in range(processes)])
+            self.end_flag_list=manager.list([False for _ in range(processes)])
         self.processes=processes
         self.num_store=num_store
         self.processes_her=processes_her
@@ -1443,9 +1742,8 @@ class RL_pytorch:
                     self.done_pool_list.append(None)
                     if self.clearing_freq!=None:
                         self.store_counter.append(0)
-            self.reward=np.zeros(processes,dtype='float32')
-            self.reward=Array('f',self.reward)
-            if self.HER!=True or self.TRL!=True:
+            self.reward=manager.list([0 for _ in range(processes)])
+            if parallel_store_and_training or self.HER!=True or self.TRL!=True:
                 lock_list=[mp.Lock() for _ in range(processes)]
             else:
                 lock_list=None
@@ -1492,15 +1790,16 @@ class RL_pytorch:
             for i in range(episodes):
                 t1=time.time()
                 if pool_network==True:
-                    if not parallel_store_and_training:
-                        self.prepare(lock_list)
-                        loss=self.train1()
-                    else:
+                    if parallel_store_and_training:
                         process_list=[]
-                        process=mp.Process(target=self.prepare,args=(lock_list,lock_list_))
-                        process.start()
-                        process_list.append(process)
-                        process=mp.Process(target=self.train1,args=(lock_list_))
+                        for p in range(processes):
+                            process=mp.Process(target=self.prepare,args=(lock_list,p))
+                            process.start()
+                            process_list.append(process)
+                        while True:
+                            if sum(self.done_length)>=self.batch:
+                                break
+                        process=mp.Process(target=self.train1,args=(lock_list))
                         process.start()
                         process_list.append(process)
                         for process in process_list:
@@ -1546,15 +1845,16 @@ class RL_pytorch:
             while True:
                 t1=time.time()
                 if pool_network==True:
-                    if not parallel_store_and_training:
-                        self.prepare(lock_list)
-                        loss=self.train1()
-                    else:
+                    if parallel_store_and_training:
                         process_list=[]
-                        process=mp.Process(target=self.prepare,args=(lock_list,lock_list_))
-                        process.start()
-                        process_list.append(process)
-                        process=mp.Process(target=self.train1,args=(lock_list_))
+                        for p in range(processes):
+                            process=mp.Process(target=self.prepare,args=(lock_list,p))
+                            process.start()
+                            process_list.append(process)
+                        while True:
+                            if sum(self.done_length)>=self.batch:
+                                break
+                        process=mp.Process(target=self.train1,args=(lock_list))
                         process.start()
                         process_list.append(process)
                         for process in process_list:
