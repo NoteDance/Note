@@ -1896,6 +1896,8 @@ class RL_pytorch:
                     print()
                 t2=time.time()
                 self.time+=(t2-t1)
+        if self.parallel_store_and_training:
+            self.build_opt(self.optimizer)
         time_=self.time-int(self.time)
         if time_<0.5:
             self.total_time=int(self.time)
@@ -2129,6 +2131,8 @@ class RL_pytorch:
                 self.next_state_pool_list[i]=None
                 self.reward_pool_list[i]=None
                 self.done_pool_list[i]=None
+        if self.parallel_store_and_training:
+            self.build_opt(self.optimizer)
         output_file=open(path,'wb')
         pickle.dump(self,output_file)
         output_file.close()
