@@ -698,13 +698,8 @@ class RL_pytorch:
             self.share_TD[7]=np.concat(TD_list, axis=0)
             if self.PPO:
                 self.share_ratio[7]=np.concat(ratio_list, axis=0)
-            if self.PPO:
-                TD_length=len(self.share_TD[7])
-                ratio_length=len(self.share_ration[7])
-                length=min(done_length,TD_length,ratio_length)
-            else:
-                TD_length=len(self.share_TD[7])
-                length=min(done_length,TD_length)
+            TD_length=len(self.share_TD[7])
+            length=min(done_length,TD_length)
             state_pool=self.share_state_pool[7][:length]
             action_pool=self.share_action_pool[7][:length]
             next_state_pool=self.share_next_state_pool[7][:length]
