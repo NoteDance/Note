@@ -292,11 +292,18 @@ class BCOS_e(optimizer.Optimizer):
             beta_v = 1.0 - (1.0 - beta) ** 2 if beta2 is None else beta2
             return beta_v * m * m + (1.0 - beta_v) * g2
         
-        return (
-            (3.0 * beta ** 2 - 2.0 * beta ** 3) * m * m
-            + (1.0 - beta) ** 2 * g2
-            + 2.0 * beta * (1.0 - beta) ** 2 * m * gradient
-        )
+        if self.sn:
+            return (
+                (3.0 * beta ** 2 - 2.0 * beta ** 3) * m * m
+                + (1.0 - beta) ** 2 * g2
+                + 2.0 * beta * (1.0 - beta) ** 2 * m * reshaped_grad
+            )
+        else:
+            return (
+                (3.0 * beta ** 2 - 2.0 * beta ** 3) * m * m
+                + (1.0 - beta) ** 2 * g2
+                + 2.0 * beta * (1.0 - beta) ** 2 * m * gradient
+            )
 
     def update_step(self, gradient, variable, learning_rate):
         step = tf.cast(self.iterations + 1, variable.dtype)
