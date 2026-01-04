@@ -220,7 +220,7 @@ class SophiaH(optimizer.Optimizer):
                 pass
             tf.cond(step % self.update_period == 0, true_fn2, false_fn2)
 
-            update = tf.clip_by_value(momentum / tf.maximum(hessian_moment, self.epsilon), clip_value_min=-p, clip_value_max=p)
+            update = tf.clip_by_value(momentum / tf.maximum(hessian_moment, self.epsilon), clip_value_min=-self.p, clip_value_max=self.p)
             p.assign_add(update * -lr)       
 
     def get_config(self):
@@ -548,10 +548,10 @@ class SophiaH_e(optimizer.Optimizer):
                 if self.sn:
                     numerator = tf.reshape(momentum, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     norm_grad = tf.reshape(numerator / de_nom, p.shape)
-                    update = tf.clip_by_value(norm_grad, clip_value_min=-p, clip_value_max=p)
+                    update = tf.clip_by_value(norm_grad, clip_value_min=-self.p, clip_value_max=self.p)
                 else:
                     norm_grad = momentum / de_nom
-                    update = tf.clip_by_value(norm_grad, clip_value_min=-p, clip_value_max=p)
+                    update = tf.clip_by_value(norm_grad, clip_value_min=-self.p, clip_value_max=self.p)
                     
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
@@ -629,10 +629,10 @@ class SophiaH_e(optimizer.Optimizer):
                     if self.sn:
                         numerator = tf.reshape(momentum, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                         norm_grad = tf.reshape(numerator / de_nom, p.shape)
-                        update = tf.clip_by_value(norm_grad, clip_value_min=-p, clip_value_max=p)
+                        update = tf.clip_by_value(norm_grad, clip_value_min=-self.p, clip_value_max=self.p)
                     else:
                         norm_grad = momentum / de_nom
-                        update = tf.clip_by_value(norm_grad, clip_value_min=-p, clip_value_max=p)
+                        update = tf.clip_by_value(norm_grad, clip_value_min=-self.p, clip_value_max=self.p)
                         
                     if self.trust_ratio:
                         # Layer-wise LR adaptation

@@ -1364,12 +1364,12 @@ class Muon_e(optimizer.Optimizer):
                         normed_grad = tf.reshape(numerator / de_nom, p.shape)
                         update = normed_grad
                         if self.sophia:
-                            update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                            update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                     else:
                         normed_grad = buf1 / de_nom
                         update = normed_grad
                         if self.sophia:
-                            update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                            update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                             
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
@@ -1471,12 +1471,12 @@ class Muon_e(optimizer.Optimizer):
                             normed_grad = tf.reshape(numerator / de_nom, p.shape)
                             update = normed_grad
                             if self.sophia:
-                                update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                                update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                         else:
                             normed_grad = buf1 / de_nom
                             update = normed_grad
                             if self.sophia:
-                                update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                                update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                                 
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
@@ -2070,11 +2070,11 @@ class DistributedMuon_e(optimizer.Optimizer):
                         numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                         normed_grad = tf.reshape(numerator / de_nom, p.shape)
                         if self.sophia:
-                            update = tf.clip_by_value(normed_grad, clip_value_min=-p, clip_value_max=p)
+                            update = tf.clip_by_value(normed_grad, clip_value_min=-self.p, clip_value_max=self.p)
                     else:
                         normed_grad = exp_avg / de_nom
                         if self.sophia:
-                            update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                            update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                     
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
@@ -2166,7 +2166,7 @@ class DistributedMuon_e(optimizer.Optimizer):
                             numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                             normed_grad = tf.reshape(numerator / de_nom, p.shape)
                             if self.sophia:
-                                update = tf.clip_by_value(normed_grad, clip_value_min=-p, clip_value_max=p)
+                                update = tf.clip_by_value(normed_grad, clip_value_min=-self.p, clip_value_max=self.p)
                             if self.trust_ratio:
                                 # Layer-wise LR adaptation
                                 w_norm = tf.norm(p, ord=2)
@@ -2190,7 +2190,7 @@ class DistributedMuon_e(optimizer.Optimizer):
                         else:
                             normed_grad = exp_avg / de_nom
                             if self.sophia:
-                                update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                                update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                             if self.trust_ratio:
                                 # Layer-wise LR adaptation
                                 w_norm = tf.norm(p, ord=2)
@@ -2758,11 +2758,11 @@ class AdaMuon_e(optimizer.Optimizer):
                         normed_grad = tf.reshape(numerator / de_nom, p.shape)
                         update = normed_grad
                         if self.sophia:
-                            update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                            update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                     else:
                         update = buf1 / de_nom
                         if self.sophia:
-                            update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                            update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                             
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
@@ -2848,12 +2848,12 @@ class AdaMuon_e(optimizer.Optimizer):
                             normed_grad = tf.reshape(numerator / de_nom, p.shape)
                             update = normed_grad
                             if self.sophia:
-                                update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                                update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                         else:
                             normed_grad = buf1 / de_nom
                             update = normed_grad
                             if self.sophia:
-                                update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                                update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                                 
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
@@ -3432,12 +3432,12 @@ class AdaGO_e(optimizer.Optimizer):
                         normed_grad = tf.reshape(numerator / de_nom, p.shape)
                         update = normed_grad
                         if self.sophia:
-                            update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                            update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                     else:
                         normed_grad = exp_avg / de_nom
                         update = normed_grad
                         if self.sophia:
-                            update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                            update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                             
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
@@ -3535,12 +3535,12 @@ class AdaGO_e(optimizer.Optimizer):
                             normed_grad = tf.reshape(numerator / de_nom, p.shape)
                             update = normed_grad
                             if self.sophia:
-                                update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                                update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                         else:
                             normed_grad = exp_avg / de_nom
                             update = normed_grad
                             if self.sophia:
-                                update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                                update = tf.clip_by_value(update, clip_value_min=-self.p, clip_value_max=self.p)
                                 
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
