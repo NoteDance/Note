@@ -315,8 +315,6 @@ class Ranger_e(optimizer.Optimizer):
                     exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
                     
                     def true_fn():
-                        lr = tf.cast(d_lr, variable.dtype)
-                        
                         denom = tf.sqrt(exp_avg_sq) + self.epsilon
                         
                         step_size = tf.sqrt(
@@ -332,15 +330,14 @@ class Ranger_e(optimizer.Optimizer):
                         if self.sn:
                             numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
                             normed_grad = tf.reshape((numerator / denom), variable.shape)
-                            update = lr * step_size * normed_grad
+                            update = step_size * normed_grad
                         else:
-                            update = lr * step_size * exp_avg / denom
+                            update = step_size * exp_avg / denom
                         return update
                     
                     def false_fn():
-                        lr = tf.cast(d_lr, variable.dtype)
                         step_size = 1.0 / (1 - self.beta1 ** step)
-                        update = lr * step_size * exp_avg
+                        update = step_size * exp_avg
                         return update
                 
                     update = tf.cond(N_sma > self.N_sma_threshhold, true_fn, false_fn)

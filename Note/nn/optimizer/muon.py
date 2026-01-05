@@ -1417,6 +1417,7 @@ class Muon_e(optimizer.Optimizer):
                     bias_correction2 = 1 - self.beta2 ** step
                     scale = bias_correction1 / bias_correction2 ** 0.5  # fmt: skip
                     d_lr = self.d0 * self.adamw_lr
+                    d_lr =  d_lr / scale
                     
                     beta2_sq = math.sqrt(self.beta2)
                     
@@ -1498,10 +1499,8 @@ class Muon_e(optimizer.Optimizer):
                             factor = numel / (tf.reduce_sum(mask) + 1)
                             mask = mask * factor
                             update = update * mask
-                        
-                        step_size = d_lr / scale
             
-                        p.assign_add(update * -step_size)
+                        p.assign_add(update * -1.0)
                         
                         if self.lookahead:
                             def true_fn():
@@ -2114,10 +2113,6 @@ class DistributedMuon_e(optimizer.Optimizer):
                 def update_fn():
                     beta1, beta2, beta3 = self.adamw_betas
                     step = self.iterations + 1
-                    bias_correction1 = 1 - beta1 ** step
-                    bias_correction2_sq = tf.sqrt(1 - beta2 ** step)
-                    d_lr = self.d0 * self.adamw_lr
-                    d_lr = d_lr * bias_correction2_sq / bias_correction1
                     
                     beta2_sq = math.sqrt(beta2)
                     
@@ -2132,8 +2127,6 @@ class DistributedMuon_e(optimizer.Optimizer):
                     
                     for p in trainable_variables:
                         grad = grads[self._get_variable_index(p)]
-                        
-                        d_lr = tf.cast(d_lr, p.dtype)
                         
                         step = tf.cast(self.iterations + 1, p.dtype)
                         
@@ -2186,7 +2179,7 @@ class DistributedMuon_e(optimizer.Optimizer):
                                 factor = numel / (tf.reduce_sum(mask) + 1)
                                 mask = mask * factor
                                 update = update * mask
-                            p.assign_add(update * -step_size)
+                            p.assign_add(update * -1.0)
                         else:
                             normed_grad = exp_avg / de_nom
                             if self.sophia:
@@ -2210,7 +2203,7 @@ class DistributedMuon_e(optimizer.Optimizer):
                                 factor = numel / (tf.reduce_sum(mask) + 1)
                                 mask = mask * factor
                                 update = update * mask
-                            p.assign_add(-step_size * update)
+                            p.assign_add(-1.0 * update)
                         
                         if self.lookahead:
                             def true_fn():
@@ -2794,6 +2787,7 @@ class AdaMuon_e(optimizer.Optimizer):
                     bias_correction2 = 1 - self.beta2 ** step
                     scale = bias_correction1 / bias_correction2 ** 0.5  # fmt: skip
                     d_lr = self.d0 * self.adamw_lr
+                    d_lr = d_lr / scale
                     
                     beta2_sq = math.sqrt(self.beta2)
                     
@@ -2876,9 +2870,7 @@ class AdaMuon_e(optimizer.Optimizer):
                             mask = mask * factor
                             update = update * mask
                         
-                        step_size = d_lr / scale
-            
-                        p.assign_add(update * -step_size)
+                        p.assign_add(update * -1.0)
                         
                         if self.lookahead:
                             def true_fn():
@@ -3331,10 +3323,10 @@ class AdaGO_e(optimizer.Optimizer):
                 bias_correction2_sq = tf.sqrt(bias_correction2)
                 
                 lr = tf.cast(self.adamw_lr, p.dtype)
-                step_size = lr / bias_correction1
+                step_size = lr / bias_correction2_sq
                 if self.DAdapt:
                     d_lr = self.d0 * self.adamw_lr
-                    d_lr = d_lr / bias_correction1
+                    d_lr = d_lr / bias_correction2_sq
                     d_lr = tf.cast(d_lr, p.dtype)
                     s = self.s[self._get_variable_index(p)]
                 step = tf.cast(self.iterations + 1, p.dtype)
@@ -3410,7 +3402,7 @@ class AdaGO_e(optimizer.Optimizer):
                 if self.sophia:
                     de_nom = tf.maximum(hessian_moment, self.adamw_eps)
                 else:
-                    de_nom = (tf.sqrt(exp_avg_sq) + self.adamw_eps) / bias_correction2_sq
+                    de_nom = (tf.sqrt(exp_avg_sq) + self.adamw_eps)
                     
                 if self.DAdapt:
                     if self.sn:
@@ -3481,6 +3473,7 @@ class AdaGO_e(optimizer.Optimizer):
                     bias_correction2 = 1 - beta2 ** step
                     bias_correction2_sq = tf.sqrt(bias_correction2)
                     d_lr = self.d0 * self.adamw_lr
+                    d_lr = d_lr / bias_correction2_sq
                     
                     beta2_sq = math.sqrt(beta2)
                     
@@ -3528,7 +3521,7 @@ class AdaGO_e(optimizer.Optimizer):
                         if self.sophia:
                             de_nom = tf.maximum(hessian_moment, self.adamw_eps)
                         else:
-                            de_nom = (tf.sqrt(exp_avg_sq) + self.adamw_eps) / bias_correction2_sq
+                            de_nom = (tf.sqrt(exp_avg_sq) + self.adamw_eps)
                             
                         if self.sn:
                             numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
@@ -3562,10 +3555,8 @@ class AdaGO_e(optimizer.Optimizer):
                             factor = numel / (tf.reduce_sum(mask) + 1)
                             mask = mask * factor
                             update = update * mask
-                        
-                        step_size = d_lr / bias_correction1
             
-                        p.assign_add(update * -step_size)
+                        p.assign_add(update * -1.0)
                         
                         if self.lookahead:
                             def true_fn():

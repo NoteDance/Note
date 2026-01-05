@@ -319,6 +319,13 @@ class Ranger25(optimizer.Optimizer):
                     clip_value_max= clip,
                 )
             
+            if self.stable_adamw:
+                d_lr /= tf.clip_by_value(
+                                tf.sqrt(tf.reduce_mean(tf.pow(g, 2) / tf.maximum(exp_avg_sq, self.epsilon))),
+                                clip_value_min=1.0,
+                                clip_value_max=tf.float64.max
+                                )
+            
             if self.sn:
                 if self.DAdapt:
                     beta2_sq = tf.sqrt(beta2)
@@ -379,8 +386,6 @@ class Ranger25(optimizer.Optimizer):
         
         if self.DAdapt:
             def update_fn():
-                d_lr = self.d0 * learning_rate * bias_correction2_sq / bias_correction1
-                
                 beta2_sq = math.sqrt(self.beta2)
                 
                 d = self.d0_
@@ -393,24 +398,15 @@ class Ranger25(optimizer.Optimizer):
                 self.d0_.assign(d)
                 
                 for p in zip(trainable_variables):
-                    d_lr = tf.cast(d_lr, p.dtype)
-                    
                     step = tf.cast(self.iterations + 1, p.dtype)
                     
                     exp_avg = self.exp_avg[self._get_variable_index(p)]
                     exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
                     exp_avg_slow = self.exp_avg_slow[self._get_variable_index(p)]
                     
+                    de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+                    
                     update = exp_avg
-                    
-                    step_size = d_lr
-                    
-                    if self.stable_adamw:
-                        step_size /= tf.clip_by_value(
-                                        tf.sqrt(tf.reduce_mean(tf.pow(g, 2) / tf.maximum(exp_avg_sq, self.epsilon))),
-                                        clip_value_min=1.0,
-                                        clip_value_max=tf.float64.max
-                                        )
                         
                     update += exp_avg_slow * alpha_t
                     
@@ -423,9 +419,9 @@ class Ranger25(optimizer.Optimizer):
                     
                     if self.epsilon is not None:
                         if self.sn:
-                            p.assign_add(-step_size * update)
+                            p.assign_add(-1.0 * update)
                         else:
-                            p.assign_add(-step_size * update / de_nom)
+                            p.assign_add(-1.0 * update / de_nom)
                     else:
                         p.assign_add(tf.atan2(update, de_nom) * -step_size)
                     

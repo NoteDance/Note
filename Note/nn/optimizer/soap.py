@@ -1104,8 +1104,6 @@ class SOAP_e(optimizer.Optimizer):
                 if self.aem:
                     exp_avg += exp_avg_slow * alpha_t
                 
-                step_size = tf.cast(d_lr, p.dtype)
-                
                 de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
     
                 exp_avg_projected = self.project(
@@ -1152,7 +1150,7 @@ class SOAP_e(optimizer.Optimizer):
                     mask = mask * factor
                     update = update * mask
     
-                p.assign_add(update * -step_size)
+                p.assign_add(update * -1.0)
                 
                 if self.lookahead:
                     def true_fn():

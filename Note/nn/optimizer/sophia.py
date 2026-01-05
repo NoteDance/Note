@@ -589,10 +589,6 @@ class SophiaH_e(optimizer.Optimizer):
                     
         if self.DAdapt:
             def update_fn():
-                lr = learning_rate
-                
-                d_lr = self.d0 * lr
-                
                 beta2_sq = math.sqrt(self.beta2)
                 
                 d = self.d0_
@@ -609,8 +605,6 @@ class SophiaH_e(optimizer.Optimizer):
                         p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * (1.0 if self.fixed_decay else d_lr)))
                     elif self.weight_decay > 0.0:
                         g += p * tf.cast(self.weight_decay, p.dtype)
-                        
-                    d_lr = tf.cast(d_lr, p.dtype)
                     
                     if not self.pnm:
                         momentum = self.momentum[self._get_variable_index(p)]
@@ -655,7 +649,7 @@ class SophiaH_e(optimizer.Optimizer):
                         mask = mask * factor
                         update = update * mask
         
-                    p.assign_add(update * -d_lr) 
+                    p.assign_add(update * -1.0) 
                     
                     if self.lookahead:
                         def true_fn():
@@ -1389,10 +1383,7 @@ def _single_tensor_sophiag(params,
                     mask = mask * factor
                     ratio = ratio * mask
                 
-                step_size = d_lr
-                step_size_neg = -step_size
-                    
-                param.assign_add(step_size_neg * tf.sign(exp_avg) * ratio)
+                param.assign_add(-1.0 * tf.sign(exp_avg) * ratio)
                 
                 if lookahead:
                     def true_fn():

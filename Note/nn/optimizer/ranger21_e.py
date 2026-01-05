@@ -450,8 +450,6 @@ class Ranger21_e(optimizer.Optimizer):
         
         if self.DAdapt:
             def update_fn():
-                d_lr = self.d0_ * learning_rate
-                
                 beta2_sq = math.sqrt(self.beta2)
                 
                 d = self.d0_
@@ -464,10 +462,6 @@ class Ranger21_e(optimizer.Optimizer):
                 self.d0_.assign(d)
                 
                 for p in zip(trainable_variables):
-                    d_lr = tf.cast(d_lr, p.dtype)
-                        
-                    step_size = d_lr if self.adam_debias else d_lr / bias_correction1
-                    
                     def true_fn():
                         return self.grad_ma[self._get_variable_index(p)], self.neg_grad_ma[self._get_variable_index(p)]
                     def false_fn():
@@ -477,7 +471,7 @@ class Ranger21_e(optimizer.Optimizer):
                     variance_ma = self.variance_ma[self._get_variable_index(p)]
                     variance_ma.assign(tf.maximum(self.max_variance_ma[self._get_variable_index(p)], variance_ma))
         
-                    de_nom = (tf.sqrt(variance_ma) / bias_correction2_sq) + self.epsilon
+                    de_nom = tf.sqrt(variance_ma) + self.epsilon
         
                     if self.use_softplus:
                         de_nom = softplus(de_nom, beta=self.beta_softplus)
@@ -486,9 +480,9 @@ class Ranger21_e(optimizer.Optimizer):
                     if self.sn:
                         numerator = tf.reshape(pn_momentum, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                         normed_grad = tf.reshape((numerator / de_nom), p.shape)
-                        update = -step_size * normed_grad
+                        update = -normed_grad
                     else:
-                        update = -step_size * pn_momentum / de_nom
+                        update = -pn_momentum / de_nom
                     p.assign_add(update)
                 
                 self.lookahead_process_step()

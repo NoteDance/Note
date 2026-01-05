@@ -578,9 +578,6 @@ class Conda_e(optimizer.Optimizer):
         def update_fn():
             lr = learning_rate
             step = self.iterations + 1
-            bias_correction1 = 1 - self.beta1 ** step
-            bias_correction2_sq = tf.sqrt(1 - self.beta2 ** step)
-            d_lr = self.d0 * lr * bias_correction2_sq / bias_correction1
             
             beta2_sq = math.sqrt(self.beta2)
             
@@ -612,8 +609,6 @@ class Conda_e(optimizer.Optimizer):
                 
                 if self.aem:
                     exp_avg += exp_avg_slow * alpha_t
-                
-                step_size = tf.cast(d_lr, p.dtype)
     
                 if self.update_proj_gap is not None and len(p.shape) == 2:
                     g = self.projector[self._get_variable_index(p)].project(g, step, exp_avg)
@@ -653,7 +648,7 @@ class Conda_e(optimizer.Optimizer):
                     mask = mask * factor
                     update = update * mask
     
-                p.assign_add(update * -step_size)
+                p.assign_add(update * -1.0)
                 
                 if self.lookahead:
                     def true_fn():
