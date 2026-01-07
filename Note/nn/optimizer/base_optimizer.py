@@ -11,6 +11,7 @@ from keras.src.utils import tracking
 from keras.src.utils.naming import auto_name
 
 import tensorflow as tf
+import math
 
 
 def closest_smaller_divisor_of_n_to_k(n, k):
@@ -271,6 +272,19 @@ class BaseOptimizer(KerasSaveable):
             self.hessian = []
         if self.lookahead:
             self.slow_momentum = []
+        if self.DAdapt:
+            self.s = []
+            self.sk_l1 = tf.Variable(0.0)
+            self.numerator_acc = tf.Variable(0.0)
+            self.numerator_weighted = tf.Variable(0.0)
+            self.d0_ = tf.Variable(self.d0)
+            self._track_variable(self.sk_l1)
+            self._track_variable(self.numerator_acc)
+            self._track_variable(self.numerator_weighted)
+            self._track_variable(self.d0_)
+        if self.pnm:
+            self.pos_momentum = []
+            self.neg_momentum = []
         if self.use_ema:
             self._model_variables_moving_average = self.add_optimizer_variables(
                 variables, "average"
@@ -328,6 +342,23 @@ class BaseOptimizer(KerasSaveable):
             if self.lookahead:
                 self.slow_momentum.append(tf.Variable(variable))
                 self._track_variable(self.slow_momentum[-1])
+                
+            if self.DAdapt:
+                self.s.append(self.add_variable_from_reference(
+                                    reference_variable=variable, name="s"
+                                                        ))
+            
+            if self.pnm:
+                self.pos_momentum.append(
+                    self.add_variable_from_reference(
+                        reference_variable=variable, name="pos_momentum"
+                    )
+                )
+                self.neg_momentum.append(
+                    self.add_variable_from_reference(
+                        reference_variable=variable, name="neg_momentum"
+                    )
+                )
         self._trainable_variables = variables[:]
         self.built = True
 
@@ -582,6 +613,38 @@ class BaseOptimizer(KerasSaveable):
         gradient = grads[idx]
         return gradient
     
+    def apply_orthogonal_gradients(self, params, grads, eps = 1e-16):
+        for p, g in zip(params, grads):
+            if tf.keras.backend.is_sparse(g):
+                continue
+            
+            original_shape = g.shape
+            w = tf.reshape(p, [-1])
+            g = tf.reshape(g, [-1])
+
+            proj = tf.tensordot(w, g, axes=1) / (tf.tensordot(w, w, axes=1) + eps)
+            g_ortho = tf.cast(g, tf.float32) - proj * w
+            g_norm = tf.norm(g)
+            g_ortho_norm = tf.norm(g_ortho)
+            g_ortho_scaled = g_ortho * (g_norm / (g_ortho_norm + eps))
+            
+            grads[self._get_variable_index(p)] = tf.reshape(g_ortho_scaled, original_shape)
+    
+    def apply_weight_decay(self, variable, gradient, lr):
+        if self.weight_decouple:
+            variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+        elif self.weight_decay > 0.0:
+            gradient += variable * self.weight_decay
+    
+    def accumulate_numerator(self, s, gradient, de_nom, d_lr, idx):
+        if self.sn:
+            size = tf.size(gradient)
+            s = tf.reshape(s, (size // self.subset_size_[idx], self.subset_size_[idx]))
+        flat_grad = tf.reshape(gradient, [-1])
+        flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
+        dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
+        self.numerator_acc.assign_add(tf.cast(d_lr * dot_val, tf.float32))
+    
     def get_second_moment_update(self, gradient, idx):
         size = tf.size(gradient)
         reshaped_grad = tf.reshape(gradient, (size // self.subset_size_[idx], self.subset_size_[idx]))
@@ -632,9 +695,9 @@ class BaseOptimizer(KerasSaveable):
             pass
         tf.cond(step % self.update_period == 0, true_fn2, false_fn2)
     
-    def lookahead_merge(self, variable, step, idx):
+    def lookahead_merge(self, variable, step):
         def true_fn():
-            slow_p = self.slow_momentum[idx]
+            slow_p = self.slow_momentum[self._get_variable_index(variable)]
             slow_p.assign(slow_p + self.lookahead_blending_alpha * (variable - slow_p))
             variable.assign(slow_p)
         
@@ -664,6 +727,16 @@ class BaseOptimizer(KerasSaveable):
         mask = mask * factor
         update = update * mask
         return update
+    
+    def apply_pnm(self, gradient, step, idx):
+        noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)
+        def true_fn():
+            return self.pos_momentum[idx], self.neg_momentum[idx]
+        def false_fn():
+            return self.neg_momentum[idx], self.pos_momentum[idx]
+        pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
+        pos_momentum.assign(pos_momentum * self.beta1 ** 2 + gradient * (1.0 - self.beta1 ** 2))
+        return (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
 
     def update_step(self, gradient, variable, learning_rate):
         raise NotImplementedError
@@ -839,6 +912,8 @@ class BaseOptimizer(KerasSaveable):
             def false_fn1():
                 pass
             tf.cond(self.iterations % self.update_period == 0, true_fn1, false_fn1)
+        if self.orthograd:
+            self.apply_orthogonal_gradients(trainable_variables, grads)
         self.update_step(grads, trainable_variables, learning_rate)
 
     def _backend_reset_gradient_accumulators(self):
