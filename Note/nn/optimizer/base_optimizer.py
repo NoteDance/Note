@@ -11,42 +11,8 @@ from keras.src.utils import tracking
 from keras.src.utils.naming import auto_name
 
 import tensorflow as tf
+from Note.nn.optimizer.galore_projector import GaLoreProjector
 import math
-
-
-def closest_smaller_divisor_of_n_to_k(n, k):
-    r"""Get closest smaller divisor of n to k."""
-    def true_fn():
-        return k
-    
-    def false_fn():
-        def true_fn():
-            raise ValueError
-        def false_fn():
-            pass
-        tf.cond(tf.logical_or(n <= 1, k <= 1), true_fn, false_fn)
-        closest_smaller_divisor = -7
-        for i in tf.range(k, 0, -1):
-            def true_fn():
-                def true_fn():
-                    return i
-                def false_fn():
-                    return -7
-                return tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
-            def false_fn():
-                return -7  # pragma: no cover
-            closest_smaller_divisor = tf.cond(n % i == 0, true_fn, false_fn)
-        return closest_smaller_divisor
-    
-    closest_smaller_divisor = tf.cond(n % k == 0, true_fn, false_fn)
-    
-    def true_fn():
-        return -1
-    def false_fn():
-        return closest_smaller_divisor
-    closest_smaller_divisor = tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
-    
-    return closest_smaller_divisor
 
 
 def unit_norm(x, ord = 2.0):
@@ -307,7 +273,7 @@ class BaseOptimizer(KerasSaveable):
                     return self.subset_size
                 def false_fn():
                     return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
-                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
+                self.subset_size_.append(self.closest_smaller_divisor_of_n_to_k(
                     size,
                     tf.cond(self.subset_size > 0, true_fn, false_fn)
                 ))
@@ -359,6 +325,30 @@ class BaseOptimizer(KerasSaveable):
                         reference_variable=variable, name="neg_momentum"
                     )
                 )
+            
+            if self.update_proj_gap is not None and len(variable.shape) == 2:
+                self.projector.append(GaLoreProjector(
+                    rank=self.rank,
+                    update_proj_gap=self.update_proj_gap,
+                    scale=self.scale,
+                    projection_type=self.projection_type,
+                ))
+                ortho_matrix = self.projector[-1].get_orthogonal_matrix(variable, self.rank, self.projection_type)
+                variable = self.projector[-1].project_(variable, ortho_matrix)
+                if self.projection_type != 'full':
+                    self.ortho_matrix.append(self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix, name="ortho_matrix"
+                                                        ))
+                else:
+                    self.ortho_matrix.append((self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix[0], name="ortho_matrix"
+                                                        ), self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix[1], name="ortho_matrix"
+                                                        )))
+                self.projector[-1].ortho_matrix = self.ortho_matrix[-1]
+            else:
+                self.projector.append(None)
+                self.ortho_matrix.append(None)
         self._trainable_variables = variables[:]
         self.built = True
 
@@ -644,6 +634,40 @@ class BaseOptimizer(KerasSaveable):
         flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
         dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
         self.numerator_acc.assign_add(tf.cast(d_lr * dot_val, tf.float32))
+        
+    def closest_smaller_divisor_of_n_to_k(self, n, k):
+        r"""Get closest smaller divisor of n to k."""
+        def true_fn():
+            return k
+        
+        def false_fn():
+            def true_fn():
+                raise ValueError
+            def false_fn():
+                pass
+            tf.cond(tf.logical_or(n <= 1, k <= 1), true_fn, false_fn)
+            closest_smaller_divisor = -7
+            for i in tf.range(k, 0, -1):
+                def true_fn():
+                    def true_fn():
+                        return i
+                    def false_fn():
+                        return -7
+                    return tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
+                def false_fn():
+                    return -7  # pragma: no cover
+                closest_smaller_divisor = tf.cond(n % i == 0, true_fn, false_fn)
+            return closest_smaller_divisor
+        
+        closest_smaller_divisor = tf.cond(n % k == 0, true_fn, false_fn)
+        
+        def true_fn():
+            return -1
+        def false_fn():
+            return closest_smaller_divisor
+        closest_smaller_divisor = tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
+        
+        return closest_smaller_divisor
     
     def get_second_moment_update(self, gradient, idx):
         size = tf.size(gradient)
@@ -694,6 +718,25 @@ class BaseOptimizer(KerasSaveable):
         def false_fn2():
             pass
         tf.cond(step % self.update_period == 0, true_fn2, false_fn2)
+        
+    def zero_power_via_newton_schulz_5(self, G, steps):
+        assert len(G.shape) >= 2 # batched Muon implementation by @scottjmaddox, and put into practice in the record by @YouJiacheng
+        a, b, c = (3.4445, -4.7750,  2.0315)
+        X = tf.cast(G, tf.bfloat16)
+        if G.shape[-2] > G.shape[-1]:
+            X = tf.linalg.matrix_transpose(X)
+    
+        # Ensure spectral norm is at most 1
+        X = X / (tf.norm(X, axis=[-2, -1], keepdims=True) + 1e-7)
+        # Perform the NS iterations
+        for _ in range(steps):
+            A = tf.matmul(X, tf.linalg.matrix_transpose(X))
+            B = b * A + c * tf.matmul(A, A) # quintic computation strategy adapted from suggestion by @jxbz, @leloykun, and @YouJiacheng
+            X = a * X + tf.matmul(B, X)
+        
+        if G.shape[-2] > G.shape[-1]:
+            X = tf.linalg.matrix_transpose(X)
+        return X
     
     def lookahead_merge(self, variable, step):
         def true_fn():
