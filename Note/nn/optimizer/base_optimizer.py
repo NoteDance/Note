@@ -231,6 +231,7 @@ class BaseOptimizer(KerasSaveable):
 
     @tracking.no_automatic_dependency_tracking
     def build(self, variables):
+        self.exp_avg_sq = []
         if self.sn:
             self.subset_size_ = []
         if self.sophia:
