@@ -251,6 +251,9 @@ class BaseOptimizer(KerasSaveable):
         if self.pnm:
             self.pos_momentum = []
             self.neg_momentum = []
+        if self.update_proj_gap:
+            self.projector = []
+            self.ortho_matrix = []
         if self.use_ema:
             self._model_variables_moving_average = self.add_optimizer_variables(
                 variables, "average"
