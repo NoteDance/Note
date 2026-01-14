@@ -16,10 +16,12 @@ class pr:
         return train_data[self.index],train_labels[self.index]
     
     
-    def update(self,loss=None):
+    def update(self,loss=None, index=None):
         if loss is not None:
             loss=tf.cast(loss,tf.float32)
-            self.loss_[:self.batch].assign(loss)
+            self.loss_.assign(loss)
+        elif index is not None:
+            self.loss[index[0]:index[1]]=tf.abs(self.loss_[:self.batch])
         else:
             self.loss[self.index]=tf.abs(self.loss_[:self.batch])
         return
