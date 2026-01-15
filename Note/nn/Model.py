@@ -121,6 +121,7 @@ class Model:
                 self.info['test_loss']=self.test_loss
                 self.info['test_accuracy']=self.test_accuracy
                 self.info['PR']=self.PR
+                self.info['compute_ess_freq']=self.compute_ess_freq
                 self.info['alpha']=self.alpha
                 self.info['ess_threshold']=self.ess_threshold
                 self.info['num_updates']=self.num_updates
@@ -147,6 +148,7 @@ class Model:
                 self.info['test_loss']=self.test_loss
                 self.info['test_accuracy']=self.test_accuracy
                 self.info['PR']=self.PR
+                self.info['compute_ess_freq']=self.compute_ess_freq
                 self.info['alpha']=self.alpha
                 self.info['ess_threshold']=self.ess_threshold
                 self.info['num_updates']=self.num_updates
@@ -880,17 +882,13 @@ class Model:
             
                 batch = 0
                 index1 = 0
-                self.batch_counter_ = 0
+                batch_counter = 0
                 for train_data, labels in train_ds:
                     if self.stop_training==True:
                         return
-                    if self.PR and self.batch_counter_ % num_updates == 0:
-                        break
                     index2 = index1 + self.batch_size
                     if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
-                    if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
-                        break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_batch_begin'):
                             callback.on_batch_begin(batch, logs={})
@@ -909,9 +907,13 @@ class Model:
                         if hasattr(callback, 'on_batch_end'):
                             callback.on_batch_end(batch, logs=batch_logs)
                     self.batch_counter+=1
-                    self.batch_counter_+=1
+                    batch_counter+=1
                     batch += 1
                     index1 = index2
+                    if self.PR and batch_counter % num_updates == 0:
+                        break
+                    if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
+                        break
                     if hasattr(self, 'batch_size_fn'):
                         train_ds = self.batch_size_fn(train_ds)
                     if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
@@ -1012,17 +1014,13 @@ class Model:
             
                 batch = 0
                 index1 = 0
-                self.batch_counter_ = 0
+                batch_counter = 0
                 for train_data, labels in train_ds:
                     if self.stop_training==True:
                         return
-                    if self.PR and self.batch_counter_ % num_updates == 0:
-                        break
                     index2 = index1 + self.batch_size
                     if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
-                    if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
-                        break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_batch_begin'):
                             callback.on_batch_begin(batch, logs={})
@@ -1041,9 +1039,13 @@ class Model:
                         if hasattr(callback, 'on_batch_end'):
                             callback.on_batch_end(batch, logs=batch_logs)
                     self.batch_counter+=1
-                    self.batch_counter_+=1
+                    batch_counter+=1
                     batch += 1
                     index1 = index2
+                    if self.PR and batch_counter % num_updates == 0:
+                        break
+                    if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
+                        break
                     if hasattr(self, 'batch_size_fn'):
                         train_ds = self.batch_size_fn(train_ds)
                     if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
@@ -1224,20 +1226,16 @@ class Model:
                     num_batches = 0
                     batch = 0
                     index1 = 0
-                    self.batch_counter_ = 0
+                    batch_counter = 0
                     for x in train_dist_dataset:
                         if self.stop_training==True:
                             return
-                        if self.PR and self.batch_counter_ % num_updates == 0:
-                            break
                         index2 = index1 + self.batch_size
                         if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
                             train_dataset = tf.data.Dataset.from_tensor_slices((train_data, labels)).batch(self.batch_size)
                             for x in strategy.experimental_distribute_dataset(train_dataset):
                                 x = x
-                        if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
-                            break
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_batch_begin'):
                                 callback.on_batch_begin(batch, logs={})
@@ -1259,9 +1257,13 @@ class Model:
                                 callback.on_batch_end(batch, logs=batch_logs)
                         num_batches += 1
                         self.batch_counter+=1
-                        self.batch_counter_+=1
+                        batch_counter+=1
                         batch += 1
                         index1 = index2
+                        if self.PR and batch_counter % num_updates == 0:
+                            break
+                        if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
+                            break
                         if hasattr(self, 'batch_size_fn'):
                             train_dist_dataset = self.batch_size_fn(train_dist_dataset)
                         if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
@@ -1390,20 +1392,16 @@ class Model:
                     num_batches = 0
                     batch = 0
                     index1 = 0
-                    self.batch_counter_ = 0
+                    batch_counter = 0
                     for x in train_dist_dataset:
                         if self.stop_training==True:
                             return
-                        if self.PR and self.batch_counter_ % num_updates == 0:
-                            break
                         index2 = index1 + self.batch_size
                         if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
                             train_dataset = tf.data.Dataset.from_tensor_slices((train_data, labels)).batch(self.batch_size)
                             for x in strategy.experimental_distribute_dataset(train_dataset):
                                 x = x
-                        if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
-                            break
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_batch_begin'):
                                 callback.on_batch_begin(batch, logs={})
@@ -1425,9 +1423,13 @@ class Model:
                                 callback.on_batch_end(batch, logs=batch_logs)
                         num_batches += 1
                         self.batch_counter+=1
-                        self.batch_counter_+=1
+                        batch_counter+=1
                         batch +=1
                         index1 = index2
+                        if self.PR and batch_counter % num_updates == 0:
+                            break
+                        if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
+                            break
                         if hasattr(self, 'batch_size_fn'):
                             train_dist_dataset = self.batch_size_fn(train_dist_dataset)
                         if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
@@ -1967,10 +1969,8 @@ class Model:
         num_batches = 0
         batch = 0
         index1 = 0
-        self.batch_counter_ = 0
+        batch_counter = 0
         while self.step_in_epoch < num_steps_per_epoch:
-            if self.PR and self.batch_counter_ % self.num_updates == 0:
-                break 
             index2 = index1 + self.batch_size
             if self.PR and hasattr(self, 'ess') and self.ess<=self.ess_threshold:
                 train_data, labels = self.prioritized_replay.sample(self.train_data, self.train_labels, self.alpha, self.batch_size)
@@ -1979,8 +1979,6 @@ class Model:
                     multi_worker_dataset = strategy.distribute_datasets_from_function(
                             lambda input_context: self.dataset_fn(train_dataset, self.global_batch_size, input_context))
                 iterator = iter(multi_worker_dataset)
-            if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
-                break
             for callback in self.callbacks:
                 if hasattr(callback, 'on_batch_begin'):
                     callback.on_batch_begin(batch, logs={})
@@ -2002,9 +2000,13 @@ class Model:
             num_batches += 1
             self.step_in_epoch += 1
             self.batch_counter += 1
-            self.batch_counter_ += 1
+            batch_counter += 1
             batch += 1
             index1 = index2
+            if self.PR and batch_counter % self.num_updates == 0:
+                break 
+            if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
+                break
             if hasattr(self, 'batch_size_fn'):
                 iterator = iter(self.batch_size_fn(multi_worker_dataset))
             if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
@@ -2059,10 +2061,8 @@ class Model:
         num_batches = 0
         batch = 0
         index1 = 0
-        self.batch_counter_ = 0
+        batch_counter = 0
         while self.step_in_epoch < num_steps_per_epoch:
-            if self.PR and self.batch_counter_ % self.num_updates == 0:
-                break
             index2 = index1 + self.batch_size
             if self.PR and hasattr(self, 'ess') and self.ess<=self.ess_threshold:
                 if jit_compile==True:
@@ -2091,9 +2091,11 @@ class Model:
             num_batches += 1
             self.step_in_epoch += 1
             self.batch_counter += 1
-            self.batch_counter_ += 1
+            batch_counter += 1
             batch += 1
             index1 = index2
+            if self.PR and batch_counter % self.num_updates == 0:
+                break
             if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
                 self.train_loss=total_loss.fetch() / num_batches
                 if self.end():
