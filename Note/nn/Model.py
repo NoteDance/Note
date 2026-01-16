@@ -944,7 +944,10 @@ class Model:
                 if test_accuracy!=None:
                     self.test_acc_list.append(self.test_acc)
                 
-                self.train_loss=train_loss.result().numpy()
+                if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
+                else:
+                    self.train_loss=train_loss.result().numpy()
                 self.train_loss_list.append(self.train_loss)
                 if train_accuracy!=None:
                     self.train_acc=train_accuracy.result().numpy()
@@ -1076,7 +1079,10 @@ class Model:
                 if test_accuracy!=None:
                     self.test_acc_list.append(self.test_acc)
             
-                self.train_loss=train_loss.result().numpy()
+                if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
+                else:
+                    self.train_loss=train_loss.result().numpy()
                 self.train_loss_list.append(self.train_loss)
                 if train_accuracy!=None:
                     self.train_acc=train_accuracy.result().numpy()
@@ -1317,7 +1323,10 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    self.train_loss=(total_loss / num_batches).numpy()
+                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                        self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
+                    else:
+                        self.train_loss=(total_loss / num_batches).numpy()
                     self.train_loss_list.append(self.train_loss)
                     if train_accuracy!=None:
                         self.train_acc=train_accuracy.result().numpy()
@@ -1483,7 +1492,10 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                 
-                    self.train_loss=(total_loss / num_batches).numpy()
+                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                        self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
+                    else:
+                        self.train_loss=(total_loss / num_batches).numpy()
                     self.train_loss_list.append(self.train_loss)
                     if train_accuracy!=None:
                         self.train_acc=train_accuracy.result().numpy()
@@ -1580,7 +1592,10 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    self.train_loss=train_loss.numpy()
+                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                        self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
+                    else:
+                        self.train_loss=train_loss.numpy()
                     self.train_loss_list.append(self.train_loss)
                     self.train_acc=train_accuracy.result().numpy()
                     self.train_acc_list.append(self.train_acc)
@@ -1685,7 +1700,10 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    self.train_loss=train_loss.numpy()
+                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                        self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
+                    else:
+                        self.train_loss=train_loss.numpy()
                     self.train_loss_list.append(self.train_loss)
                     self.train_acc=train_accuracy.result().numpy()
                     self.train_acc_list.append(self.train_acc)
@@ -1785,7 +1803,10 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    self.train_loss=train_loss
+                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                        self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
+                    else:
+                        self.train_loss=train_loss
                     self.train_loss_list.append(self.train_loss)
                     self.train_acc=train_accuracy.result().numpy()
                     self.train_acc_list.append(self.train_acc)
@@ -1885,7 +1906,10 @@ class Model:
                                 self.test_acc_list.append(self.test_acc)
                             self.training(True)
                         
-                        self.train_loss=train_loss
+                        if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                            self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
+                        else:
+                            self.train_loss=train_loss
                         self.train_loss_list.append(self.train_loss)
                         self.train_acc=train_accuracy.result().numpy()
                         self.train_acc_list.append(self.train_acc)
