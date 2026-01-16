@@ -21,7 +21,7 @@ class pr:
             loss=tf.cast(loss,tf.float32)
             self.loss_.assign(loss)
         elif index is not None:
-            self.loss[index[0]:index[1]]=tf.abs(self.loss_[:self.batch])
+            self.loss[index[0]:index[1]]=self.loss_[:self.batch]
         else:
-            self.loss[self.index]=tf.abs(self.loss_[:self.batch])
+            self.loss[self.index]=self.loss_[:self.batch]
         return
