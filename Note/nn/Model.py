@@ -126,6 +126,8 @@ class Model:
                 self.info['ess_threshold']=self.ess_threshold
                 self.info['scale']=self.scale
                 self.info['num_updates']=self.num_updates
+                self.info['min_num_updates']=self.min_num_updates
+                self.info['max_num_updates']=self.max_num_updates
                 self.info['test_batch_size']=self.test_batch_size
                 self.info['processes']=self.processes
                 self.info['parallel_test']=self.parallel_test_
@@ -154,6 +156,8 @@ class Model:
                 self.info['ess_threshold']=self.ess_threshold
                 self.info['scale']=self.scale
                 self.info['num_updates']=self.num_updates
+                self.info['min_num_updates']=self.min_num_updates
+                self.info['max_num_updates']=self.max_num_updates
                 self.info['global_test_batch_size']=self.global_test_batch_size
                 self.info['eval_steps_per_epoch']=self.eval_steps_per_epoch
                 self.info['jit_compile']=self.jit_compile
@@ -808,7 +812,7 @@ class Model:
         return float(ess)
     
     
-    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, PR=False, train_data=None, train_labels=None, compute_ess_freq=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
+    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, PR=False, train_data=None, train_labels=None, compute_ess_freq=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
         if p!=0:
             if p==None:
                 p_=9
@@ -844,6 +848,8 @@ class Model:
         self.ess_threshold=ess_threshold
         self.scale=scale
         self.num_updates=num_updates
+        self.min_num_updates=min_num_updates
+        self.max_num_updates=max_num_updates
         if PR:
             self.prioritized_replay=pr()
             self.prioritized_replay.loss=np.zeros(len(train_data), dtype=np.float32)
@@ -892,6 +898,8 @@ class Model:
                     if self.PR and epoch % 2 != 0 and num_updates is None:
                         self.ess = self.compute_ess()
                         num_updates = scale * self.ess / ess_threshold * num_updates
+                        num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
+                        num_updates = int(num_updates)
                     index2 = index1 + self.batch_size
                     if self.PR and epoch % 2 != 0:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1028,6 +1036,8 @@ class Model:
                     if self.PR and i % 2 != 0 and num_updates is None:
                         self.ess = self.compute_ess()
                         num_updates = scale * self.ess / ess_threshold * num_updates
+                        num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
+                        num_updates = int(num_updates)
                     index2 = index1 + self.batch_size
                     if self.PR and i % 2 != 0:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1151,7 +1161,7 @@ class Model:
         return
     
     
-    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, PR=False, train_data=None, train_labels=None, compute_ess_freq=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
+    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, PR=False, train_data=None, train_labels=None, compute_ess_freq=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
         if num_epochs!=None:
             epochs=num_epochs
         if p!=0:
@@ -1187,6 +1197,8 @@ class Model:
         self.ess_threshold=ess_threshold
         self.scale=scale
         self.num_updates=num_updates
+        self.min_num_updates=min_num_updates
+        self.max_num_updates=max_num_updates
         if PR:
             self.prioritized_replay=pr()
             self.prioritized_replay.loss=np.zeros(len(train_data), dtype=np.float32)
@@ -1246,6 +1258,8 @@ class Model:
                         if self.PR and epoch % 2 != 0 and num_updates is None:
                             self.ess = self.compute_ess()
                             num_updates = scale * self.ess / ess_threshold * num_updates
+                            num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
+                            num_updates = int(num_updates)
                         index2 = index1 + self.batch_size
                         if self.PR and hasattr(self, 'ess') and epoch % 2 != 0:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1417,6 +1431,8 @@ class Model:
                         if self.PR and i % 2 != 0 and num_updates is None:
                             self.ess = self.compute_ess()
                             num_updates = scale * self.ess / ess_threshold * num_updates
+                            num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
+                            num_updates = int(num_updates)
                         index2 = index1 + self.batch_size
                         if self.PR and i % 2 != 0:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -2009,6 +2025,8 @@ class Model:
             if self.PR and self.total_epoch % 2 != 0 and self.num_updates is None:
                 self.ess = self.compute_ess()
                 self.num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
+                self.num_updates = np.clip(self.num_updates, self.min_num_updates, self.max_num_updates)
+                self.num_updates = int(self.num_updates)
             index2 = index1 + self.batch_size
             if self.PR and self.total_epoch % 2 != 0:
                 train_data, labels = self.prioritized_replay.sample(self.train_data, self.train_labels, self.alpha, self.batch_size)
@@ -2103,6 +2121,8 @@ class Model:
             if self.PR and self.total_epoch % 2 != 0 and self.num_updates is None:
                 self.ess = self.compute_ess()
                 self.num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
+                self.num_updates = np.clip(self.num_updates, self.min_num_updates, self.max_num_updates)
+                self.num_updates = int(self.num_updates)
             index2 = index1 + self.batch_size
             if self.PR and self.total_epoch % 2 != 0:
                 if jit_compile==True:
