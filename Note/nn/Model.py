@@ -124,6 +124,7 @@ class Model:
                 self.info['compute_ess_freq']=self.compute_ess_freq
                 self.info['alpha']=self.alpha
                 self.info['ess_threshold']=self.ess_threshold
+                self.info['scale']=self.scale
                 self.info['num_updates']=self.num_updates
                 self.info['test_batch_size']=self.test_batch_size
                 self.info['processes']=self.processes
@@ -151,6 +152,7 @@ class Model:
                 self.info['compute_ess_freq']=self.compute_ess_freq
                 self.info['alpha']=self.alpha
                 self.info['ess_threshold']=self.ess_threshold
+                self.info['scale']=self.scale
                 self.info['num_updates']=self.num_updates
                 self.info['global_test_batch_size']=self.global_test_batch_size
                 self.info['eval_steps_per_epoch']=self.eval_steps_per_epoch
@@ -806,7 +808,7 @@ class Model:
         return float(ess)
     
     
-    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, PR=False, train_data=None, train_labels=None, compute_ess_freq=None, alpha=None, ess_threshold=None, num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
+    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, PR=False, train_data=None, train_labels=None, compute_ess_freq=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
         if p!=0:
             if p==None:
                 p_=9
@@ -840,6 +842,7 @@ class Model:
         self.train_labels=train_labels
         self.alpha=alpha
         self.ess_threshold=ess_threshold
+        self.scale=scale
         self.num_updates=num_updates
         if PR:
             self.prioritized_replay=pr()
@@ -886,8 +889,11 @@ class Model:
                 for train_data, labels in train_ds:
                     if self.stop_training==True:
                         return
+                    if self.PR and epoch % 2 != 0 and num_updates is None:
+                        self.ess = self.compute_ess()
+                        num_updates = scale * self.ess / ess_threshold * num_updates
                     index2 = index1 + self.batch_size
-                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    if self.PR and epoch % 2 != 0:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_batch_begin'):
@@ -896,7 +902,7 @@ class Model:
                         loss,acc=self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
                     else:
                         loss,acc=self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
-                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    if self.PR and epoch % 2 != 0:
                         self.prioritized_replay.update()
                     elif self.PR:
                         self.prioritized_replay.update(index=(index1, index2))
@@ -907,10 +913,11 @@ class Model:
                         if hasattr(callback, 'on_batch_end'):
                             callback.on_batch_end(batch, logs=batch_logs)
                     self.batch_counter+=1
-                    batch_counter+=1
+                    if self.PR and epoch % 2 != 0:
+                        batch_counter+=1
                     batch += 1
                     index1 = index2
-                    if self.PR and batch_counter % num_updates == 0:
+                    if self.PR and epoch % 2 != 0 and batch_counter % num_updates == 0:
                         break
                     if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                         break
@@ -932,9 +939,6 @@ class Model:
                             self.save_(self.path)
                         else:
                             self.save_param_(self.path)
-                    if self.PR and self.batch_counter % self.compute_ess_freq == 0:
-                        self.ess = self.compute_ess()
-                
                 if test_ds!=None:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_begin'):
@@ -944,7 +948,7 @@ class Model:
                 if test_accuracy!=None:
                     self.test_acc_list.append(self.test_acc)
                 
-                if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                if self.PR:
                     self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                 else:
                     self.train_loss=train_loss.result().numpy()
@@ -1021,8 +1025,11 @@ class Model:
                 for train_data, labels in train_ds:
                     if self.stop_training==True:
                         return
+                    if self.PR and i % 2 != 0 and num_updates is None:
+                        self.ess = self.compute_ess()
+                        num_updates = scale * self.ess / ess_threshold * num_updates
                     index2 = index1 + self.batch_size
-                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    if self.PR and i % 2 != 0:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_batch_begin'):
@@ -1031,7 +1038,7 @@ class Model:
                         loss,acc=self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
                     else:
                         loss,acc=self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
-                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    if self.PR  and i % 2 != 0:
                         self.prioritized_replay.update()
                     elif self.PR:
                         self.prioritized_replay.update(index=(index1, index2))
@@ -1042,10 +1049,11 @@ class Model:
                         if hasattr(callback, 'on_batch_end'):
                             callback.on_batch_end(batch, logs=batch_logs)
                     self.batch_counter+=1
-                    batch_counter+=1
+                    if self.PR and i % 2 != 0:
+                        batch_counter+=1
                     batch += 1
                     index1 = index2
-                    if self.PR and batch_counter % num_updates == 0:
+                    if self.PR and i % 2 != 0 and batch_counter % num_updates == 0:
                         break
                     if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                         break
@@ -1067,8 +1075,6 @@ class Model:
                             self.save_(self.path)
                         else:
                             self.save_param_(self.path)
-                    if self.PR and self.batch_counter % self.compute_ess_freq == 0:
-                        self.ess = self.compute_ess()
                 
                 if test_ds!=None:
                     for callback in self.callbacks:
@@ -1079,7 +1085,7 @@ class Model:
                 if test_accuracy!=None:
                     self.test_acc_list.append(self.test_acc)
             
-                if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                if self.PR:
                     self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                 else:
                     self.train_loss=train_loss.result().numpy()
@@ -1145,7 +1151,7 @@ class Model:
         return
     
     
-    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, PR=False, train_data=None, train_labels=None, compute_ess_freq=None, alpha=None, ess_threshold=None, num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
+    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, PR=False, train_data=None, train_labels=None, compute_ess_freq=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
         if num_epochs!=None:
             epochs=num_epochs
         if p!=0:
@@ -1178,7 +1184,8 @@ class Model:
         self.train_data=train_data
         self.train_labels=train_labels
         self.alpha=alpha
-        self.ess_threshold=ess_threshold 
+        self.ess_threshold=ess_threshold
+        self.scale=scale
         self.num_updates=num_updates
         if PR:
             self.prioritized_replay=pr()
@@ -1236,8 +1243,11 @@ class Model:
                     for x in train_dist_dataset:
                         if self.stop_training==True:
                             return
+                        if self.PR and epoch % 2 != 0 and num_updates is None:
+                            self.ess = self.compute_ess()
+                            num_updates = scale * self.ess / ess_threshold * num_updates
                         index2 = index1 + self.batch_size
-                        if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                        if self.PR and hasattr(self, 'ess') and epoch % 2 != 0:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
                             train_dataset = tf.data.Dataset.from_tensor_slices((train_data, labels)).batch(self.batch_size)
                             for x in strategy.experimental_distribute_dataset(train_dataset):
@@ -1249,7 +1259,7 @@ class Model:
                             loss,acc = self.distributed_train_step(x, self.optimizer, train_accuracy, strategy)
                         else:
                             loss,acc = self.distributed_train_step_(x, self.optimizer, train_accuracy, strategy)
-                        if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                        if self.PR and epoch % 2 != 0:
                             self.prioritized_replay.update()
                         elif self.PR:
                             self.prioritized_replay.update(index=(index1, index2))
@@ -1263,10 +1273,11 @@ class Model:
                                 callback.on_batch_end(batch, logs=batch_logs)
                         num_batches += 1
                         self.batch_counter+=1
-                        batch_counter+=1
+                        if self.PR and epoch % 2 != 0:
+                            batch_counter+=1
                         batch += 1
                         index1 = index2
-                        if self.PR and batch_counter % num_updates == 0:
+                        if self.PR and epoch % 2 != 0 and batch_counter % num_updates == 0:
                             break
                         if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                             break
@@ -1298,8 +1309,6 @@ class Model:
                                 self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
-                        if self.PR and self.batch_counter % self.compute_ess_freq == 0:
-                            self.ess = self.compute_ess()
                     
                     if test_loss!=None:
                         test_loss.reset_states()
@@ -1323,7 +1332,7 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    if self.PR:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
                         self.train_loss=(total_loss / num_batches).numpy()
@@ -1405,8 +1414,11 @@ class Model:
                     for x in train_dist_dataset:
                         if self.stop_training==True:
                             return
+                        if self.PR and i % 2 != 0 and num_updates is None:
+                            self.ess = self.compute_ess()
+                            num_updates = scale * self.ess / ess_threshold * num_updates
                         index2 = index1 + self.batch_size
-                        if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                        if self.PR and i % 2 != 0:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
                             train_dataset = tf.data.Dataset.from_tensor_slices((train_data, labels)).batch(self.batch_size)
                             for x in strategy.experimental_distribute_dataset(train_dataset):
@@ -1418,7 +1430,7 @@ class Model:
                             loss,acc = self.distributed_train_step(x, self.optimizer, train_accuracy, strategy)
                         else:
                             loss,acc = self.distributed_train_step_(x, self.optimizer, train_accuracy, strategy)
-                        if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                        if self.PR and i % 2 != 0:
                             self.prioritized_replay.update()
                         elif self.PR:
                             self.prioritized_replay.update(index=(index1, index2))
@@ -1432,10 +1444,11 @@ class Model:
                                 callback.on_batch_end(batch, logs=batch_logs)
                         num_batches += 1
                         self.batch_counter+=1
-                        batch_counter+=1
+                        if self.PR and i % 2 != 0:
+                            batch_counter+=1
                         batch +=1
                         index1 = index2
-                        if self.PR and batch_counter % num_updates == 0:
+                        if self.PR and i % 2 != 0 and batch_counter % num_updates == 0:
                             break
                         if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                             break
@@ -1467,8 +1480,6 @@ class Model:
                                 self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
-                        if self.PR and self.batch_counter % self.compute_ess_freq == 0:
-                            self.ess = self.compute_ess()
                     
                     if test_loss!=None:
                         test_loss.reset_states()
@@ -1492,7 +1503,7 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                 
-                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    if self.PR:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
                         self.train_loss=(total_loss / num_batches).numpy()
@@ -1592,7 +1603,7 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    if self.PR:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
                         self.train_loss=train_loss.numpy()
@@ -1700,7 +1711,7 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    if self.PR:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
                         self.train_loss=train_loss.numpy()
@@ -1803,7 +1814,7 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                    if self.PR:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
                         self.train_loss=train_loss
@@ -1906,7 +1917,7 @@ class Model:
                                 self.test_acc_list.append(self.test_acc)
                             self.training(True)
                         
-                        if self.PR and hasattr(self, 'ess') and self.ess<=ess_threshold:
+                        if self.PR:
                             self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                         else:
                             self.train_loss=train_loss
@@ -1995,8 +2006,11 @@ class Model:
         index1 = 0
         batch_counter = 0
         while self.step_in_epoch < num_steps_per_epoch:
+            if self.PR and self.total_epoch % 2 != 0 and self.num_updates is None:
+                self.ess = self.compute_ess()
+                self.num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
             index2 = index1 + self.batch_size
-            if self.PR and hasattr(self, 'ess') and self.ess<=self.ess_threshold:
+            if self.PR and self.total_epoch % 2 != 0:
                 train_data, labels = self.prioritized_replay.sample(self.train_data, self.train_labels, self.alpha, self.batch_size)
                 train_dataset = tf.data.Dataset.from_tensor_slices((train_data, labels))
                 with strategy.scope():
@@ -2010,7 +2024,7 @@ class Model:
                 loss,acc = self.distributed_train_step(next(iterator), self.optimizer, train_accuracy, strategy)
             else:
                 loss,acc = self.distributed_train_step_(next(iterator), self.optimizer, train_accuracy, strategy)
-            if self.PR and hasattr(self, 'ess') and self.ess<=self.ess_threshold:
+            if self.PR and self.total_epoch % 2 != 0:
                 self.prioritized_replay.update()
             elif self.PR:
                 self.prioritized_replay.update(index=(index1, index2))
@@ -2024,10 +2038,11 @@ class Model:
             num_batches += 1
             self.step_in_epoch += 1
             self.batch_counter += 1
-            batch_counter += 1
+            if self.PR and self.total_epoch % 2 != 0:
+                batch_counter += 1
             batch += 1
             index1 = index2
-            if self.PR and batch_counter % self.num_updates == 0:
+            if self.PR and self.total_epoch % 2 != 0 and batch_counter % self.num_updates == 0:
                 break 
             if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                 break
@@ -2045,8 +2060,6 @@ class Model:
                     self.save_(self.path)
                 else:
                     self.save_param_(self.path)
-            if self.PR and self.batch_counter % self.compute_ess_freq == 0:
-                self.ess = self.compute_ess()
             if self.stop_training==True:
                 return total_loss / num_batches
       
@@ -2087,8 +2100,11 @@ class Model:
         index1 = 0
         batch_counter = 0
         while self.step_in_epoch < num_steps_per_epoch:
+            if self.PR and self.total_epoch % 2 != 0 and self.num_updates is None:
+                self.ess = self.compute_ess()
+                self.num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
             index2 = index1 + self.batch_size
-            if self.PR and hasattr(self, 'ess') and self.ess<=self.ess_threshold:
+            if self.PR and self.total_epoch % 2 != 0:
                 if jit_compile==True:
                     per_worker_dataset = coordinator.create_per_worker_dataset(self.per_worker_dataset_fn)
                 else:
@@ -2101,7 +2117,7 @@ class Model:
                 loss,acc = coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer, train_accuracy, strategy))
             else:
                 loss,acc = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer, train_accuracy, strategy))
-            if self.PR and hasattr(self, 'ess') and self.ess<=self.ess_threshold:
+            if self.PR and self.total_epoch % 2 != 0:
                 self.prioritized_replay.update()
             elif self.PR:
                 self.prioritized_replay.update(index=(index1, index2))
@@ -2115,10 +2131,11 @@ class Model:
             num_batches += 1
             self.step_in_epoch += 1
             self.batch_counter += 1
-            batch_counter += 1
+            if self.PR and self.total_epoch % 2 != 0:
+                batch_counter += 1
             batch += 1
             index1 = index2
-            if self.PR and batch_counter % self.num_updates == 0:
+            if self.PR and self.total_epoch % 2 != 0 and batch_counter % self.num_updates == 0:
                 break
             if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
                 self.train_loss=total_loss.fetch() / num_batches
@@ -2132,8 +2149,6 @@ class Model:
                     self.save_(self.path)
                 else:
                     self.save_param_(self.path)
-            if self.PR and self.batch_counter % self.compute_ess_freq == 0:
-                self.ess = self.compute_ess()
             if self.stop_training==True:
                 coordinator.join()
                 return total_loss.fetch() / num_batches
