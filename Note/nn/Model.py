@@ -892,14 +892,14 @@ class Model:
                 batch = 0
                 index1 = 0
                 batch_counter = 0
+                if self.PR and epoch % 2 != 0 and num_updates is None:
+                    self.ess = self.compute_ess()
+                    num_updates = scale * self.ess / ess_threshold * num_updates
+                    num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
+                    num_updates = int(num_updates)
                 for train_data, labels in train_ds:
                     if self.stop_training==True:
                         return
-                    if self.PR and epoch % 2 != 0 and num_updates is None:
-                        self.ess = self.compute_ess()
-                        num_updates = scale * self.ess / ess_threshold * num_updates
-                        num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
-                        num_updates = int(num_updates)
                     index2 = index1 + self.batch_size
                     if self.PR and epoch % 2 != 0:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -956,7 +956,7 @@ class Model:
                 if test_accuracy!=None:
                     self.test_acc_list.append(self.test_acc)
                 
-                if self.PR:
+                if self.PR and epoch % 2 != 0:
                     self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                 else:
                     self.train_loss=train_loss.result().numpy()
@@ -1030,14 +1030,14 @@ class Model:
                 batch = 0
                 index1 = 0
                 batch_counter = 0
+                if self.PR and i % 2 != 0 and num_updates is None:
+                    self.ess = self.compute_ess()
+                    num_updates = scale * self.ess / ess_threshold * num_updates
+                    num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
+                    num_updates = int(num_updates)
                 for train_data, labels in train_ds:
                     if self.stop_training==True:
                         return
-                    if self.PR and i % 2 != 0 and num_updates is None:
-                        self.ess = self.compute_ess()
-                        num_updates = scale * self.ess / ess_threshold * num_updates
-                        num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
-                        num_updates = int(num_updates)
                     index2 = index1 + self.batch_size
                     if self.PR and i % 2 != 0:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1095,7 +1095,7 @@ class Model:
                 if test_accuracy!=None:
                     self.test_acc_list.append(self.test_acc)
             
-                if self.PR:
+                if self.PR and i % 2 != 0:
                     self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                 else:
                     self.train_loss=train_loss.result().numpy()
@@ -1252,14 +1252,14 @@ class Model:
                     batch = 0
                     index1 = 0
                     batch_counter = 0
+                    if self.PR and epoch % 2 != 0 and num_updates is None:
+                        self.ess = self.compute_ess()
+                        num_updates = scale * self.ess / ess_threshold * num_updates
+                        num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
+                        num_updates = int(num_updates)
                     for x in train_dist_dataset:
                         if self.stop_training==True:
                             return
-                        if self.PR and epoch % 2 != 0 and num_updates is None:
-                            self.ess = self.compute_ess()
-                            num_updates = scale * self.ess / ess_threshold * num_updates
-                            num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
-                            num_updates = int(num_updates)
                         index2 = index1 + self.batch_size
                         if self.PR and hasattr(self, 'ess') and epoch % 2 != 0:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1346,7 +1346,7 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    if self.PR:
+                    if self.PR and epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
                         self.train_loss=(total_loss / num_batches).numpy()
@@ -1425,14 +1425,14 @@ class Model:
                     batch = 0
                     index1 = 0
                     batch_counter = 0
+                    if self.PR and i % 2 != 0 and num_updates is None:
+                        self.ess = self.compute_ess()
+                        num_updates = scale * self.ess / ess_threshold * num_updates
+                        num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
+                        num_updates = int(num_updates)
                     for x in train_dist_dataset:
                         if self.stop_training==True:
                             return
-                        if self.PR and i % 2 != 0 and num_updates is None:
-                            self.ess = self.compute_ess()
-                            num_updates = scale * self.ess / ess_threshold * num_updates
-                            num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
-                            num_updates = int(num_updates)
                         index2 = index1 + self.batch_size
                         if self.PR and i % 2 != 0:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1519,7 +1519,7 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                 
-                    if self.PR:
+                    if self.PR and i % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
                         self.train_loss=(total_loss / num_batches).numpy()
@@ -1619,7 +1619,7 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    if self.PR:
+                    if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
                         self.train_loss=train_loss.numpy()
@@ -1727,7 +1727,7 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    if self.PR:
+                    if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
                         self.train_loss=train_loss.numpy()
@@ -1830,7 +1830,7 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     
-                    if self.PR:
+                    if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
                         self.train_loss=train_loss
@@ -1933,7 +1933,7 @@ class Model:
                                 self.test_acc_list.append(self.test_acc)
                             self.training(True)
                         
-                        if self.PR:
+                        if self.PR and self.total_epoch % 2 != 0:
                             self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                         else:
                             self.train_loss=train_loss
@@ -2021,12 +2021,12 @@ class Model:
         batch = 0
         index1 = 0
         batch_counter = 0
+        if self.PR and self.total_epoch % 2 != 0 and self.num_updates is None:
+            self.ess = self.compute_ess()
+            self.num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
+            self.num_updates = np.clip(self.num_updates, self.min_num_updates, self.max_num_updates)
+            self.num_updates = int(self.num_updates)
         while self.step_in_epoch < num_steps_per_epoch:
-            if self.PR and self.total_epoch % 2 != 0 and self.num_updates is None:
-                self.ess = self.compute_ess()
-                self.num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
-                self.num_updates = np.clip(self.num_updates, self.min_num_updates, self.max_num_updates)
-                self.num_updates = int(self.num_updates)
             index2 = index1 + self.batch_size
             if self.PR and self.total_epoch % 2 != 0:
                 train_data, labels = self.prioritized_replay.sample(self.train_data, self.train_labels, self.alpha, self.batch_size)
@@ -2117,12 +2117,12 @@ class Model:
         batch = 0
         index1 = 0
         batch_counter = 0
+        if self.PR and self.total_epoch % 2 != 0 and self.num_updates is None:
+            self.ess = self.compute_ess()
+            self.num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
+            self.num_updates = np.clip(self.num_updates, self.min_num_updates, self.max_num_updates)
+            self.num_updates = int(self.num_updates)
         while self.step_in_epoch < num_steps_per_epoch:
-            if self.PR and self.total_epoch % 2 != 0 and self.num_updates is None:
-                self.ess = self.compute_ess()
-                self.num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
-                self.num_updates = np.clip(self.num_updates, self.min_num_updates, self.max_num_updates)
-                self.num_updates = int(self.num_updates)
             index2 = index1 + self.batch_size
             if self.PR and self.total_epoch % 2 != 0:
                 if jit_compile==True:
