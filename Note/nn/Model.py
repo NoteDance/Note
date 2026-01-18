@@ -121,7 +121,6 @@ class Model:
                 self.info['test_loss']=self.test_loss
                 self.info['test_accuracy']=self.test_accuracy
                 self.info['PR']=self.PR
-                self.info['compute_ess_freq']=self.compute_ess_freq
                 self.info['alpha']=self.alpha
                 self.info['ess_threshold']=self.ess_threshold
                 self.info['scale']=self.scale
@@ -151,7 +150,6 @@ class Model:
                 self.info['test_loss']=self.test_loss
                 self.info['test_accuracy']=self.test_accuracy
                 self.info['PR']=self.PR
-                self.info['compute_ess_freq']=self.compute_ess_freq
                 self.info['alpha']=self.alpha
                 self.info['ess_threshold']=self.ess_threshold
                 self.info['scale']=self.scale
@@ -892,9 +890,9 @@ class Model:
                 batch = 0
                 index1 = 0
                 batch_counter = 0
-                if self.PR and epoch % 2 != 0 and num_updates is None:
+                if self.PR and epoch % 2 != 0:
                     self.ess = self.compute_ess()
-                    num_updates = scale * self.ess / ess_threshold * num_updates
+                    num_updates = scale * self.ess / ess_threshold * self.num_updates
                     num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                     num_updates = int(num_updates)
                 for train_data, labels in train_ds:
@@ -1030,9 +1028,9 @@ class Model:
                 batch = 0
                 index1 = 0
                 batch_counter = 0
-                if self.PR and i % 2 != 0 and num_updates is None:
+                if self.PR and i % 2 != 0:
                     self.ess = self.compute_ess()
-                    num_updates = scale * self.ess / ess_threshold * num_updates
+                    num_updates = scale * self.ess / ess_threshold * self.num_updates
                     num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                     num_updates = int(num_updates)
                 for train_data, labels in train_ds:
@@ -1252,9 +1250,9 @@ class Model:
                     batch = 0
                     index1 = 0
                     batch_counter = 0
-                    if self.PR and epoch % 2 != 0 and num_updates is None:
+                    if self.PR and epoch % 2 != 0:
                         self.ess = self.compute_ess()
-                        num_updates = scale * self.ess / ess_threshold * num_updates
+                        num_updates = scale * self.ess / ess_threshold * self.num_updates
                         num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                         num_updates = int(num_updates)
                     for x in train_dist_dataset:
@@ -1425,9 +1423,9 @@ class Model:
                     batch = 0
                     index1 = 0
                     batch_counter = 0
-                    if self.PR and i % 2 != 0 and num_updates is None:
+                    if self.PR and i % 2 != 0:
                         self.ess = self.compute_ess()
-                        num_updates = scale * self.ess / ess_threshold * num_updates
+                        num_updates = scale * self.ess / ess_threshold * self.num_updates
                         num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                         num_updates = int(num_updates)
                     for x in train_dist_dataset:
@@ -2021,11 +2019,11 @@ class Model:
         batch = 0
         index1 = 0
         batch_counter = 0
-        if self.PR and self.total_epoch % 2 != 0 and self.num_updates is None:
+        if self.PR and self.total_epoch % 2 != 0:
             self.ess = self.compute_ess()
-            self.num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
-            self.num_updates = np.clip(self.num_updates, self.min_num_updates, self.max_num_updates)
-            self.num_updates = int(self.num_updates)
+            num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
+            num_updates = np.clip(num_updates, self.min_num_updates, self.max_num_updates)
+            num_updates = int(num_updates)
         while self.step_in_epoch < num_steps_per_epoch:
             index2 = index1 + self.batch_size
             if self.PR and self.total_epoch % 2 != 0:
@@ -2060,7 +2058,7 @@ class Model:
                 batch_counter += 1
             batch += 1
             index1 = index2
-            if self.PR and self.total_epoch % 2 != 0 and batch_counter % self.num_updates == 0:
+            if self.PR and self.total_epoch % 2 != 0 and batch_counter % num_updates == 0:
                 break 
             if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                 break
@@ -2117,11 +2115,11 @@ class Model:
         batch = 0
         index1 = 0
         batch_counter = 0
-        if self.PR and self.total_epoch % 2 != 0 and self.num_updates is None:
+        if self.PR and self.total_epoch % 2 != 0:
             self.ess = self.compute_ess()
-            self.num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
-            self.num_updates = np.clip(self.num_updates, self.min_num_updates, self.max_num_updates)
-            self.num_updates = int(self.num_updates)
+            num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
+            num_updates = np.clip(num_updates, self.min_num_updates, self.max_num_updates)
+            num_updates = int(num_updates)
         while self.step_in_epoch < num_steps_per_epoch:
             index2 = index1 + self.batch_size
             if self.PR and self.total_epoch % 2 != 0:
@@ -2155,7 +2153,7 @@ class Model:
                 batch_counter += 1
             batch += 1
             index1 = index2
-            if self.PR and self.total_epoch % 2 != 0 and batch_counter % self.num_updates == 0:
+            if self.PR and self.total_epoch % 2 != 0 and batch_counter % num_updates == 0:
                 break
             if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
                 self.train_loss=total_loss.fetch() / num_batches
