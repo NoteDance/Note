@@ -120,6 +120,8 @@ class Model:
                 self.info['train_accuracy']=self.train_accuracy
                 self.info['test_loss']=self.test_loss
                 self.info['test_accuracy']=self.test_accuracy
+                self.info['parallel_training_and_test']=self.parallel_training_and_test
+                self.info['test_freq']=self.test_freq
                 self.info['PR']=self.PR
                 self.info['alpha']=self.alpha
                 self.info['ess_threshold']=self.ess_threshold
@@ -149,6 +151,8 @@ class Model:
                 self.info['train_accuracy']=self.train_accuracy
                 self.info['test_loss']=self.test_loss
                 self.info['test_accuracy']=self.test_accuracy
+                self.info['parallel_training_and_test']=self.parallel_training_and_test
+                self.info['test_freq']=self.test_freq
                 self.info['PR']=self.PR
                 self.info['alpha']=self.alpha
                 self.info['ess_threshold']=self.ess_threshold
@@ -156,6 +160,7 @@ class Model:
                 self.info['num_updates']=self.num_updates
                 self.info['min_num_updates']=self.min_num_updates
                 self.info['max_num_updates']=self.max_num_updates
+                self.info['test_batch_size']=self.test_batch_size
                 self.info['global_test_batch_size']=self.global_test_batch_size
                 self.info['eval_steps_per_epoch']=self.eval_steps_per_epoch
                 self.info['jit_compile']=self.jit_compile
@@ -372,20 +377,21 @@ class Model:
     
     
     def end(self):
-        if self.end_acc!=None and self.train_acc!=None and self.train_acc>self.end_acc:
-            return True
-        elif self.end_loss!=None and self.train_loss!=None and self.train_loss<self.end_loss:
-            return True
-        elif self.end_test_acc!=None and self.test_acc!=None and self.test_acc>self.end_test_acc:
-            return True
-        elif self.end_test_loss!=None and self.test_loss!=None and self.test_loss<self.end_test_loss:
-            return True
-        elif self.end_acc!=None and self.end_test_acc!=None:
-            if self.train_acc!=None and self.test_acc!=None and self.train_acc>self.end_acc and self.test_acc>self.end_test_acc:
+        if not self.parallel_training_and_test or self.test_flag:
+            if self.end_acc!=None and self.train_acc!=None and self.train_acc>self.end_acc:
                 return True
-        elif self.end_loss!=None and self.end_test_loss!=None:
-            if self.train_loss!=None and self.test_loss!=None and self.train_loss<self.end_loss and self.test_loss<self.end_test_loss:
+            elif self.end_loss!=None and self.train_loss!=None and self.train_loss<self.end_loss:
                 return True
+            elif self.end_test_acc!=None and self.test_acc!=None and self.test_acc>self.end_test_acc:
+                return True
+            elif self.end_test_loss!=None and self.test_loss!=None and self.test_loss<self.end_test_loss:
+                return True
+            elif self.end_acc!=None and self.end_test_acc!=None:
+                if self.train_acc!=None and self.test_acc!=None and self.train_acc>self.end_acc and self.test_acc>self.end_test_acc:
+                    return True
+            elif self.end_loss!=None and self.end_test_loss!=None:
+                if self.train_loss!=None and self.test_loss!=None and self.train_loss<self.end_loss and self.test_loss<self.end_test_loss:
+                    return True
     
     
     def segment_data(self, data, labels, processes):
@@ -528,9 +534,9 @@ class Model:
             self.training()
             for test_data, labels in test_ds:
                 if jit_compile==True:
-                    self.test_step(test_data, labels)
+                    self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
                 else:
-                    self.test_step_(test_data, labels)
+                    self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
             self.training(True)
             
             test_loss=test_loss.result().numpy()
@@ -568,8 +574,8 @@ class Model:
                 return test_loss
     
     
-    def test_(self,test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile):
-        if mp==None:
+    def test_(self, test_ds, loss_object, test_loss, test_accuracy, processes, jit_compile):
+        if not self.parallel_test_:
             self.training()
             if test_loss!=None:
                 test_loss.reset_states()
@@ -577,9 +583,9 @@ class Model:
                 test_accuracy.reset_states()
             for test_data, labels in test_ds:
                 if jit_compile==True:
-                    self.test_step(test_data, labels)
+                    self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
                 else:
-                    self.test_step_(test_data, labels)
+                    self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
                 
             self.test_loss=test_loss.result().numpy()
             if test_accuracy!=None:
@@ -587,18 +593,18 @@ class Model:
             self.training(True)
         else:
             self.training()
-            if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
-                self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+            if not isinstance(self.shared_test_loss_array, multiprocessing.sharedctypes.SynchronizedArray):
+                self.shared_test_loss_array=multiprocessing.Array('f',np.zeros([processes],dtype='float32'))
             if test_accuracy!=None:
-                if not isinstance(self.shared_test_acc_array, mp.sharedctypes.SynchronizedArray):
-                    self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+                if not isinstance(self.shared_test_acc_array, multiprocessing.sharedctypes.SynchronizedArray):
+                    self.shared_test_acc_array=multiprocessing.Array('f',np.zeros([processes],dtype='float32'))
             
             process_list=[]
             for p in range(processes):
                 test_loss_=test_loss[p]
                 if test_accuracy!=None:
                     test_accuracy_=test_accuracy[p]
-                process=mp.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
+                process=multiprocessing.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
                 process.start()
                 process_list.append(process)
             for process in process_list:
@@ -613,6 +619,71 @@ class Model:
                 self.test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
             self.training(True)
         return
+    
+    
+    def test_p(self, test_data, test_labels, loss_object, test_loss, test_accuracy, processes, jit_compile):
+        self.test_flag.value=False
+        if not self.parallel_test_:
+            test_ds=tf.data.Dataset.from_tensor_slices((test_data, test_labels)).batch(self.test_batch)
+            if test_loss!=None:
+                test_loss=test_loss()
+            if test_accuracy!=None:
+                test_accuracy=test_accuracy()
+            for test_data, labels in test_ds:
+                if jit_compile==True:
+                    self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
+                else:
+                    self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
+            
+            if test_accuracy!=None:
+                self.test_loss_dict[7], self.test_accuracy_dict[7] = test_loss.result().numpy(), test_accuracy.result().numpy()
+            else:
+                self.test_loss_dict[7] = test_loss.result().numpy()
+        else:
+            test_ds = []
+            for date, labels in zip(test_data, test_labels):
+                test_ds.append(tf.data.Dataset.from_tensor_slices((date, labels)).batch(self.test_batch))
+            if not isinstance(self.shared_test_loss_array, multiprocessing.sharedctypes.SynchronizedArray):
+                self.shared_test_loss_array=multiprocessing.Array('f',np.zeros([processes],dtype='float32'))
+            if test_accuracy!=None:
+                if not isinstance(self.shared_test_acc_array, multiprocessing.sharedctypes.SynchronizedArray):
+                    self.shared_test_acc_array=multiprocessing.Array('f',np.zeros([processes],dtype='float32'))
+            
+            process_list=[]
+            for p in range(processes):
+                test_loss_=test_loss[p]()
+                if test_accuracy!=None:
+                    test_accuracy_=test_accuracy[p]()
+                process=multiprocessing.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
+                process.start()
+                process_list.append(process)
+            
+            if test_accuracy!=None:
+                self.test_loss_dict[7], self.test_accuracy_dict[7] = np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
+            else:
+                self.test_loss_dict[7] = np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
+        self.test_flag.value=True
+    
+    
+    def distributed_test_p(self,  test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile):
+        if isinstance(self.strategy,tf.distribute.MirroredStrategy):
+            self.test_flag.value=False
+            test_dataset=tf.data.Dataset.from_tensor_slices((test_data, test_labels)).batch(self.test_batch)
+            test_dist_dataset=self.strategy.experimental_distribute_dataset(test_dataset)
+            if test_loss!=None:
+                test_loss=test_loss()
+            if test_accuracy!=None:
+                test_accuracy=test_accuracy()
+            for x in test_dist_dataset:
+                if jit_compile==True:
+                    self.distributed_test_step(x, loss_object, test_loss, test_accuracy, self.strategy)
+                else:
+                    self.distributed_test_step_(x, loss_object, test_loss, test_accuracy, self.strategy)
+                
+            self.test_loss_dict[7]=test_loss.result().numpy()
+            if test_accuracy!=None:
+                self.test_accuracy_dict[7]=test_accuracy.result().numpy()
+            self.test_flag.value=True
     
     
     def adjust_lr(self, lr_params, lr, ema, target): 
@@ -810,7 +881,7 @@ class Model:
         return float(ess)
     
     
-    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
+    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=1.0, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
         if p!=0:
             if p==None:
                 p_=9
@@ -824,10 +895,6 @@ class Model:
                 p=int(p)
             if p==0:
                 p=1
-        if parallel_test==True:
-            mp=multiprocessing
-        else:
-            mp=None
         self.batch_size=train_ds._batch_size.numpy()
         self.batch_size_old=self.batch_size
         self.batches=train_ds.cardinality().numpy()
@@ -839,6 +906,16 @@ class Model:
         self.train_accuracy=train_accuracy
         self.test_loss=test_loss
         self.test_accuracy=test_accuracy
+        self.parallel_training_and_test=parallel_training_and_test
+        if parallel_training_and_test:
+            manager=multiprocessing.Manager()
+            self.test_flag=multiprocessing.Value('b',False)
+            self.test_loss_dict=manager.dict()
+            self.test_accuracy_dict=manager.dict()
+        self.test_data=test_data
+        self.test_labels=test_labels
+        self.test_batch_size=test_batch_size
+        self.test_freq=test_freq
         self.PR=PR
         self.train_data=train_data
         self.train_labels=train_labels
@@ -930,7 +1007,7 @@ class Model:
                         if train_accuracy!=None:
                             self.train_acc=train_accuracy.result().numpy()
                         if test_ds!=None:
-                            self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile)
+                            self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, jit_compile)
                         if self.end():
                             if self.save_param_only==False:
                                 self.save_(self.path)
@@ -941,14 +1018,26 @@ class Model:
                             self.save_(self.path)
                         else:
                             self.save_param_(self.path)
-                if test_ds!=None:
+                if test_ds!=None and not parallel_training_and_test and epoch % test_freq == 0:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_begin'):
                             callback.on_test_begin(epoch, logs={})
-                    self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile)
-                self.test_loss_list.append(self.test_loss)
+                    self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, jit_compile)
+                elif epoch % test_freq == 0:
+                    for callback in self.callbacks:
+                        if hasattr(callback, 'on_test_begin'):
+                            callback.on_test_begin(epoch, logs={})
+                    process=multiprocessing.Process(target=self.test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, processes, jit_compile))
+                    process.start()
+                if not parallel_training_and_test:
+                    self.test_loss_list.append(self.test_loss)
+                elif self.test_flag.value:
+                    self.test_loss_list.append(self.test_loss_dict[7])
                 if test_accuracy!=None:
-                    self.test_acc_list.append(self.test_acc)
+                    if not parallel_training_and_test:
+                        self.test_acc_list.append(self.test_acc)
+                    elif self.test_flag.value:
+                        self.test_acc_list.append(self.test_accuracy_dict[7])
                 
                 if self.PR and epoch % 2 != 0:
                     self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
@@ -984,13 +1073,14 @@ class Model:
                                 print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
                                 print()
                         else:
-                            if test_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
-                                print()
-                            else:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                print()
+                            if (parallel_training_and_test and self.test_flag.value) or not parallel_training_and_test:
+                                if test_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print()
                 if self.save_freq_==None:
                     if self.path!=None and epoch%self.save_freq==0:
                         if self.save_param_only==False:
@@ -1042,7 +1132,7 @@ class Model:
                         loss,acc=self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
                     else:
                         loss,acc=self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
-                    if self.PR  and i % 2 != 0:
+                    if self.PR and i % 2 != 0:
                         self.prioritized_replay.update()
                     elif self.PR:
                         self.prioritized_replay.update(index=(index1, index2))
@@ -1068,7 +1158,7 @@ class Model:
                         if train_accuracy!=None:
                             self.train_acc=train_accuracy.result().numpy()
                         if test_ds!=None:
-                            self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile)
+                            self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, jit_compile)
                         if self.end():
                             if self.save_param_only==False:
                                 self.save_(self.path)
@@ -1080,14 +1170,26 @@ class Model:
                         else:
                             self.save_param_(self.path)
                 
-                if test_ds!=None:
+                if test_ds!=None and not parallel_training_and_test and i % test_freq == 0:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_begin'):
                             callback.on_test_begin(i, logs={})
-                    self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile)
-                self.test_loss_list.append(self.test_loss)
+                    self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, jit_compile)
+                elif i % test_freq == 0:
+                    for callback in self.callbacks:
+                        if hasattr(callback, 'on_test_begin'):
+                            callback.on_test_begin(epoch, logs={})
+                    process=multiprocessing.Process(target=self.test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, processes, jit_compile))
+                    process.start()
+                if not parallel_training_and_test:
+                    self.test_loss_list.append(self.test_loss)
+                elif self.test_flag.value:
+                    self.test_loss_list.append(self.test_loss_dict[7])
                 if test_accuracy!=None:
-                    self.test_acc_list.append(self.test_acc)
+                    if not parallel_training_and_test:
+                        self.test_acc_list.append(self.test_acc)
+                    elif self.test_flag.value:
+                        self.test_acc_list.append(self.test_accuracy_dict[7])
             
                 if self.PR and i % 2 != 0:
                     self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
@@ -1124,13 +1226,14 @@ class Model:
                                 print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
                                 print()
                         else:
-                            if test_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
-                                print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
-                                print()
-                            else:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
-                                print()
+                            if (parallel_training_and_test and self.test_flag.value) or not parallel_training_and_test:
+                                if test_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                                    print()
                 if self.save_freq_==None:
                     if self.path!=None and i%self.save_freq==0:
                         if self.save_param_only==False:
@@ -1141,21 +1244,40 @@ class Model:
                 self.time+=(t2-t1)
         self.shared_test_loss_array=None
         self.shared_test_acc_array=None
-        self._time=self.time-int(self.time)
-        if self._time<0.5:
-            self.time=int(self.time)
+        if parallel_training_and_test:
+            t1=time.time()
+            while True:
+                if self.test_flag.value:
+                    t2=time.time()
+                    self.time+=(t2-t1)
+                    self._time=self.time-int(self.time)
+                    if self._time<0.5:
+                        self.time=int(self.time)
+                    else:
+                        self.time=int(self.time)+1
+                    self.total_time+=self.time
+                    if p!=0:
+                        print('time:{0}s'.format(self.time))
+                    for callback in self.callbacks:
+                        if hasattr(callback, 'on_train_end'):
+                            callback.on_train_end(logs={})
+                    return
         else:
-            self.time=int(self.time)+1
-        self.total_time+=self.time
-        if p!=0:
-            print('time:{0}s'.format(self.time))
-        for callback in self.callbacks:
-            if hasattr(callback, 'on_train_end'):
-                callback.on_train_end(logs={})
-        return
+            self._time=self.time-int(self.time)
+            if self._time<0.5:
+                self.time=int(self.time)
+            else:
+                self.time=int(self.time)+1
+            self.total_time+=self.time
+            if p!=0:
+                print('time:{0}s'.format(self.time))
+            for callback in self.callbacks:
+                if hasattr(callback, 'on_train_end'):
+                    callback.on_train_end(logs={})
+            return
     
     
-    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
+    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
         if num_epochs!=None:
             epochs=num_epochs
         if p!=0:
@@ -1184,6 +1306,16 @@ class Model:
         self.train_accuracy=train_accuracy
         self.test_loss=test_loss
         self.test_accuracy=test_accuracy
+        self.parallel_training_and_test=parallel_training_and_test
+        if parallel_training_and_test:
+            manager=multiprocessing.Manager()
+            self.test_flag=multiprocessing.Value('b',False)
+            self.test_loss_dict=manager.dict()
+            self.test_accuracy_dict=manager.dict()
+        self.test_data=test_data
+        self.test_labels=test_labels
+        self.test_batch_size=test_batch_size
+        self.test_freq=test_freq
         self.PR=PR
         self.train_data=train_data
         self.train_labels=train_labels
@@ -1211,7 +1343,7 @@ class Model:
                 callback.on_train_begin(logs={})
         if isinstance(strategy,tf.distribute.MirroredStrategy):
             train_dist_dataset=strategy.experimental_distribute_dataset(train_dataset)
-            if test_dataset!=None:
+            if not parallel_training_and_test and test_dataset!=None:
                 test_dist_dataset=strategy.experimental_distribute_dataset(test_dataset)    
             if epochs!=None:
                 for epoch in range(epochs):
@@ -1318,7 +1450,7 @@ class Model:
                         test_loss.reset_states()
                     if test_accuracy!=None:
                         test_accuracy.reset_states()
-                    if test_dist_dataset!=None:
+                    if not parallel_training_and_test and test_dist_dataset!=None and epoch % test_freq == 0:
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_test_begin'):
                                 callback.on_test_begin(epoch, logs={})
@@ -1328,13 +1460,22 @@ class Model:
                                 self.distributed_test_step(x, loss_object, test_loss, test_accuracy, strategy)
                             else:
                                 self.distributed_test_step_(x, loss_object, test_loss, test_accuracy, strategy)
-                            
                         self.test_loss=test_loss.result().numpy()
                         self.test_loss_list.append(self.test_loss)
                         if test_accuracy!=None:
                             self.test_acc=test_accuracy.result().numpy()
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
+                    elif epoch % test_freq == 0:
+                        for callback in self.callbacks:
+                            if hasattr(callback, 'on_test_begin'):
+                                callback.on_test_begin(epoch, logs={})
+                        process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
+                        process.start()
+                        if self.test_flag.value:
+                            self.test_loss_list.append(self.test_loss_dict[7])
+                            if test_accuracy!=None:
+                                self.test_acc_list.append(self.test_accuracy_dict[7])
                     
                     if self.PR and epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
@@ -1370,13 +1511,14 @@ class Model:
                                     print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
                                     print()
                             else:
-                                if test_accuracy!=None:
-                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
-                                    print()
-                                else:
-                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                    print()
+                                if (parallel_training_and_test and self.test_flag.value) or not parallel_training_and_test:
+                                    if test_accuracy!=None:
+                                        print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                        print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                                        print()
+                                    else:
+                                        print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                        print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
                             if self.save_param_only==False:
@@ -1491,7 +1633,7 @@ class Model:
                         test_loss.reset_states()
                     if test_accuracy!=None:
                         test_accuracy.reset_states()
-                    if test_dist_dataset!=None:
+                    if not parallel_training_and_test and test_dist_dataset!=None:
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_test_begin'):
                                 callback.on_test_begin(epoch, logs={})
@@ -1508,6 +1650,16 @@ class Model:
                             self.test_acc=test_accuracy.result().numpy()
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
+                    elif i % test_freq == 0:
+                        for callback in self.callbacks:
+                            if hasattr(callback, 'on_test_begin'):
+                                callback.on_test_begin(epoch, logs={})
+                        process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
+                        process.start()
+                        if self.test_flag.value:
+                            self.test_loss_list.append(self.test_loss_dict[7])
+                            if test_accuracy!=None:
+                                self.test_acc_list.append(self.test_accuracy_dict[7])
                 
                     if self.PR and i % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
@@ -1544,13 +1696,14 @@ class Model:
                                     print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
                                     print()
                             else:
-                                if test_accuracy!=None:
-                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
-                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
-                                    print()
-                                else:
-                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
-                                    print()
+                                if (parallel_training_and_test and self.test_flag.value) or not parallel_training_and_test:
+                                    if test_accuracy!=None:
+                                        print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                                        print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
+                                        print()
+                                    else:
+                                        print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                                        print()
                     if self.save_freq_==None:
                         if self.path!=None and i%self.save_freq==0:
                             if self.save_param_only==False:
@@ -1981,18 +2134,37 @@ class Model:
                                     
                         t2=time.time()
                         self.time+=(t2-t1)
-        self._time=self.time-int(self.time)
-        if self._time<0.5:
-            self.time=int(self.time)
+        if parallel_training_and_test:
+            t1=time.time()
+            while True:
+                if self.test_flag.value:
+                    t2=time.time()
+                    self.time+=(t2-t1)
+                    self._time=self.time-int(self.time)
+                    if self._time<0.5:
+                        self.time=int(self.time)
+                    else:
+                        self.time=int(self.time)+1
+                    self.total_time+=self.time
+                    if p!=0:
+                        print('time:{0}s'.format(self.time))
+                    for callback in self.callbacks:
+                        if hasattr(callback, 'on_train_end'):
+                            callback.on_train_end(logs={})
+                    return
         else:
-            self.time=int(self.time)+1
-        self.total_time+=self.time
-        if p!=0:
-            print('time:{0}s'.format(self.time))
-        for callback in self.callbacks:
-            if hasattr(callback, 'on_train_end'):
-                callback.on_train_end(logs={})
-        return
+            self._time=self.time-int(self.time)
+            if self._time<0.5:
+                self.time=int(self.time)
+            else:
+                self.time=int(self.time)+1
+            self.total_time+=self.time
+            if p!=0:
+                print('time:{0}s'.format(self.time))
+            for callback in self.callbacks:
+                if hasattr(callback, 'on_train_end'):
+                    callback.on_train_end(logs={})
+            return
     
     
     def dataset_fn(self, dataset, global_batch_size, input_context):
