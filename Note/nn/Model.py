@@ -378,6 +378,8 @@ class Model:
     
     def end(self):
         if not self.parallel_training_and_test or self.test_flag:
+            if self.parallel_training_and_test and hasattr(self, 'end_test_func'):
+                self.end_test_func()
             if self.end_acc!=None and self.train_acc!=None and self.train_acc>self.end_acc:
                 return True
             elif self.end_loss!=None and self.train_loss!=None and self.train_loss<self.end_loss:
@@ -1024,6 +1026,8 @@ class Model:
                             callback.on_test_begin(epoch, logs={})
                     self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, jit_compile)
                 elif epoch % test_freq == 0:
+                    if hasattr(self, 'begin_test_func'):
+                        self.begin_test_func()
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_begin'):
                             callback.on_test_begin(epoch, logs={})
@@ -1073,7 +1077,7 @@ class Model:
                                 print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
                                 print()
                         else:
-                            if (parallel_training_and_test and self.test_flag.value) or not parallel_training_and_test:
+                            if not parallel_training_and_test:
                                 if test_accuracy!=None:
                                     print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                                     print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
@@ -1176,6 +1180,8 @@ class Model:
                             callback.on_test_begin(i, logs={})
                     self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, jit_compile)
                 elif i % test_freq == 0:
+                    if hasattr(self, 'begin_test_func'):
+                        self.begin_test_func()
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_begin'):
                             callback.on_test_begin(epoch, logs={})
@@ -1226,7 +1232,7 @@ class Model:
                                 print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
                                 print()
                         else:
-                            if (parallel_training_and_test and self.test_flag.value) or not parallel_training_and_test:
+                            if not parallel_training_and_test:
                                 if test_accuracy!=None:
                                     print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                                     print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
@@ -1467,6 +1473,8 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     elif epoch % test_freq == 0:
+                        if hasattr(self, 'begin_test_func'):
+                            self.begin_test_func()
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_test_begin'):
                                 callback.on_test_begin(epoch, logs={})
@@ -1511,7 +1519,7 @@ class Model:
                                     print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
                                     print()
                             else:
-                                if (parallel_training_and_test and self.test_flag.value) or not parallel_training_and_test:
+                                if not parallel_training_and_test:
                                     if test_accuracy!=None:
                                         print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                                         print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
@@ -1651,6 +1659,8 @@ class Model:
                             self.test_acc_list.append(self.test_acc)
                         self.training(True)
                     elif i % test_freq == 0:
+                        if hasattr(self, 'begin_test_func'):
+                            self.begin_test_func()
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_test_begin'):
                                 callback.on_test_begin(epoch, logs={})
@@ -1696,7 +1706,7 @@ class Model:
                                     print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
                                     print()
                             else:
-                                if (parallel_training_and_test and self.test_flag.value) or not parallel_training_and_test:
+                                if not parallel_training_and_test:
                                     if test_accuracy!=None:
                                         print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                                         print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
