@@ -378,8 +378,6 @@ class Model:
     
     def end(self):
         if not self.parallel_training_and_test or self.test_flag:
-            if self.parallel_training_and_test and hasattr(self, 'end_test_func'):
-                self.end_test_func()
             if self.end_acc!=None and self.train_acc!=None and self.train_acc>self.end_acc:
                 return True
             elif self.end_loss!=None and self.train_loss!=None and self.train_loss<self.end_loss:
@@ -973,6 +971,8 @@ class Model:
                 for train_data, labels in train_ds:
                     if self.stop_training==True:
                         return
+                    if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+                        self.end_test_func()
                     index2 = index1 + self.batch_size
                     if self.PR and epoch % 2 != 0:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1126,6 +1126,8 @@ class Model:
                 for train_data, labels in train_ds:
                     if self.stop_training==True:
                         return
+                    if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+                        self.end_test_func()
                     index2 = index1 + self.batch_size
                     if self.PR and i % 2 != 0:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1254,6 +1256,8 @@ class Model:
             t1=time.time()
             while True:
                 if self.test_flag.value:
+                    if hasattr(self, 'end_test_func'):
+                        self.end_test_func()
                     t2=time.time()
                     self.time+=(t2-t1)
                     self._time=self.time-int(self.time)
@@ -1388,6 +1392,8 @@ class Model:
                     for x in train_dist_dataset:
                         if self.stop_training==True:
                             return
+                        if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+                            self.end_test_func()
                         index2 = index1 + self.batch_size
                         if self.PR and hasattr(self, 'ess') and epoch % 2 != 0:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1573,6 +1579,8 @@ class Model:
                     for x in train_dist_dataset:
                         if self.stop_training==True:
                             return
+                        if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+                            self.end_test_func()
                         index2 = index1 + self.batch_size
                         if self.PR and i % 2 != 0:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -2148,6 +2156,8 @@ class Model:
             t1=time.time()
             while True:
                 if self.test_flag.value:
+                    if hasattr(self, 'end_test_func'):
+                        self.end_test_func()
                     t2=time.time()
                     self.time+=(t2-t1)
                     self._time=self.time-int(self.time)
