@@ -950,6 +950,7 @@ class Model:
         self.parallel_training_and_test=parallel_training_and_test
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
+            self.param=manager.list(self.param)
             self.test_flag=multiprocessing.Value('b',False)
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
@@ -1358,6 +1359,7 @@ class Model:
         self.parallel_training_and_test=parallel_training_and_test
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
+            self.param=manager.list(self.param)
             self.test_flag=multiprocessing.Value('b',False)
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
