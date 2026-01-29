@@ -975,6 +975,9 @@ class Model:
             self.test_batch_size=test_ds._batch_size.numpy()
         self.processes=processes
         self.parallel_test_=parallel_test
+        if parallel_test:
+            manager=multiprocessing.Manager()
+            self.param=manager.list(self.param)
         self.jit_compile=jit_compile
         self.p=p
         self.info_flag=0
