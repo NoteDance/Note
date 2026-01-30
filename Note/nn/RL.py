@@ -2727,6 +2727,7 @@ class RL:
         self.p=p
         self.info_flag=0
         if pool_network==True:
+            self.param=manager.list(self.param)
             self.env=manager.list(self.env)
             if save_data and len(self.state_pool_list)!=0 and self.state_pool_list[0] is not None:
                 self.state_pool_list=manager.list(self.state_pool_list)
@@ -3035,6 +3036,7 @@ class RL:
         self.p=p
         self.info_flag=1
         if pool_network==True:
+            self.param=manager.list(self.param)
             self.env=manager.list(self.env)
             if save_data and len(self.state_pool_list)!=0 and self.state_pool_list[0] is not None:
                 self.state_pool_list=manager.list(self.state_pool_list)
