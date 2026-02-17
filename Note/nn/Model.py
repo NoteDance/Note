@@ -1160,12 +1160,16 @@ class Model:
                                     else:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
-                                process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
                                 process.start()
                             else:
                                 self.save_(self.path)
                         else:
-                            self.save_param_(self.path)
+                            if parallel_training_and_save:
+                                process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                process.start()
+                            else:
+                                self.save_param_(self.path)
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -1336,20 +1340,24 @@ class Model:
                                     else:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
-                                process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
                                 process.start()
                             else:
                                 self.save_(self.path)
                         else:
-                            self.save_param_(self.path)
+                            if parallel_training_and_save:
+                                process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                process.start()
+                            else:
+                                self.save_param_(self.path)
                 t2=time.time()
                 self.time+=(t2-t1)
         self.shared_test_loss_array=None
         self.shared_test_acc_array=None
-        if parallel_training_and_test:
+        if parallel_training_and_test or parallel_training_and_save:
             t1=time.time()
             while True:
-                if self.end() or self.test_flag.value:
+                if (self.end() or self.test_flag.value) or (parallel_training_and_save and self.save_flag.value):
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
                     t2=time.time()
@@ -1657,12 +1665,16 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
                                     process.start()
                                 else:
                                     self.save_(self.path)
                             else:
-                                self.save_param_(self.path)
+                                if parallel_training_and_save:
+                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
+                                else:
+                                    self.save_param_(self.path)
                     t2=time.time()
                     self.time+=(t2-t1)
             else:
@@ -1865,12 +1877,16 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
                                     process.start()
                                 else:
                                     self.save_(self.path)
                             else:
-                                self.save_param_(self.path)
+                                if parallel_training_and_save:
+                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
+                                else:
+                                    self.save_param_(self.path)
                     t2=time.time()
                     self.time+=(t2-t1)
         elif isinstance(strategy,tf.distribute.MultiWorkerMirroredStrategy):
@@ -1995,12 +2011,16 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
                                     process.start()
                                 else:
                                     self.save_(self.path)
                             else:
-                                self.save_param_(self.path)
+                                if parallel_training_and_save:
+                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
+                                else:
+                                    self.save_param_(self.path)
                     
                     if train_accuracy!=None:
                         train_accuracy.reset_states()
@@ -2135,12 +2155,16 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
                                     process.start()
                                 else:
                                     self.save_(self.path)
                             else:
-                                self.save_param_(self.path)
+                                if parallel_training_and_save:
+                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
+                                else:
+                                    self.save_param_(self.path)
                     
                     if train_accuracy!=None:
                         train_accuracy.reset_states()
@@ -2270,12 +2294,16 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
                                     process.start()
                                 else:
                                     self.save_(self.path)
                             else:
-                                self.save_param_(self.path)
+                                if parallel_training_and_save:
+                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
+                                else:
+                                    self.save_param_(self.path)
                     
                     if train_accuracy!=None:
                         train_accuracy.reset_states()
@@ -2405,12 +2433,16 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
                                     process.start()
                                 else:
                                     self.save_(self.path)
                             else:
-                                self.save_param_(self.path)
+                                if parallel_training_and_save:
+                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
+                                else:
+                                    self.save_param_(self.path)
                         
                         if train_accuracy!=None:
                             train_accuracy.reset_states()
@@ -2423,10 +2455,10 @@ class Model:
                                     
                         t2=time.time()
                         self.time+=(t2-t1)
-        if parallel_training_and_test:
+        if parallel_training_and_test or parallel_training_and_save:
             t1=time.time()
             while True:
-                if self.end() or self.test_flag.value:
+                if (self.end() or self.test_flag.value) or (parallel_training_and_save and self.save_flag.value):
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
                     t2=time.time()
@@ -2739,9 +2771,16 @@ class Model:
     
     
     def save_param(self,path):
+        if self.parallel_training_and_save:
+            self.test_flag.value=False
         output_file=open(path,'wb')
-        pickle.dump(self.param,output_file)
+        if self.parallel_training_and_save:
+            pickle.dump(self.param_,output_file)
+        else:
+            pickle.dump(self.param,output_file)
         output_file.close()
+        if self.parallel_training_and_save:
+            self.test_flag.value=True
         return
     
     
