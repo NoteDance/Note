@@ -956,8 +956,10 @@ class Model:
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
         if parallel_training_and_save:
+            manager=multiprocessing.Manager()
             self.save_flag=multiprocessing.Value('b',False)
             self.param_=manager.list()
+            self.path_list_=manager.list()
             for i in range(len(self.param)):
                 if type(self.param[i])==list:
                     self.param_.append([])
@@ -1364,6 +1366,8 @@ class Model:
                 if condition:
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
+                    del self.param_
+                    del self.state_dict
                     t2=time.time()
                     self.time+=(t2-t1)
                     self._time=self.time-int(self.time)
@@ -1431,7 +1435,10 @@ class Model:
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
         if parallel_training_and_save:
+            manager=multiprocessing.Manager()
+            self.save_flag=multiprocessing.Value('b',False)
             self.param_=manager.list()
+            self.path_list_=manager.list()
             for i in range(len(self.param)):
                 if type(self.param[i])==list:
                     self.param_.append([])
@@ -2469,6 +2476,8 @@ class Model:
                 if condition:
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
+                    del self.param_
+                    del self.state_dict
                     t2=time.time()
                     self.time+=(t2-t1)
                     self._time=self.time-int(self.time)
@@ -2781,8 +2790,13 @@ class Model:
     def save_param(self,path):
         if self.parallel_training_and_save:
             self.test_flag.value=False
+        if self.max_save_files==None or self.max_save_files!=1:
+            self.path_list_.append(path)
+            if len(self.path_list_)>self.max_save_files:
+                os.remove(self.path_list_[0])
+                del self.path_list_[0]
         output_file=open(path,'wb')
-        if self.parallel_training_and_save:
+        if self.parallel_training_and_save and hasattr(self, 'param_'):
             pickle.dump(self.param_,output_file)
         else:
             pickle.dump(self.param,output_file)
@@ -2851,15 +2865,27 @@ class Model:
     
     
     def save_p(self,path):
+        if self.parallel_training_and_save:
+            self.test_flag.value=False
+        if self.max_save_files==None or self.max_save_files!=1:
+            self.path_list_.append(path)
+            if len(self.path_list_)>self.max_save_files:
+                os.remove(self.path_list_[0])
+                del self.path_list_[0]
         output_file=open(path,'wb')
         param=self.param
         self.param=None
+        param_=self.param_
+        self.param_=None
         optimizer=self.optimizer
         self.optimizer=None
         pickle.dump(self,output_file)
         self.param=param
+        self.param_=param_
         self.optimizer=optimizer
         output_file.close()
+        if self.parallel_training_and_save:
+            self.test_flag.value=True
         return
     
     
