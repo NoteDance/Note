@@ -922,7 +922,7 @@ class Model:
         return float(ess)
     
     
-    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=1.0, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
+    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=1.0, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
         if p!=0:
             if p==None:
                 p_=9
@@ -948,12 +948,23 @@ class Model:
         self.test_loss=test_loss
         self.test_accuracy=test_accuracy
         self.parallel_training_and_test=parallel_training_and_test
+        self.parallel_training_and_save=parallel_training_and_save
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
             self.param=manager.list(self.param)
             self.test_flag=multiprocessing.Value('b',False)
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
+        if parallel_training_and_save:
+            self.save_flag=multiprocessing.Value('b',False)
+            self.param_=manager.list()
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    self.param_.append([])
+                    for j in range(len(self.param[i])):
+                        self.param_[-1].append(None)
+                else:
+                    self.param_.append(None)
         self.test_data=test_data
         self.test_labels=test_labels
         self.test_batch_size=test_batch_size
@@ -1132,7 +1143,27 @@ class Model:
                 if self.save_freq_==None:
                     if self.path!=None and epoch%self.save_freq==0:
                         if self.save_param_only==False:
-                            self.save_(self.path)
+                            if parallel_training_and_save:
+                                if type(self.optimizer)==list:
+                                    self.state_dict=manager.list()
+                                    for i in range(len(self.optimizer)):
+                                        self.state_dict.append(dict())
+                                        self.optimizer[i].save_own_variables(self.state_dict[-1])
+                                else:
+                                    self.state_dict=manager.dict()
+                                    self.optimizer.save_own_variables(self.state_dict)
+                                self.param_=manager.list([None for _ in range(len(self.param))])
+                                for i in range(len(self.param)):
+                                    if type(self.param[i])==list:
+                                        for j in range(len(self.param[i])):
+                                            self.param_[i][j]=tf.identity(self.param[i][j])
+                                    else:
+                                        self.param_[i]=tf.identity(self.param[i])
+                                self._save(self.path)
+                                process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                process.start()
+                            else:
+                                self.save_(self.path)
                         else:
                             self.save_param_(self.path)
                 t2=time.time()
@@ -1286,9 +1317,29 @@ class Model:
                                 print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                                 print()
                 if self.save_freq_==None:
-                    if self.path!=None and i%self.save_freq==0:
+                    if self.path!=None and epoch%self.save_freq==0:
                         if self.save_param_only==False:
-                            self.save_(self.path)
+                            if parallel_training_and_save:
+                                if type(self.optimizer)==list:
+                                    self.state_dict=manager.list()
+                                    for i in range(len(self.optimizer)):
+                                        self.state_dict.append(dict())
+                                        self.optimizer[i].save_own_variables(self.state_dict[-1])
+                                else:
+                                    self.state_dict=manager.dict()
+                                    self.optimizer.save_own_variables(self.state_dict)
+                                self.param_=manager.list([None for _ in range(len(self.param))])
+                                for i in range(len(self.param)):
+                                    if type(self.param[i])==list:
+                                        for j in range(len(self.param[i])):
+                                            self.param_[i][j]=tf.identity(self.param[i][j])
+                                    else:
+                                        self.param_[i]=tf.identity(self.param[i])
+                                self._save(self.path)
+                                process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                process.start()
+                            else:
+                                self.save_(self.path)
                         else:
                             self.save_param_(self.path)
                 t2=time.time()
@@ -1330,7 +1381,7 @@ class Model:
             return
     
     
-    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
+    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
         if num_epochs!=None:
             epochs=num_epochs
         if p!=0:
@@ -1360,12 +1411,22 @@ class Model:
         self.test_loss=test_loss
         self.test_accuracy=test_accuracy
         self.parallel_training_and_test=parallel_training_and_test
+        self.parallel_training_and_save=parallel_training_and_save
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
             self.param=manager.list(self.param)
             self.test_flag=multiprocessing.Value('b',False)
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
+        if parallel_training_and_save:
+            self.param_=manager.list()
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    self.param_.append([])
+                    for j in range(len(self.param[i])):
+                        self.param_[-1].append(None)
+                else:
+                    self.param_.append(None)
         self.test_data=test_data
         self.test_labels=test_labels
         self.test_batch_size=test_batch_size
@@ -1579,7 +1640,27 @@ class Model:
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
                             if self.save_param_only==False:
-                                self.save_(self.path)
+                                if parallel_training_and_save:
+                                    if type(self.optimizer)==list:
+                                        self.state_dict=manager.list()
+                                        for i in range(len(self.optimizer)):
+                                            self.state_dict.append(dict())
+                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
+                                    else:
+                                        self.state_dict=manager.dict()
+                                        self.optimizer.save_own_variables(self.state_dict)
+                                    self.param_=manager.list([None for _ in range(len(self.param))])
+                                    for i in range(len(self.param)):
+                                        if type(self.param[i])==list:
+                                            for j in range(len(self.param[i])):
+                                                self.param_[i][j]=tf.identity(self.param[i][j])
+                                        else:
+                                            self.param_[i]=tf.identity(self.param[i])
+                                    self._save(self.path)
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process.start()
+                                else:
+                                    self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
                     t2=time.time()
@@ -1765,9 +1846,29 @@ class Model:
                                     print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                                     print()
                     if self.save_freq_==None:
-                        if self.path!=None and i%self.save_freq==0:
+                        if self.path!=None and epoch%self.save_freq==0:
                             if self.save_param_only==False:
-                                self.save_(self.path)
+                                if parallel_training_and_save:
+                                    if type(self.optimizer)==list:
+                                        self.state_dict=manager.list()
+                                        for i in range(len(self.optimizer)):
+                                            self.state_dict.append(dict())
+                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
+                                    else:
+                                        self.state_dict=manager.dict()
+                                        self.optimizer.save_own_variables(self.state_dict)
+                                    self.param_=manager.list([None for _ in range(len(self.param))])
+                                    for i in range(len(self.param)):
+                                        if type(self.param[i])==list:
+                                            for j in range(len(self.param[i])):
+                                                self.param_[i][j]=tf.identity(self.param[i][j])
+                                        else:
+                                            self.param_[i]=tf.identity(self.param[i])
+                                    self._save(self.path)
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process.start()
+                                else:
+                                    self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
                     t2=time.time()
@@ -1877,7 +1978,27 @@ class Model:
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
                             if self.save_param_only==False:
-                                self.save_(self.path)
+                                if parallel_training_and_save:
+                                    if type(self.optimizer)==list:
+                                        self.state_dict=manager.list()
+                                        for i in range(len(self.optimizer)):
+                                            self.state_dict.append(dict())
+                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
+                                    else:
+                                        self.state_dict=manager.dict()
+                                        self.optimizer.save_own_variables(self.state_dict)
+                                    self.param_=manager.list([None for _ in range(len(self.param))])
+                                    for i in range(len(self.param)):
+                                        if type(self.param[i])==list:
+                                            for j in range(len(self.param[i])):
+                                                self.param_[i][j]=tf.identity(self.param[i][j])
+                                        else:
+                                            self.param_[i]=tf.identity(self.param[i])
+                                    self._save(self.path)
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process.start()
+                                else:
+                                    self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
                     
@@ -1997,7 +2118,27 @@ class Model:
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
                             if self.save_param_only==False:
-                                self.save_(self.path)
+                                if parallel_training_and_save:
+                                    if type(self.optimizer)==list:
+                                        self.state_dict=manager.list()
+                                        for i in range(len(self.optimizer)):
+                                            self.state_dict.append(dict())
+                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
+                                    else:
+                                        self.state_dict=manager.dict()
+                                        self.optimizer.save_own_variables(self.state_dict)
+                                    self.param_=manager.list([None for _ in range(len(self.param))])
+                                    for i in range(len(self.param)):
+                                        if type(self.param[i])==list:
+                                            for j in range(len(self.param[i])):
+                                                self.param_[i][j]=tf.identity(self.param[i][j])
+                                        else:
+                                            self.param_[i]=tf.identity(self.param[i])
+                                    self._save(self.path)
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process.start()
+                                else:
+                                    self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
                     
@@ -2112,7 +2253,27 @@ class Model:
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
                             if self.save_param_only==False:
-                                self.save_(self.path)
+                                if parallel_training_and_save:
+                                    if type(self.optimizer)==list:
+                                        self.state_dict=manager.list()
+                                        for i in range(len(self.optimizer)):
+                                            self.state_dict.append(dict())
+                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
+                                    else:
+                                        self.state_dict=manager.dict()
+                                        self.optimizer.save_own_variables(self.state_dict)
+                                    self.param_=manager.list([None for _ in range(len(self.param))])
+                                    for i in range(len(self.param)):
+                                        if type(self.param[i])==list:
+                                            for j in range(len(self.param[i])):
+                                                self.param_[i][j]=tf.identity(self.param[i][j])
+                                        else:
+                                            self.param_[i]=tf.identity(self.param[i])
+                                    self._save(self.path)
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process.start()
+                                else:
+                                    self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
                     
@@ -2224,12 +2385,32 @@ class Model:
                                     else:
                                         print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                                         print()
-                        if self.save_freq_==None:
-                            if self.path!=None and epoch%self.save_freq==0:
-                                if self.save_param_only==False:
-                                    self.save_(self.path)
+                    if self.save_freq_==None:
+                        if self.path!=None and epoch%self.save_freq==0:
+                            if self.save_param_only==False:
+                                if parallel_training_and_save:
+                                    if type(self.optimizer)==list:
+                                        self.state_dict=manager.list()
+                                        for i in range(len(self.optimizer)):
+                                            self.state_dict.append(dict())
+                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
+                                    else:
+                                        self.state_dict=manager.dict()
+                                        self.optimizer.save_own_variables(self.state_dict)
+                                    self.param_=manager.list([None for _ in range(len(self.param))])
+                                    for i in range(len(self.param)):
+                                        if type(self.param[i])==list:
+                                            for j in range(len(self.param[i])):
+                                                self.param_[i][j]=tf.identity(self.param[i][j])
+                                        else:
+                                            self.param_[i]=tf.identity(self.param[i])
+                                    self._save(self.path)
+                                    process=multiprocessing.Process(target=self.save_p,args=(self.path))
+                                    process.start()
                                 else:
-                                    self.save_param_(self.path)
+                                    self.save_(self.path)
+                            else:
+                                self.save_param_(self.path)
                         
                         if train_accuracy!=None:
                             train_accuracy.reset_states()
@@ -2528,7 +2709,7 @@ class Model:
     def save_param_(self,path):
         if self.save_best_only==False:
             if self.max_save_files==None or self.max_save_files==1:
-                output_file=open(path,'wb')
+                path=path
             else:
                 if self.train_acc!=None and self.test_acc!=None:
                     path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
@@ -2536,13 +2717,11 @@ class Model:
                     path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
-                output_file=open(path,'wb')
                 self.path_list.append(path)
                 if len(self.path_list)>self.max_save_files:
                     os.remove(self.path_list[0])
                     del self.path_list[0]
-            pickle.dump(self.param,output_file)
-            output_file.close()
+            self.save_param(path)
         else:
             if self.monitor=='val_loss':
                 if self.test_loss<self.val_loss:
@@ -2577,7 +2756,7 @@ class Model:
     def save_(self,path):
         if self.save_best_only==False:
             if self.max_save_files==None or self.max_save_files==1:
-                output_file=open(path,'wb')
+                path=path
             else:
                 if self.train_acc!=None and self.test_acc!=None:
                     path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
@@ -2585,13 +2764,11 @@ class Model:
                     path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
-                output_file=open(path,'wb')
                 self.path_list.append(path)
                 if len(self.path_list)>self.max_save_files:
                     os.remove(self.path_list[0])
                     del self.path_list[0]
-            pickle.dump(self,output_file)
-            output_file.close()
+            self.save(path)
         else:
             if self.monitor=='val_loss':
                 if self.test_loss<self.val_loss:
@@ -2608,24 +2785,68 @@ class Model:
         return
     
     
-    def save(self,path):
+    def _save(self,path):
+        if self.max_save_files==None or self.max_save_files==1:
+            path=path
+        else:
+            if self.train_acc!=None and self.test_acc!=None:
+                path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
+            elif self.train_acc!=None:
+                path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+            else:
+                path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
+            self.path_list.append(path)
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
+        self.save_p(path)
+        return
+    
+    
+    def save_p(self,path):
         output_file=open(path,'wb')
         param=self.param
         self.param=None
+        optimizer=self.optimizer
+        self.optimizer=None
         pickle.dump(self,output_file)
-        pickle.dump(param,output_file)
         self.param=param
-        if type(self.optimizer)==list:
-            state_dict=[]
-            for i in range(len(self.optimizer)):
-                state_dict.append(dict())
-                self.optimizer[i].save_own_variables(state_dict[-1])
-            pickle.dump(state_dict,output_file)
-        else:
-            state_dict=dict()
-            self.optimizer.save_own_variables(state_dict)
-            pickle.dump(state_dict,output_file)
+        self.optimizer=optimizer
         output_file.close()
+        return
+    
+    
+    def save(self,path):
+        if self.parallel_training_and_save:
+            self.test_flag.value=False
+        output_file=open(path,'wb')
+        param=self.param
+        self.param=None
+        optimizer=self.optimizer
+        self.optimizer=None
+        pickle.dump(self,output_file)
+        if not self.parallel_training_and_save:
+            pickle.dump(param,output_file)
+        else:
+            pickle.dump(self.param_,output_file)
+        self.param=param
+        self.optimizer=optimizer
+        if self.parallel_training_and_save:
+            pickle.dump(self.state_dict,output_file)
+        else:
+            if type(self.optimizer)==list:
+                state_dict=[]
+                for i in range(len(self.optimizer)):
+                    state_dict.append(dict())
+                    self.optimizer[i].save_own_variables(state_dict[-1])
+                pickle.dump(state_dict,output_file)
+            else:
+                state_dict=dict()
+                self.optimizer.save_own_variables(state_dict)
+                pickle.dump(state_dict,output_file)
+        output_file.close()
+        if self.parallel_training_and_save:
+            self.test_flag.value=True
         return
     
     
@@ -2649,6 +2870,31 @@ class Model:
             self.optimizer.build(self.optimizer._trainable_variables)
             self.optimizer.load_own_variables(state_dict)
         input_file.close()
+        return
+    
+    
+    def restore_p(self,path1,path2):
+        input_file1=open(path1,'rb')
+        input_file2=open(path2,'rb')
+        model=pickle.load(input_file1)
+        param=self.param
+        self.__dict__.update(model.__dict__)
+        self.param=param
+        param=pickle.load(input_file2)
+        nn.assign_param(self.param,param)
+        if type(self.optimizer)==list:
+            state_dict=pickle.load(input_file2)
+            for i in range(len(self.optimizer)):
+                self.optimizer[i].built=False
+                self.optimizer[i].build(self.optimizer[i]._trainable_variables)
+                self.optimizer[i].load_own_variables(state_dict[i])
+        else:
+            state_dict=pickle.load(input_file2)
+            self.optimizer.built=False
+            self.optimizer.build(self.optimizer._trainable_variables)
+            self.optimizer.load_own_variables(state_dict)
+        input_file1.close()
+        input_file2.close()
         return
     
     
