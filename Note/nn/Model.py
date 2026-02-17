@@ -1357,7 +1357,11 @@ class Model:
         if parallel_training_and_test or parallel_training_and_save:
             t1=time.time()
             while True:
-                if (self.end() or self.test_flag.value) or (parallel_training_and_save and self.save_flag.value):
+                if parallel_training_and_save:
+                    condition = (self.end() or self.test_flag.value) and self.save_flag.value
+                else:
+                    condition = self.end() or self.test_flag.value
+                if condition:
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
                     t2=time.time()
@@ -2458,7 +2462,11 @@ class Model:
         if parallel_training_and_test or parallel_training_and_save:
             t1=time.time()
             while True:
-                if (self.end() or self.test_flag.value) or (parallel_training_and_save and self.save_flag.value):
+                if parallel_training_and_save:
+                    condition = (self.end() or self.test_flag.value) and self.save_flag.value
+                else:
+                    condition = self.end() or self.test_flag.value
+                if condition:
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
                     t2=time.time()
