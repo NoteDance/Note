@@ -2655,7 +2655,7 @@ class RL:
                     self.ess.value=self.compute_ess(None,None)
     
     
-    def train(self, train_loss, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
+    def train(self, train_loss, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, parallel_dump=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
         avg_reward=None
         if p!=0:
             if p==None:
@@ -2679,6 +2679,12 @@ class RL:
             manager=mp.Manager()
         self.parallel_store_and_training=parallel_store_and_training
         self.parallel_training_and_save=parallel_training_and_save
+        self.parallel_dump=parallel_dump
+        if parallel_dump:
+            manager=mp.Manager()
+            self.lock=mp.Lock()
+            self.param_index_list=manager.list()
+            self.state_index_list=manager.list()
         if parallel_store_and_training:
             self.param=manager.list(self.param)
             self.share_state_pool=manager.dict()
@@ -2872,14 +2878,22 @@ class RL:
                                 else:
                                     self.param_[i]=tf.identity(self.param[i])
                             self._save(self.path)
-                            process=mp.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                            process.start()
+                            if parallel_dump:
+                                process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                process.start()
+                            else:
+                                process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                process.start()
                         else:
                             self.save_(self.path)
                     else:
                         if parallel_training_and_save:
-                            process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                            process.start()
+                            if parallel_dump:
+                                process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                process.start()
+                            else:
+                                process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                process.start()
                         else:
                             self.save_param_(self.path)
                 if self.trial_count!=None:
@@ -2968,14 +2982,22 @@ class RL:
                                 else:
                                     self.param_[i]=tf.identity(self.param[i])
                             self._save(self.path)
-                            process=mp.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                            process.start()
+                            if parallel_dump:
+                                process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                process.start()
+                            else:
+                                process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                process.start()
                         else:
                             self.save_(self.path)
                     else:
                         if parallel_training_and_save:
-                            process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                            process.start()
+                            if parallel_dump:
+                                process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                process.start()
+                            else:
+                                process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                process.start()
                         else:
                             self.save_param_(self.path)
                 if self.trial_count!=None:
@@ -3043,7 +3065,7 @@ class RL:
         return
     
     
-    def distributed_training(self, optimizer=None, strategy=None, episodes=None, num_episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
+    def distributed_training(self, optimizer=None, strategy=None, episodes=None, num_episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, parallel_dump=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
         avg_reward=None
         if num_episodes!=None:
             episodes=num_episodes
@@ -3070,6 +3092,12 @@ class RL:
             manager=mp.Manager()
         self.parallel_store_and_training=parallel_store_and_training
         self.parallel_training_and_save=parallel_training_and_save
+        self.parallel_pickle=parallel_dump
+        if parallel_dump:
+            manager=mp.Manager()
+            self.lock=mp.Lock()
+            self.param_index_list=manager.list()
+            self.state_index_list=manager.list()
         if parallel_store_and_training:
             self.param=manager.list(self.param)
             self.share_state_pool=manager.dict()
@@ -3266,14 +3294,22 @@ class RL:
                                     else:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
-                                process=mp.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_(self.path)
                         else:
                             if parallel_training_and_save:
-                                process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_param_(self.path)
                     if self.trial_count!=None:
@@ -3361,14 +3397,22 @@ class RL:
                                     else:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
-                                process=mp.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_(self.path)
                         else:
                             if parallel_training_and_save:
-                                process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_param_(self.path)
                     if self.trial_count!=None:
@@ -3450,14 +3494,22 @@ class RL:
                                     else:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
-                                process=mp.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_(self.path)
                         else:
                             if parallel_training_and_save:
-                                process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_param_(self.path)
                   
@@ -3552,14 +3604,22 @@ class RL:
                                     else:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
-                                process=mp.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_(self.path)
                         else:
                             if parallel_training_and_save:
-                                process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_param_(self.path)
                   
@@ -3652,14 +3712,22 @@ class RL:
                                     else:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
-                                process=mp.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_(self.path)
                         else:
                             if parallel_training_and_save:
-                                process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_param_(self.path)
                   
@@ -3872,10 +3940,10 @@ class RL:
                     path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
-                self.path_list.append(path)
-                if len(self.path_list)>self.max_save_files:
-                    os.remove(self.path_list[0])
-                    del self.path_list[0]
+            self.path_list.append(path)
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
             self.save_param(path)
         else:
             if self.trial_count!=None:
@@ -3890,7 +3958,6 @@ class RL:
     def save_param(self,path):
         if self.parallel_training_and_save:
             self.test_flag.value=False
-        if self.max_save_files==None or self.max_save_files!=1:
             self.path_list_.append(path)
             if len(self.path_list_)>self.max_save_files:
                 os.remove(self.path_list_[0])
@@ -3954,10 +4021,10 @@ class RL:
                     path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
-                self.path_list.append(path)
-                if len(self.path_list)>self.max_save_files:
-                    os.remove(self.path_list[0])
-                    del self.path_list[0]
+            self.path_list.append(path)
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
             self.save(path)
         else:
             if self.trial_count!=None:
@@ -3987,22 +4054,10 @@ class RL:
                     path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
-                self.path_list.append(path)
-                if len(self.path_list)>self.max_save_files:
-                    os.remove(self.path_list[0])
-                    del self.path_list[0]
-            self.save_p(path)
-        return
-    
-    
-    def save_p(self,path):
-        if self.parallel_training_and_save:
-            self.test_flag.value=False
-        if self.max_save_files==None or self.max_save_files!=1:
-            self.path_list_.append(path)
-            if len(self.path_list_)>self.max_save_files:
-                os.remove(self.path_list_[0])
-                del self.path_list_[0]
+            self.path_list.append(path)
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
         output_file=open(path,'wb')
         param=self.param
         self.param=None
@@ -4015,9 +4070,43 @@ class RL:
         self.param_=param_
         self.optimizer=optimizer
         output_file.close()
-        if self.parallel_training_and_save:
-            self.test_flag.value=True
         return
+    
+    
+    def parallel_param_dump(self, index1, index2, path, counter, lock):
+        os.makedirs(path, exist_ok=True)
+        filename = os.path.join(path, f"param_{counter}.dat")
+        output_file=open(filename,'wb')
+        if type(self.param_[index1])==list:
+            pickle.dump(self.param_[index1][index2],output_file)
+            lock.acquire()
+            self.param_index_list.append((index1, index2))
+            lock.release()
+            output_file.close()
+        else:
+            pickle.dump(self.param_[index1],output_file)
+            lock.acquire()
+            self.param_index_list.append(index1)
+            lock.release()
+            output_file.close()
+    
+    
+    def parallel_state_dict_dump(self, index1, index2, path, counter, lock):
+        os.makedirs(path, exist_ok=True)
+        filename = os.path.join(path, f"state_{counter}.dat")
+        output_file=open(filename,'wb')
+        if type(self.optimizer)==list:
+            pickle.dump(self.state_dict[index1][str(index2)],output_file)
+            lock.acquire()
+            self.state_index_list.append((index1, index2))
+            lock.release()
+            output_file.close()
+        else:
+            pickle.dump(self.state_dict[str(index1)],output_file)
+            lock.acquire()
+            self.state_index_list.append(str(index1))
+            lock.release() 
+            output_file.close()
     
     
     def save(self,path):
@@ -4060,14 +4149,43 @@ class RL:
         optimizer=self.optimizer
         self.optimizer=None
         pickle.dump(self,output_file)
-        if not self.parallel_training_and_save:
-            pickle.dump(param,output_file)
-        else:
-            pickle.dump(self.param_,output_file)
-        self.param=param
-        self.optimizer=optimizer
         if self.parallel_training_and_save:
-            pickle.dump(self.state_dict,output_file)
+            if self.parallel_dump==True:
+                counter=0
+                for i in range(len(self.param_)):
+                    if type(self.param_[i])==list:
+                        for j in range(len(self.param_[i])):
+                            counter+=1
+                            process=mp.Process(target=self.parallel_param_dump,args=(i, j, path, counter, self.lock))
+                            process.start()
+                    else:
+                        counter+=1
+                        process=mp.Process(target=self.parallel_param_dump,args=(i, None, path, counter, self.lock))
+                        process.start()
+            else:
+                output_file=open(path,'wb')
+                pickle.dump(self.param_,output_file)
+        else:
+            pickle.dump(param,output_file)
+            self.param=param
+            self.optimizer=optimizer
+        if self.parallel_training_and_save:
+            if self.parallel_dump==True:
+                counter=0
+                if type(self.optimizer)==list:
+                    for i in range(len(self.optimizer)):
+                        for j in range(len(self.state_dict[i])):
+                            counter+=1
+                            process=mp.Process(target=self.parallel_state_dict_dump,args=(i, j, path, counter, self.lock))
+                            process.start()
+                else:
+                    for i in range(len(self.state_dict)):
+                        counter+=1
+                        process=mp.Process(target=self.parallel_state_dict_dump,args=(i, None, path, counter, self.lock))
+                        process.start()
+            else:
+                pickle.dump(self.state_dict,output_file)
+                output_file.close()
         else:
             if type(self.optimizer)==list:
                 state_dict=[]
@@ -4079,7 +4197,7 @@ class RL:
                 state_dict=dict()
                 self.optimizer.save_own_variables(state_dict)
                 pickle.dump(state_dict,output_file)
-        output_file.close()
+            output_file.close()
         if self.pool_network and not self.save_data:
             for i in range(self.processes):
                 self.state_pool_list[i]=state_pool_list[i]
@@ -4117,24 +4235,73 @@ class RL:
     
     def restore_p(self,path1,path2):
         input_file1=open(path1,'rb')
-        input_file2=open(path2,'rb')
+        if not self.parallel_dump:
+            input_file2=open(path2,'rb')
         model=pickle.load(input_file1)
         param=self.param
         self.__dict__.update(model.__dict__)
-        self.param=param
-        param=pickle.load(input_file2)
-        nn.assign_param(self.param,param)
-        if type(self.optimizer)==list:
-            state_dict=pickle.load(input_file2)
-            for i in range(len(self.optimizer)):
-                self.optimizer[i].built=False
-                self.optimizer[i].build(self.optimizer[i]._trainable_variables)
-                self.optimizer[i].load_own_variables(state_dict[i])
+        if self.parallel_dump==True:
+            param=[]
+            counter=0
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    param.append([None for _ in range(len(self.param[i]))])
+                else:
+                    param=[None for _ in range(len(self.param[i]))]
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    for j in range(len(self.param[i])):
+                        counter+=1
+                        input_file2=open(os.path.join(path2[0],f"param_{counter}.dat"),'rb')
+                        param[self.param_index_list[counter][0]][self.param_index_list[counter][1]]=pickle.load(input_file2)
+                        input_file2.close()
+                else:
+                    counter+=1
+                    input_file2=open(os.path.join(path2[0],f"param_{counter}.dat"),'rb')
+                    param[self.param_index_list[i]]=pickle.load(input_file2)
+                    input_file2.close()
         else:
-            state_dict=pickle.load(input_file2)
-            self.optimizer.built=False
-            self.optimizer.build(self.optimizer._trainable_variables)
-            self.optimizer.load_own_variables(state_dict)
+            self.param=param
+            param=pickle.load(input_file2)
+        nn.assign_param(self.param,param)
+        if self.parallel_dump==True:
+            counter=0
+            if type(self.optimizer)==list:
+                state_dict=[]
+                for i in range(len(self.optimizer)):
+                    state_dict.append(dict())
+                for i in range(len(self.optimizer)):
+                    for j in range(len(self.state_dict[i])):
+                        counter+=1
+                        input_file2=open(os.path.join(path2[1],f"state_{counter}.dat"),'rb')
+                        state_dict[self.state_index_list[counter][0]][self.state_index_list[counter][1]]=pickle.load(input_file2)
+                    self.optimizer[self.state_index_list[counter][0]].built=False
+                    self.optimizer[self.state_index_list[counter][0]].build(self.optimizer[self.state_index_list[counter][0]]._trainable_variables)
+                    self.optimizer[self.state_index_list[counter][0]].load_own_variables(state_dict[self.state_index_list[counter][0]])
+                    input_file2.close()
+            else:
+                state_dict=dict()
+                for i in range(len(self.state_dict)):
+                    counter+=1
+                    input_file2=open(os.path.join(path2[1],f"state_{counter}.dat"),'rb')
+                    state_dict[self.state_index_list[counter]]=pickle.load(input_file2)
+                self.optimizer.built=False
+                self.optimizer.build(self.optimizer._trainable_variables)
+                self.optimizer.load_own_variables(state_dict)
+                input_file2.close()
+        else:
+            if type(self.optimizer)==list:
+                state_dict=pickle.load(input_file2)
+                for i in range(len(self.optimizer)):
+                    self.optimizer[i].built=False
+                    self.optimizer[i].build(self.optimizer[i]._trainable_variables)
+                    self.optimizer[i].load_own_variables(state_dict[i])
+            else:
+                state_dict=pickle.load(input_file2)
+                self.optimizer.built=False
+                self.optimizer.build(self.optimizer._trainable_variables)
+                self.optimizer.load_own_variables(state_dict)
         input_file1.close()
-        input_file2.close()
+        if not self.parallel_dump:
+            input_file2.close()
         return

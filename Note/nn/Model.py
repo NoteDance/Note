@@ -8,6 +8,7 @@ import math
 import matplotlib.pyplot as plt
 import pickle
 import os
+import shutil
 import time
 
 
@@ -922,7 +923,7 @@ class Model:
         return float(ess)
     
     
-    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=1.0, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
+    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, parallel_dump=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=1.0, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
         if p!=0:
             if p==None:
                 p_=9
@@ -949,6 +950,12 @@ class Model:
         self.test_accuracy=test_accuracy
         self.parallel_training_and_test=parallel_training_and_test
         self.parallel_training_and_save=parallel_training_and_save
+        self.parallel_pickle=parallel_dump
+        if parallel_dump:
+            manager=multiprocessing.Manager()
+            self.lock=multiprocessing.Lock()
+            self.param_index_list=manager.list()
+            self.state_index_list=manager.list()
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
             self.param=manager.list(self.param)
@@ -1162,14 +1169,22 @@ class Model:
                                     else:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
-                                process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=multiprocessing.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_(self.path)
                         else:
                             if parallel_training_and_save:
-                                process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=multiprocessing.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_param_(self.path)
                 t2=time.time()
@@ -1342,14 +1357,22 @@ class Model:
                                     else:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
-                                process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=multiprocessing.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_(self.path)
                         else:
                             if parallel_training_and_save:
-                                process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                process.start()
+                                if parallel_dump:
+                                    process=multiprocessing.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    process.start()
+                                else:
+                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                    process.start()
                             else:
                                 self.save_param_(self.path)
                 t2=time.time()
@@ -1397,7 +1420,7 @@ class Model:
             return
     
     
-    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
+    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, parallel_dump=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
         if num_epochs!=None:
             epochs=num_epochs
         if p!=0:
@@ -1428,6 +1451,12 @@ class Model:
         self.test_accuracy=test_accuracy
         self.parallel_training_and_test=parallel_training_and_test
         self.parallel_training_and_save=parallel_training_and_save
+        self.parallel_dump=parallel_dump
+        if parallel_dump:
+            manager=multiprocessing.Manager()
+            self.lock=multiprocessing.Lock()
+            self.param_index_list=manager.list()
+            self.state_index_list=manager.list()
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
             self.param=manager.list(self.param)
@@ -1676,14 +1705,22 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_(self.path)
                             else:
                                 if parallel_training_and_save:
-                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_param_(self.path)
                     t2=time.time()
@@ -1888,14 +1925,22 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_(self.path)
                             else:
                                 if parallel_training_and_save:
-                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_param_(self.path)
                     t2=time.time()
@@ -2022,14 +2067,22 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_(self.path)
                             else:
                                 if parallel_training_and_save:
-                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_param_(self.path)
                     
@@ -2166,14 +2219,22 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_(self.path)
                             else:
                                 if parallel_training_and_save:
-                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_param_(self.path)
                     
@@ -2305,14 +2366,22 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_(self.path)
                             else:
                                 if parallel_training_and_save:
-                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_param_(self.path)
                     
@@ -2444,14 +2513,22 @@ class Model:
                                         else:
                                             self.param_[i]=tf.identity(self.param[i])
                                     self._save(self.path)
-                                    process=multiprocessing.Process(target=self.save_p,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_(self.path)
                             else:
                                 if parallel_training_and_save:
-                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
+                                    if parallel_dump:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                        process.start()
+                                    else:
+                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                                        process.start()
                                 else:
                                     self.save_param_(self.path)
                         
@@ -2766,10 +2843,10 @@ class Model:
                     path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
-                self.path_list.append(path)
-                if len(self.path_list)>self.max_save_files:
-                    os.remove(self.path_list[0])
-                    del self.path_list[0]
+            self.path_list.append(path)
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
             self.save_param(path)
         else:
             if self.monitor=='val_loss':
@@ -2790,7 +2867,6 @@ class Model:
     def save_param(self,path):
         if self.parallel_training_and_save:
             self.test_flag.value=False
-        if self.max_save_files==None or self.max_save_files!=1:
             self.path_list_.append(path)
             if len(self.path_list_)>self.max_save_files:
                 os.remove(self.path_list_[0])
@@ -2825,10 +2901,10 @@ class Model:
                     path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
-                self.path_list.append(path)
-                if len(self.path_list)>self.max_save_files:
-                    os.remove(self.path_list[0])
-                    del self.path_list[0]
+            self.path_list.append(path)
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
             self.save(path)
         else:
             if self.monitor=='val_loss':
@@ -2856,22 +2932,10 @@ class Model:
                 path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
             else:
                 path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
-            self.path_list.append(path)
-            if len(self.path_list)>self.max_save_files:
-                os.remove(self.path_list[0])
-                del self.path_list[0]
-        self.save_p(path)
-        return
-    
-    
-    def save_p(self,path):
-        if self.parallel_training_and_save:
-            self.test_flag.value=False
-        if self.max_save_files==None or self.max_save_files!=1:
-            self.path_list_.append(path)
-            if len(self.path_list_)>self.max_save_files:
-                os.remove(self.path_list_[0])
-                del self.path_list_[0]
+        self.path_list.append(path)
+        if len(self.path_list)>self.max_save_files:
+            os.remove(self.path_list[0])
+            del self.path_list[0]
         output_file=open(path,'wb')
         param=self.param
         self.param=None
@@ -2884,28 +2948,108 @@ class Model:
         self.param_=param_
         self.optimizer=optimizer
         output_file.close()
-        if self.parallel_training_and_save:
-            self.test_flag.value=True
         return
+    
+    
+    def parallel_param_dump(self, index1, index2, path, counter, lock):
+        os.makedirs(path, exist_ok=True)
+        filename = os.path.join(path, f"param_{counter}.dat")
+        output_file=open(filename,'wb')
+        if type(self.param_[index1])==list:
+            pickle.dump(self.param_[index1][index2],output_file)
+            lock.acquire()
+            self.param_index_list.append((index1, index2))
+            lock.release()
+            output_file.close()
+        else:
+            pickle.dump(self.param_[index1],output_file)
+            lock.acquire()
+            self.param_index_list.append(index1)
+            lock.release()
+            output_file.close()
+    
+    
+    def parallel_state_dict_dump(self, index1, index2, path, counter, lock):
+        os.makedirs(path, exist_ok=True)
+        filename = os.path.join(path, f"state_{counter}.dat")
+        output_file=open(filename,'wb')
+        if type(self.optimizer)==list:
+            pickle.dump(self.state_dict[index1][str(index2)],output_file)
+            lock.acquire()
+            self.state_index_list.append((index1, index2))
+            lock.release()
+            output_file.close()
+        else:
+            pickle.dump(self.state_dict[str(index1)],output_file)
+            lock.acquire()
+            self.state_index_list.append(str(index1))
+            lock.release() 
+            output_file.close()
     
     
     def save(self,path):
         if self.parallel_training_and_save:
             self.test_flag.value=False
-        output_file=open(path,'wb')
-        param=self.param
-        self.param=None
-        optimizer=self.optimizer
-        self.optimizer=None
-        pickle.dump(self,output_file)
-        if not self.parallel_training_and_save:
-            pickle.dump(param,output_file)
+            if self.parallel_dump:
+                if self.max_save_files==None or self.max_save_files==1:
+                    self.path_list_.append(path)
+                else:
+                    self.path_list_.append(path)
+                if len(self.path_list_)>self.max_save_files:
+                    shutil.rmtree(self.path_list_[0])
+                    del self.path_list_[0]
+            else:
+                if self.max_save_files==None or self.max_save_files==1:
+                    self.path_list_.append(path)
+                else:
+                    self.path_list_.append(path)
+                if len(self.path_list_)>self.max_save_files:
+                    os.remove(self.path_list_[0])
+                    del self.path_list_[0]
         else:
-            pickle.dump(self.param_,output_file)
-        self.param=param
-        self.optimizer=optimizer
+            output_file=open(path,'wb')
+            param=self.param
+            self.param=None
+            optimizer=self.optimizer
+            self.optimizer=None
+            pickle.dump(self,output_file)
         if self.parallel_training_and_save:
-            pickle.dump(self.state_dict,output_file)
+            if self.parallel_dump==True:
+                counter=0
+                for i in range(len(self.param_)):
+                    if type(self.param_[i])==list:
+                        for j in range(len(self.param_[i])):
+                            counter+=1
+                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, j, path, counter, self.lock))
+                            process.start()
+                    else:
+                        counter+=1
+                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, None, path, counter, self.lock))
+                        process.start()
+            else:
+                output_file=open(path,'wb')
+                pickle.dump(self.param_,output_file)
+        else:
+            pickle.dump(param,output_file)
+            self.param=param
+            self.optimizer=optimizer
+        if self.parallel_training_and_save:
+            if self.parallel_dump==True:
+                counter=0
+                if type(self.optimizer)==list:
+                    for i in range(len(self.optimizer)):
+                        for j in range(len(self.state_dict[i])):
+                            counter+=1
+                            process=multiprocessing.Process(target=self.parallel_state_dict_dump,args=(i, j, path, counter, self.lock))
+                            process.start()
+                else:
+                    for i in range(len(self.state_dict)):
+                        counter+=1
+                        process=multiprocessing.Process(target=self.parallel_state_dict_dump,args=(i, None, path, counter, self.lock))
+                        process.start()
+            else:
+                pickle.dump(self.state_dict,output_file)
+                output_file.close()
         else:
             if type(self.optimizer)==list:
                 state_dict=[]
@@ -2917,7 +3061,7 @@ class Model:
                 state_dict=dict()
                 self.optimizer.save_own_variables(state_dict)
                 pickle.dump(state_dict,output_file)
-        output_file.close()
+            output_file.close()
         if self.parallel_training_and_save:
             self.test_flag.value=True
         return
@@ -2948,26 +3092,75 @@ class Model:
     
     def restore_p(self,path1,path2):
         input_file1=open(path1,'rb')
-        input_file2=open(path2,'rb')
+        if not self.parallel_dump:
+            input_file2=open(path2,'rb')
         model=pickle.load(input_file1)
         param=self.param
         self.__dict__.update(model.__dict__)
-        self.param=param
-        param=pickle.load(input_file2)
-        nn.assign_param(self.param,param)
-        if type(self.optimizer)==list:
-            state_dict=pickle.load(input_file2)
-            for i in range(len(self.optimizer)):
-                self.optimizer[i].built=False
-                self.optimizer[i].build(self.optimizer[i]._trainable_variables)
-                self.optimizer[i].load_own_variables(state_dict[i])
+        if self.parallel_dump==True:
+            param=[]
+            counter=0
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    param.append([None for _ in range(len(self.param[i]))])
+                else:
+                    param=[None for _ in range(len(self.param[i]))]
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    for j in range(len(self.param[i])):
+                        counter+=1
+                        input_file2=open(os.path.join(path2[0],f"param_{counter}.dat"),'rb')
+                        param[self.param_index_list[counter][0]][self.param_index_list[counter][1]]=pickle.load(input_file2)
+                        input_file2.close()
+                else:
+                    counter+=1
+                    input_file2=open(os.path.join(path2[0],f"param_{counter}.dat"),'rb')
+                    param[self.param_index_list[i]]=pickle.load(input_file2)
+                    input_file2.close()
         else:
-            state_dict=pickle.load(input_file2)
-            self.optimizer.built=False
-            self.optimizer.build(self.optimizer._trainable_variables)
-            self.optimizer.load_own_variables(state_dict)
+            self.param=param
+            param=pickle.load(input_file2)
+        nn.assign_param(self.param,param)
+        if self.parallel_dump==True:
+            counter=0
+            if type(self.optimizer)==list:
+                state_dict=[]
+                for i in range(len(self.optimizer)):
+                    state_dict.append(dict())
+                for i in range(len(self.optimizer)):
+                    for j in range(len(self.state_dict[i])):
+                        counter+=1
+                        input_file2=open(os.path.join(path2[1],f"state_{counter}.dat"),'rb')
+                        state_dict[self.state_index_list[counter][0]][self.state_index_list[counter][1]]=pickle.load(input_file2)
+                    self.optimizer[self.state_index_list[counter][0]].built=False
+                    self.optimizer[self.state_index_list[counter][0]].build(self.optimizer[self.state_index_list[counter][0]]._trainable_variables)
+                    self.optimizer[self.state_index_list[counter][0]].load_own_variables(state_dict[self.state_index_list[counter][0]])
+                    input_file2.close()
+            else:
+                state_dict=dict()
+                for i in range(len(self.state_dict)):
+                    counter+=1
+                    input_file2=open(os.path.join(path2[1],f"state_{counter}.dat"),'rb')
+                    state_dict[self.state_index_list[counter]]=pickle.load(input_file2)
+                self.optimizer.built=False
+                self.optimizer.build(self.optimizer._trainable_variables)
+                self.optimizer.load_own_variables(state_dict)
+                input_file2.close()
+        else:
+            if type(self.optimizer)==list:
+                state_dict=pickle.load(input_file2)
+                for i in range(len(self.optimizer)):
+                    self.optimizer[i].built=False
+                    self.optimizer[i].build(self.optimizer[i]._trainable_variables)
+                    self.optimizer[i].load_own_variables(state_dict[i])
+            else:
+                state_dict=pickle.load(input_file2)
+                self.optimizer.built=False
+                self.optimizer.build(self.optimizer._trainable_variables)
+                self.optimizer.load_own_variables(state_dict)
         input_file1.close()
-        input_file2.close()
+        if not self.parallel_dump:
+            input_file2.close()
         return
     
     
