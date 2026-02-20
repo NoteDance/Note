@@ -11,6 +11,7 @@ import math
 import statistics
 import pickle
 import os
+import shutil
 import time
 
 
@@ -2719,6 +2720,8 @@ class RL:
             self.end_flag_list=manager.list([False for _ in range(processes)])
         if parallel_training_and_save:
             manager=mp.Manager()
+            self.param_save_flag_list=mp.list()
+            self.state_save_flag_list=mp.list()
             self.save_flag=mp.Value('b',False)
             self.param_=manager.list()
             self.path_list_=manager.list()
@@ -3033,6 +3036,8 @@ class RL:
         if parallel_training_and_save:
             t1=time.time()
             while True:
+                if self.save_param_only==False:
+                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
                 if self.save_flag.value:
                     del self.param_
                     del self.state_dict
@@ -3132,6 +3137,8 @@ class RL:
             self.end_flag_list=manager.list([False for _ in range(processes)])
         if parallel_training_and_save:
             manager=mp.Manager()
+            self.param_save_flag_list=mp.list()
+            self.state_save_flag_list=mp.list()
             self.save_flag=mp.Value('b',False)
             self.param_=manager.list()
             self.path_list_=manager.list()
@@ -3775,6 +3782,8 @@ class RL:
         if parallel_training_and_save:
             t1=time.time()
             while True:
+                if self.save_param_only==False:
+                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
                 if self.save_flag.value:
                     del self.param_
                     del self.state_dict
@@ -4073,45 +4082,55 @@ class RL:
         return
     
     
-    def parallel_param_dump(self, index1, index2, path, counter, lock):
+    def parallel_param_dump(self, index1, index2, path, counter):
+        self.param_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
         filename = os.path.join(path, f"param_{counter}.dat")
         output_file=open(filename,'wb')
         if type(self.param_[index1])==list:
             pickle.dump(self.param_[index1][index2],output_file)
-            lock.acquire()
-            self.param_index_list.append((index1, index2))
-            lock.release()
+            output_file.close()
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"param_index_{counter}.dat")
+            output_file=open(path,'wb')
+            pickle.dump((index1, index2),output_file)
             output_file.close()
         else:
             pickle.dump(self.param_[index1],output_file)
-            lock.acquire()
-            self.param_index_list.append(index1)
-            lock.release()
             output_file.close()
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"param_index_{counter}.dat")
+            output_file=open(path,'wb')
+            pickle.dump((index1, index2),output_file)
+            output_file.close()
+        self.param_save_flag_list[counter]=True
+            
     
-    
-    def parallel_state_dict_dump(self, index1, index2, path, counter, lock):
+    def parallel_state_dict_dump(self, index1, index2, path, counter):
+        self.state_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
-        filename = os.path.join(path, f"state_{counter}.dat")
-        output_file=open(filename,'wb')
+        path = os.path.join(path, f"state_{counter}.dat")
+        output_file=open(path,'wb')
         if type(self.optimizer)==list:
             pickle.dump(self.state_dict[index1][str(index2)],output_file)
-            lock.acquire()
-            self.state_index_list.append((index1, index2))
-            lock.release()
+            output_file.close()
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"state_index_{counter}.dat")
+            output_file=open(path,'wb')
+            pickle.dump((index1, str(index2)),output_file)
             output_file.close()
         else:
             pickle.dump(self.state_dict[str(index1)],output_file)
-            lock.acquire()
-            self.state_index_list.append(str(index1))
-            lock.release() 
             output_file.close()
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"state_index_{counter}.dat")
+            output_file=open(path,'wb')
+            pickle.dump(str(index2),output_file)
+            output_file.close()
+        self.state_save_flag_list=True
     
     
     def save(self,path):
-        if self.parallel_training_and_save:
-            self.test_flag.value=False
         if self.pool_network and not self.save_data:
             state_pool_list=[]
             action_pool_list=[]
@@ -4143,12 +4162,33 @@ class RL:
                 self.done_pool_list[i]=None
         if self.parallel_store_and_training:
             self.build_opt(self.optimizer)
-        output_file=open(path,'wb')
-        param=self.param
-        self.param=None
-        optimizer=self.optimizer
-        self.optimizer=None
-        pickle.dump(self,output_file)
+        if self.parallel_training_and_save:
+            self.save_flag.value=False
+            self.param_save_flag_list.clear()
+            self.state_save_flag_list.clear()
+            if self.parallel_dump:
+                if self.max_save_files==None or self.max_save_files==1:
+                    self.path_list_.append(path)
+                else:
+                    self.path_list_.append(path)
+                if len(self.path_list_)>self.max_save_files:
+                    shutil.rmtree(self.path_list_[0])
+                    del self.path_list_[0]
+            else:
+                if self.max_save_files==None or self.max_save_files==1:
+                    self.path_list_.append(path)
+                else:
+                    self.path_list_.append(path)
+                if len(self.path_list_)>self.max_save_files:
+                    os.remove(self.path_list_[0])
+                    del self.path_list_[0]
+        else:
+            output_file=open(path,'wb')
+            param=self.param
+            self.param=None
+            optimizer=self.optimizer
+            self.optimizer=None
+            pickle.dump(self,output_file)
         if self.parallel_training_and_save:
             if self.parallel_dump==True:
                 counter=0
@@ -4156,11 +4196,11 @@ class RL:
                     if type(self.param_[i])==list:
                         for j in range(len(self.param_[i])):
                             counter+=1
-                            process=mp.Process(target=self.parallel_param_dump,args=(i, j, path, counter, self.lock))
+                            process=mp.Process(target=self.parallel_param_dump,args=(i, j, path, counter))
                             process.start()
                     else:
                         counter+=1
-                        process=mp.Process(target=self.parallel_param_dump,args=(i, None, path, counter, self.lock))
+                        process=mp.Process(target=self.parallel_param_dump,args=(i, None, path, counter))
                         process.start()
             else:
                 output_file=open(path,'wb')
@@ -4176,12 +4216,12 @@ class RL:
                     for i in range(len(self.optimizer)):
                         for j in range(len(self.state_dict[i])):
                             counter+=1
-                            process=mp.Process(target=self.parallel_state_dict_dump,args=(i, j, path, counter, self.lock))
+                            process=mp.Process(target=self.parallel_state_dict_dump,args=(i, j, path, counter))
                             process.start()
                 else:
                     for i in range(len(self.state_dict)):
                         counter+=1
-                        process=mp.Process(target=self.parallel_state_dict_dump,args=(i, None, path, counter, self.lock))
+                        process=mp.Process(target=self.parallel_state_dict_dump,args=(i, None, path, counter))
                         process.start()
             else:
                 pickle.dump(self.state_dict,output_file)
@@ -4205,8 +4245,6 @@ class RL:
                 self.next_state_pool_list[i]=next_state_pool_list[i]
                 self.reward_pool_list[i]=reward_pool_list[i]
                 self.done_pool_list[i]=done_pool_list[i]
-        if self.parallel_training_and_save:
-            self.test_flag.value=True
         return
     
     
@@ -4252,20 +4290,27 @@ class RL:
                 if type(self.param[i])==list:
                     for j in range(len(self.param[i])):
                         counter+=1
-                        input_file2=open(os.path.join(path2[0],f"param_{counter}.dat"),'rb')
-                        param[self.param_index_list[counter][0]][self.param_index_list[counter][1]]=pickle.load(input_file2)
+                        input_file2=open(os.path.join(path2,f"param_{counter}.dat"),'rb')
+                        input_file3=open(os.path.join(path2,"param_index_{counter}.dat"),'rb')
+                        param_index=pickle.load(input_file3)
+                        param[param_index[0]][param_index[1]]=pickle.load(input_file2)
                         input_file2.close()
+                        input_file3.close()
                 else:
                     counter+=1
-                    input_file2=open(os.path.join(path2[0],f"param_{counter}.dat"),'rb')
-                    param[self.param_index_list[i]]=pickle.load(input_file2)
+                    input_file2=open(os.path.join(path2,f"param_{counter}.dat"),'rb')
+                    input_file3=open(os.path.join(path2,"param_index_{counter}.dat"),'rb')
+                    param_index=pickle.load(input_file3)
+                    param[param_index]=pickle.load(input_file2)
                     input_file2.close()
+                    input_file3.close()
         else:
             self.param=param
             param=pickle.load(input_file2)
         nn.assign_param(self.param,param)
         if self.parallel_dump==True:
             counter=0
+            self.state_index_list=pickle.load(input_file3)
             if type(self.optimizer)==list:
                 state_dict=[]
                 for i in range(len(self.optimizer)):
@@ -4273,22 +4318,28 @@ class RL:
                 for i in range(len(self.optimizer)):
                     for j in range(len(self.state_dict[i])):
                         counter+=1
-                        input_file2=open(os.path.join(path2[1],f"state_{counter}.dat"),'rb')
-                        state_dict[self.state_index_list[counter][0]][self.state_index_list[counter][1]]=pickle.load(input_file2)
-                    self.optimizer[self.state_index_list[counter][0]].built=False
-                    self.optimizer[self.state_index_list[counter][0]].build(self.optimizer[self.state_index_list[counter][0]]._trainable_variables)
-                    self.optimizer[self.state_index_list[counter][0]].load_own_variables(state_dict[self.state_index_list[counter][0]])
+                        input_file2=open(os.path.join(path2,f"state_{counter}.dat"),'rb')
+                        input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
+                        state_index=pickle.load(input_file3)
+                        state_dict[state_index[0]][self.state_index[1]]=pickle.load(input_file2)
+                    self.optimizer[state_index[0]].built=False
+                    self.optimizer[state_index[0]].build(self.optimizer[state_index[0]]._trainable_variables)
+                    self.optimizer[state_index[0]].load_own_variables(state_dict[state_index[0]])
                     input_file2.close()
+                    input_file3.close()
             else:
                 state_dict=dict()
                 for i in range(len(self.state_dict)):
                     counter+=1
-                    input_file2=open(os.path.join(path2[1],f"state_{counter}.dat"),'rb')
-                    state_dict[self.state_index_list[counter]]=pickle.load(input_file2)
+                    input_file2=open(os.path.join(path2,f"state_{counter}.dat"),'rb')
+                    input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
+                    state_index=pickle.load(input_file3)
+                    state_dict[state_index]=pickle.load(input_file2)
                 self.optimizer.built=False
                 self.optimizer.build(self.optimizer._trainable_variables)
                 self.optimizer.load_own_variables(state_dict)
                 input_file2.close()
+                input_file3.close()
         else:
             if type(self.optimizer)==list:
                 state_dict=pickle.load(input_file2)

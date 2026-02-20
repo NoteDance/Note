@@ -622,47 +622,23 @@ class Model:
         return
     
     
-    def test_p(self, test_data, test_labels, loss_object, test_loss, test_accuracy, processes, jit_compile):
+    def test_p(self, test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile):
         self.test_flag.value=False
-        if not self.parallel_test_:
-            test_ds=tf.data.Dataset.from_tensor_slices((test_data, test_labels)).batch(self.test_batch_size)
-            if test_loss!=None:
-                test_loss=test_loss()
-            if test_accuracy!=None:
-                test_accuracy=test_accuracy()
-            for test_data, labels in test_ds:
-                if jit_compile==True:
-                    self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
-                else:
-                    self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
-            
-            if test_accuracy!=None:
-                self.test_loss_dict[7], self.test_accuracy_dict[7] = test_loss.result().numpy(), test_accuracy.result().numpy()
+        test_ds=tf.data.Dataset.from_tensor_slices((test_data, test_labels)).batch(self.test_batch_size)
+        if test_loss!=None:
+            test_loss=test_loss()
+        if test_accuracy!=None:
+            test_accuracy=test_accuracy()
+        for test_data, labels in test_ds:
+            if jit_compile==True:
+                self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
             else:
-                self.test_loss_dict[7] = test_loss.result().numpy()
+                self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
+        
+        if test_accuracy!=None:
+            self.test_loss_dict[7], self.test_accuracy_dict[7] = test_loss.result().numpy(), test_accuracy.result().numpy()
         else:
-            test_ds = []
-            for date, labels in zip(test_data, test_labels):
-                test_ds.append(tf.data.Dataset.from_tensor_slices((date, labels)).batch(self.test_batch_size))
-            if not isinstance(self.shared_test_loss_array, multiprocessing.sharedctypes.SynchronizedArray):
-                self.shared_test_loss_array=multiprocessing.Array('f',np.zeros([processes],dtype='float32'))
-            if test_accuracy!=None:
-                if not isinstance(self.shared_test_acc_array, multiprocessing.sharedctypes.SynchronizedArray):
-                    self.shared_test_acc_array=multiprocessing.Array('f',np.zeros([processes],dtype='float32'))
-            
-            process_list=[]
-            for p in range(processes):
-                test_loss_=test_loss[p]()
-                if test_accuracy!=None:
-                    test_accuracy_=test_accuracy[p]()
-                process=multiprocessing.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
-                process.start()
-                process_list.append(process)
-            
-            if test_accuracy!=None:
-                self.test_loss_dict[7], self.test_accuracy_dict[7] = np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
-            else:
-                self.test_loss_dict[7] = np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
+            self.test_loss_dict[7] = test_loss.result().numpy()
         self.test_flag.value=True
     
     
@@ -951,11 +927,6 @@ class Model:
         self.parallel_training_and_test=parallel_training_and_test
         self.parallel_training_and_save=parallel_training_and_save
         self.parallel_pickle=parallel_dump
-        if parallel_dump:
-            manager=multiprocessing.Manager()
-            self.lock=multiprocessing.Lock()
-            self.param_index_list=manager.list()
-            self.state_index_list=manager.list()
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
             self.param=manager.list(self.param)
@@ -964,6 +935,8 @@ class Model:
             self.test_accuracy_dict=manager.dict()
         if parallel_training_and_save:
             manager=multiprocessing.Manager()
+            self.param_save_flag_list=multiprocessing.list()
+            self.state_save_flag_list=multiprocessing.list()
             self.save_flag=multiprocessing.Value('b',False)
             self.param_=manager.list()
             self.path_list_=manager.list()
@@ -1161,7 +1134,6 @@ class Model:
                                 else:
                                     self.state_dict=manager.dict()
                                     self.optimizer.save_own_variables(self.state_dict)
-                                self.param_=manager.list([None for _ in range(len(self.param))])
                                 for i in range(len(self.param)):
                                     if type(self.param[i])==list:
                                         for j in range(len(self.param[i])):
@@ -1349,7 +1321,6 @@ class Model:
                                 else:
                                     self.state_dict=manager.dict()
                                     self.optimizer.save_own_variables(self.state_dict)
-                                self.param_=manager.list([None for _ in range(len(self.param))])
                                 for i in range(len(self.param)):
                                     if type(self.param[i])==list:
                                         for j in range(len(self.param[i])):
@@ -1383,6 +1354,8 @@ class Model:
             t1=time.time()
             while True:
                 if parallel_training_and_save:
+                    if self.save_param_only==False:
+                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
                     condition = (self.end() or self.test_flag.value) and self.save_flag.value
                 else:
                     condition = self.end() or self.test_flag.value
@@ -1452,11 +1425,6 @@ class Model:
         self.parallel_training_and_test=parallel_training_and_test
         self.parallel_training_and_save=parallel_training_and_save
         self.parallel_dump=parallel_dump
-        if parallel_dump:
-            manager=multiprocessing.Manager()
-            self.lock=multiprocessing.Lock()
-            self.param_index_list=manager.list()
-            self.state_index_list=manager.list()
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
             self.param=manager.list(self.param)
@@ -1465,6 +1433,8 @@ class Model:
             self.test_accuracy_dict=manager.dict()
         if parallel_training_and_save:
             manager=multiprocessing.Manager()
+            self.param_save_flag_list=multiprocessing.list()
+            self.state_save_flag_list=multiprocessing.list()
             self.save_flag=multiprocessing.Value('b',False)
             self.param_=manager.list()
             self.path_list_=manager.list()
@@ -1697,7 +1667,6 @@ class Model:
                                     else:
                                         self.state_dict=manager.dict()
                                         self.optimizer.save_own_variables(self.state_dict)
-                                    self.param_=manager.list([None for _ in range(len(self.param))])
                                     for i in range(len(self.param)):
                                         if type(self.param[i])==list:
                                             for j in range(len(self.param[i])):
@@ -1917,7 +1886,6 @@ class Model:
                                     else:
                                         self.state_dict=manager.dict()
                                         self.optimizer.save_own_variables(self.state_dict)
-                                    self.param_=manager.list([None for _ in range(len(self.param))])
                                     for i in range(len(self.param)):
                                         if type(self.param[i])==list:
                                             for j in range(len(self.param[i])):
@@ -2059,7 +2027,6 @@ class Model:
                                     else:
                                         self.state_dict=manager.dict()
                                         self.optimizer.save_own_variables(self.state_dict)
-                                    self.param_=manager.list([None for _ in range(len(self.param))])
                                     for i in range(len(self.param)):
                                         if type(self.param[i])==list:
                                             for j in range(len(self.param[i])):
@@ -2211,7 +2178,6 @@ class Model:
                                     else:
                                         self.state_dict=manager.dict()
                                         self.optimizer.save_own_variables(self.state_dict)
-                                    self.param_=manager.list([None for _ in range(len(self.param))])
                                     for i in range(len(self.param)):
                                         if type(self.param[i])==list:
                                             for j in range(len(self.param[i])):
@@ -2358,7 +2324,6 @@ class Model:
                                     else:
                                         self.state_dict=manager.dict()
                                         self.optimizer.save_own_variables(self.state_dict)
-                                    self.param_=manager.list([None for _ in range(len(self.param))])
                                     for i in range(len(self.param)):
                                         if type(self.param[i])==list:
                                             for j in range(len(self.param[i])):
@@ -2505,7 +2470,6 @@ class Model:
                                     else:
                                         self.state_dict=manager.dict()
                                         self.optimizer.save_own_variables(self.state_dict)
-                                    self.param_=manager.list([None for _ in range(len(self.param))])
                                     for i in range(len(self.param)):
                                         if type(self.param[i])==list:
                                             for j in range(len(self.param[i])):
@@ -2547,6 +2511,8 @@ class Model:
             t1=time.time()
             while True:
                 if parallel_training_and_save:
+                    if self.save_param_only==False:
+                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
                     condition = (self.end() or self.test_flag.value) and self.save_flag.value
                 else:
                     condition = self.end() or self.test_flag.value
@@ -2866,7 +2832,7 @@ class Model:
     
     def save_param(self,path):
         if self.parallel_training_and_save:
-            self.test_flag.value=False
+            self.save_flag.value=False
             self.path_list_.append(path)
             if len(self.path_list_)>self.max_save_files:
                 os.remove(self.path_list_[0])
@@ -2878,7 +2844,7 @@ class Model:
             pickle.dump(self.param,output_file)
         output_file.close()
         if self.parallel_training_and_save:
-            self.test_flag.value=True
+            self.save_flag.value=True
         return
     
     
@@ -2951,45 +2917,59 @@ class Model:
         return
     
     
-    def parallel_param_dump(self, index1, index2, path, counter, lock):
+    def parallel_param_dump(self, index1, index2, path, counter):
+        self.param_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
         filename = os.path.join(path, f"param_{counter}.dat")
         output_file=open(filename,'wb')
         if type(self.param_[index1])==list:
             pickle.dump(self.param_[index1][index2],output_file)
-            lock.acquire()
-            self.param_index_list.append((index1, index2))
-            lock.release()
+            output_file.close()
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"param_index_{counter}.dat")
+            output_file=open(path,'wb')
+            pickle.dump((index1, index2),output_file)
             output_file.close()
         else:
             pickle.dump(self.param_[index1],output_file)
-            lock.acquire()
-            self.param_index_list.append(index1)
-            lock.release()
             output_file.close()
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"param_index_{counter}.dat")
+            output_file=open(path,'wb')
+            pickle.dump((index1, index2),output_file)
+            output_file.close()
+        self.param_save_flag_list[counter]=True
+            
     
-    
-    def parallel_state_dict_dump(self, index1, index2, path, counter, lock):
+    def parallel_state_dict_dump(self, index1, index2, path, counter):
+        self.state_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
-        filename = os.path.join(path, f"state_{counter}.dat")
-        output_file=open(filename,'wb')
+        path = os.path.join(path, f"state_{counter}.dat")
+        output_file=open(path,'wb')
         if type(self.optimizer)==list:
             pickle.dump(self.state_dict[index1][str(index2)],output_file)
-            lock.acquire()
-            self.state_index_list.append((index1, index2))
-            lock.release()
+            output_file.close()
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"state_index_{counter}.dat")
+            output_file=open(path,'wb')
+            pickle.dump((index1, str(index2)),output_file)
             output_file.close()
         else:
             pickle.dump(self.state_dict[str(index1)],output_file)
-            lock.acquire()
-            self.state_index_list.append(str(index1))
-            lock.release() 
             output_file.close()
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"state_index_{counter}.dat")
+            output_file=open(path,'wb')
+            pickle.dump(str(index2),output_file)
+            output_file.close()
+        self.state_save_flag_list=True
     
     
     def save(self,path):
         if self.parallel_training_and_save:
-            self.test_flag.value=False
+            self.save_flag.value=False
+            self.param_save_flag_list.clear()
+            self.state_save_flag_list.clear()
             if self.parallel_dump:
                 if self.max_save_files==None or self.max_save_files==1:
                     self.path_list_.append(path)
@@ -3020,11 +3000,11 @@ class Model:
                     if type(self.param_[i])==list:
                         for j in range(len(self.param_[i])):
                             counter+=1
-                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, j, path, counter, self.lock))
+                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, j, path, counter))
                             process.start()
                     else:
                         counter+=1
-                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, None, path, counter, self.lock))
+                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, None, path, counter))
                         process.start()
             else:
                 output_file=open(path,'wb')
@@ -3040,12 +3020,12 @@ class Model:
                     for i in range(len(self.optimizer)):
                         for j in range(len(self.state_dict[i])):
                             counter+=1
-                            process=multiprocessing.Process(target=self.parallel_state_dict_dump,args=(i, j, path, counter, self.lock))
+                            process=multiprocessing.Process(target=self.parallel_state_dict_dump,args=(i, j, path, counter))
                             process.start()
                 else:
                     for i in range(len(self.state_dict)):
                         counter+=1
-                        process=multiprocessing.Process(target=self.parallel_state_dict_dump,args=(i, None, path, counter, self.lock))
+                        process=multiprocessing.Process(target=self.parallel_state_dict_dump,args=(i, None, path, counter))
                         process.start()
             else:
                 pickle.dump(self.state_dict,output_file)
@@ -3062,8 +3042,6 @@ class Model:
                 self.optimizer.save_own_variables(state_dict)
                 pickle.dump(state_dict,output_file)
             output_file.close()
-        if self.parallel_training_and_save:
-            self.test_flag.value=True
         return
     
     
@@ -3109,20 +3087,27 @@ class Model:
                 if type(self.param[i])==list:
                     for j in range(len(self.param[i])):
                         counter+=1
-                        input_file2=open(os.path.join(path2[0],f"param_{counter}.dat"),'rb')
-                        param[self.param_index_list[counter][0]][self.param_index_list[counter][1]]=pickle.load(input_file2)
+                        input_file2=open(os.path.join(path2,f"param_{counter}.dat"),'rb')
+                        input_file3=open(os.path.join(path2,"param_index_{counter}.dat"),'rb')
+                        param_index=pickle.load(input_file3)
+                        param[param_index[0]][param_index[1]]=pickle.load(input_file2)
                         input_file2.close()
+                        input_file3.close()
                 else:
                     counter+=1
-                    input_file2=open(os.path.join(path2[0],f"param_{counter}.dat"),'rb')
-                    param[self.param_index_list[i]]=pickle.load(input_file2)
+                    input_file2=open(os.path.join(path2,f"param_{counter}.dat"),'rb')
+                    input_file3=open(os.path.join(path2,"param_index_{counter}.dat"),'rb')
+                    param_index=pickle.load(input_file3)
+                    param[param_index]=pickle.load(input_file2)
                     input_file2.close()
+                    input_file3.close()
         else:
             self.param=param
             param=pickle.load(input_file2)
         nn.assign_param(self.param,param)
         if self.parallel_dump==True:
             counter=0
+            self.state_index_list=pickle.load(input_file3)
             if type(self.optimizer)==list:
                 state_dict=[]
                 for i in range(len(self.optimizer)):
@@ -3130,22 +3115,28 @@ class Model:
                 for i in range(len(self.optimizer)):
                     for j in range(len(self.state_dict[i])):
                         counter+=1
-                        input_file2=open(os.path.join(path2[1],f"state_{counter}.dat"),'rb')
-                        state_dict[self.state_index_list[counter][0]][self.state_index_list[counter][1]]=pickle.load(input_file2)
-                    self.optimizer[self.state_index_list[counter][0]].built=False
-                    self.optimizer[self.state_index_list[counter][0]].build(self.optimizer[self.state_index_list[counter][0]]._trainable_variables)
-                    self.optimizer[self.state_index_list[counter][0]].load_own_variables(state_dict[self.state_index_list[counter][0]])
+                        input_file2=open(os.path.join(path2,f"state_{counter}.dat"),'rb')
+                        input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
+                        state_index=pickle.load(input_file3)
+                        state_dict[state_index[0]][self.state_index[1]]=pickle.load(input_file2)
+                    self.optimizer[state_index[0]].built=False
+                    self.optimizer[state_index[0]].build(self.optimizer[state_index[0]]._trainable_variables)
+                    self.optimizer[state_index[0]].load_own_variables(state_dict[state_index[0]])
                     input_file2.close()
+                    input_file3.close()
             else:
                 state_dict=dict()
                 for i in range(len(self.state_dict)):
                     counter+=1
-                    input_file2=open(os.path.join(path2[1],f"state_{counter}.dat"),'rb')
-                    state_dict[self.state_index_list[counter]]=pickle.load(input_file2)
+                    input_file2=open(os.path.join(path2,f"state_{counter}.dat"),'rb')
+                    input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
+                    state_index=pickle.load(input_file3)
+                    state_dict[state_index]=pickle.load(input_file2)
                 self.optimizer.built=False
                 self.optimizer.build(self.optimizer._trainable_variables)
                 self.optimizer.load_own_variables(state_dict)
                 input_file2.close()
+                input_file3.close()
         else:
             if type(self.optimizer)==list:
                 state_dict=pickle.load(input_file2)
