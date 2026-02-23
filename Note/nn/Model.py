@@ -55,7 +55,6 @@ class Model:
         self.save_freq=1
         self.save_freq_=None
         self.max_save_files=None
-        self.steps_per_execution=None
         self.monitor='val_loss'
         self.val_loss=0
         self.val_accuracy=1
@@ -99,7 +98,6 @@ class Model:
         self.info['save_freq']=self.save_freq
         self.info['save_freq_']=self.save_freq_
         self.info['max_save_files']=self.max_save_files
-        self.info['steps_per_execution']=self.steps_per_execution
         self.info['monitor']=self.monitor
         self.info['val_loss']=self.val_loss
         self.info['val_accuracy']=self.val_accuracy
@@ -992,7 +990,7 @@ class Model:
                 t1=time.time()
                 if self.stop_training==True:
                     return
-                if self.steps_per_execution==None and self.end():
+                if self.end():
                     break
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_epoch_begin'):
@@ -1063,22 +1061,8 @@ class Model:
                         break
                     if hasattr(self, 'batch_size_fn'):
                         train_ds = self.batch_size_fn(train_ds)
-                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
-                        self.train_loss=train_loss.result().numpy()
-                        if train_accuracy!=None:
-                            self.train_acc=train_accuracy.result().numpy()
-                        if test_ds!=None:
-                            self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, jit_compile)
-                        if self.end():
-                            if self.save_param_only==False:
-                                self.save_(self.path)
-                            else:
-                                self.save_param_(self.path)
                     if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                        if self.save_param_only==False:
-                            self.save_(self.path)
-                        else:
-                            self.save_param_(self.path)
+                        self.save_checkpoint()
                 if test_ds!=None and epoch % test_freq == 0:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_begin'):
@@ -1147,53 +1131,7 @@ class Model:
                                 print()
                 if self.save_freq_==None:
                     if self.path!=None and epoch%self.save_freq==0:
-                        if self.save_param_only==False:
-                            if parallel_training_and_save:
-                                if type(self.optimizer)==list:
-                                    self.state_dict=manager.list()
-                                    for i in range(len(self.optimizer)):
-                                        self.state_dict.append(dict())
-                                        self.optimizer[i].save_own_variables(self.state_dict[-1])
-                                else:
-                                    self.state_dict=manager.dict()
-                                    self.optimizer.save_own_variables(self.state_dict)
-                                for i in range(len(self.param)):
-                                    if type(self.param[i])==list:
-                                        for j in range(len(self.param[i])):
-                                            self.param_[i][j]=tf.identity(self.param[i][j])
-                                    else:
-                                        self.param_[i]=tf.identity(self.param[i])
-                                self._save(self.path)
-                                if parallel_dump:
-                                    if self.train_acc!=None and self.test_acc!=None:
-                                        path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                    elif self.train_acc!=None:
-                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                    else:
-                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                    process=multiprocessing.Process(target=self.save,args=(path))
-                                    process.start()
-                                else:
-                                    process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
-                            else:
-                                self.save_(self.path)
-                        else:
-                            if parallel_training_and_save:
-                                if parallel_dump:
-                                    if self.train_acc!=None and self.test_acc!=None:
-                                        path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                    elif self.train_acc!=None:
-                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                    else:
-                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                    process=multiprocessing.Process(target=self.save_param,args=(path))
-                                    process.start()
-                                else:
-                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
-                            else:
-                                self.save_param_(self.path)
+                        self.save_checkpoint()
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -1202,7 +1140,7 @@ class Model:
                 t1=time.time()
                 if self.stop_training==True:
                     return
-                if self.steps_per_execution==None and self.end():
+                if self.end():
                     break
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_epoch_begin'):
@@ -1273,22 +1211,8 @@ class Model:
                         break
                     if hasattr(self, 'batch_size_fn'):
                         train_ds = self.batch_size_fn(train_ds)
-                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
-                        self.train_loss=train_loss.result().numpy()
-                        if train_accuracy!=None:
-                            self.train_acc=train_accuracy.result().numpy()
-                        if test_ds!=None:
-                            self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, jit_compile)
-                        if self.end():
-                            if self.save_param_only==False:
-                                self.save_(self.path)
-                            else:
-                                self.save_param_(self.path)
                     if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                        if self.save_param_only==False:
-                            self.save_(self.path)
-                        else:
-                            self.save_param_(self.path)
+                        self.save_checkpoint()
                 
                 if test_ds!=None and i % test_freq == 0:
                     for callback in self.callbacks:
@@ -1359,53 +1283,7 @@ class Model:
                                 print()
                 if self.save_freq_==None:
                     if self.path!=None and epoch%self.save_freq==0:
-                        if self.save_param_only==False:
-                            if parallel_training_and_save:
-                                if type(self.optimizer)==list:
-                                    self.state_dict=manager.list()
-                                    for i in range(len(self.optimizer)):
-                                        self.state_dict.append(dict())
-                                        self.optimizer[i].save_own_variables(self.state_dict[-1])
-                                else:
-                                    self.state_dict=manager.dict()
-                                    self.optimizer.save_own_variables(self.state_dict)
-                                for i in range(len(self.param)):
-                                    if type(self.param[i])==list:
-                                        for j in range(len(self.param[i])):
-                                            self.param_[i][j]=tf.identity(self.param[i][j])
-                                    else:
-                                        self.param_[i]=tf.identity(self.param[i])
-                                self._save(self.path)
-                                if parallel_dump:
-                                    if self.train_acc!=None and self.test_acc!=None:
-                                        path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                    elif self.train_acc!=None:
-                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                    else:
-                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                    process=multiprocessing.Process(target=self.save,args=(path))
-                                    process.start()
-                                else:
-                                    process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
-                            else:
-                                self.save_(self.path)
-                        else:
-                            if parallel_training_and_save:
-                                if parallel_dump:
-                                    if self.train_acc!=None and self.test_acc!=None:
-                                        path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                    elif self.train_acc!=None:
-                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                    else:
-                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                    process=multiprocessing.Process(target=self.save_param,args=(path))
-                                    process.start()
-                                else:
-                                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                    process.start()
-                            else:
-                                self.save_param_(self.path)
+                        self.save_checkpoint()
                 t2=time.time()
                 self.time+=(t2-t1)
         self.shared_test_loss_array=None
@@ -1543,7 +1421,7 @@ class Model:
                     t1=time.time()
                     if self.stop_training==True:
                         return
-                    if self.steps_per_execution==None and self.end():
+                    if self.end():
                         break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_epoch_begin'):
@@ -1625,32 +1503,8 @@ class Model:
                             break
                         if hasattr(self, 'batch_size_fn'):
                             train_dist_dataset = self.batch_size_fn(train_dist_dataset)
-                        if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
-                            self.train_loss=(total_loss / num_batches).numpy()
-                            if train_accuracy!=None:
-                                self.train_acc=train_accuracy.result().numpy()
-                            if test_dist_dataset!=None:
-                                self.training()
-                                for x in test_dist_dataset:
-                                    if jit_compile==True:
-                                        self.distributed_test_step(x, loss_object, test_loss, test_accuracy, strategy)
-                                    else:
-                                        self.distributed_test_step_(x, loss_object, test_loss, test_accuracy, strategy)
-                                    
-                                self.test_loss=test_loss.result().numpy()
-                                if test_accuracy!=None:
-                                    self.test_acc=test_accuracy.result().numpy()
-                                self.training(True)
-                            if self.end():
-                                if self.save_param_only==False:
-                                    self.save_(self.path)
-                                else:
-                                    self.save_param_(self.path)
                         if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                            if self.save_param_only==False:
-                                self.save_(self.path)
-                            else:
-                                self.save_param_(self.path)
+                            self.save_checkpoint()
                     
                     if test_loss!=None:
                         test_loss.reset_states()
@@ -1730,53 +1584,7 @@ class Model:
                                     print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
-                            if self.save_param_only==False:
-                                if parallel_training_and_save:
-                                    if type(self.optimizer)==list:
-                                        self.state_dict=manager.list()
-                                        for i in range(len(self.optimizer)):
-                                            self.state_dict.append(dict())
-                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
-                                    else:
-                                        self.state_dict=manager.dict()
-                                        self.optimizer.save_own_variables(self.state_dict)
-                                    for i in range(len(self.param)):
-                                        if type(self.param[i])==list:
-                                            for j in range(len(self.param[i])):
-                                                self.param_[i][j]=tf.identity(self.param[i][j])
-                                        else:
-                                            self.param_[i]=tf.identity(self.param[i])
-                                    self._save(self.path)
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_(self.path)
-                            else:
-                                if parallel_training_and_save:
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save_param,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_param_(self.path)
+                            self.save_checkpoint()
                     t2=time.time()
                     self.time+=(t2-t1)
             else:
@@ -1785,7 +1593,7 @@ class Model:
                     t1=time.time()
                     if self.stop_training==True:
                         return
-                    if self.steps_per_execution==None and self.end():
+                    if self.end():
                         break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_epoch_begin'):
@@ -1867,32 +1675,8 @@ class Model:
                             break
                         if hasattr(self, 'batch_size_fn'):
                             train_dist_dataset = self.batch_size_fn(train_dist_dataset)
-                        if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
-                            self.train_loss=(total_loss / num_batches).numpy()
-                            if train_accuracy!=None:
-                                self.train_acc=train_accuracy.result().numpy()
-                            if test_dist_dataset!=None:
-                                self.training()
-                                for x in test_dist_dataset:
-                                    if jit_compile==True:
-                                        self.distributed_test_step(x, loss_object, test_loss, test_accuracy, strategy)
-                                    else:
-                                        self.distributed_test_step_(x, loss_object, test_loss, test_accuracy, strategy)
-                                    
-                                self.test_loss=test_loss.result().numpy()
-                                if test_accuracy!=None:
-                                    self.test_acc=test_accuracy.result().numpy()
-                                self.training(True)
-                            if self.end():
-                                if self.save_param_only==False:
-                                    self.save_(self.path)
-                                else:
-                                    self.save_param_(self.path)
                         if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                            if self.save_param_only==False:
-                                self.save_(self.path)
-                            else:
-                                self.save_param_(self.path)
+                            self.save_checkpoint()
                     
                     if test_loss!=None:
                         test_loss.reset_states()
@@ -1974,53 +1758,7 @@ class Model:
                                     print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
-                            if self.save_param_only==False:
-                                if parallel_training_and_save:
-                                    if type(self.optimizer)==list:
-                                        self.state_dict=manager.list()
-                                        for i in range(len(self.optimizer)):
-                                            self.state_dict.append(dict())
-                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
-                                    else:
-                                        self.state_dict=manager.dict()
-                                        self.optimizer.save_own_variables(self.state_dict)
-                                    for i in range(len(self.param)):
-                                        if type(self.param[i])==list:
-                                            for j in range(len(self.param[i])):
-                                                self.param_[i][j]=tf.identity(self.param[i][j])
-                                        else:
-                                            self.param_[i]=tf.identity(self.param[i])
-                                    self._save(self.path)
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_(self.path)
-                            else:
-                                if parallel_training_and_save:
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save_param,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_param_(self.path)
+                            self.save_checkpoint()
                     t2=time.time()
                     self.time+=(t2-t1)
         elif isinstance(strategy,tf.distribute.MultiWorkerMirroredStrategy):
@@ -2041,7 +1779,7 @@ class Model:
                     if self.stop_training==True:
                         return
                     
-                    if self.steps_per_execution==None and self.end():
+                    if self.end():
                         break
                     
                     if not self.PR and hasattr(self, 'batch_size_fn') and self.batch_size_old != self.batch_size:
@@ -2129,53 +1867,7 @@ class Model:
                                     print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
-                            if self.save_param_only==False:
-                                if parallel_training_and_save:
-                                    if type(self.optimizer)==list:
-                                        self.state_dict=manager.list()
-                                        for i in range(len(self.optimizer)):
-                                            self.state_dict.append(dict())
-                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
-                                    else:
-                                        self.state_dict=manager.dict()
-                                        self.optimizer.save_own_variables(self.state_dict)
-                                    for i in range(len(self.param)):
-                                        if type(self.param[i])==list:
-                                            for j in range(len(self.param[i])):
-                                                self.param_[i][j]=tf.identity(self.param[i][j])
-                                        else:
-                                            self.param_[i]=tf.identity(self.param[i])
-                                    self._save(self.path)
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_(self.path)
-                            else:
-                                if parallel_training_and_save:
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save_param,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_param_(self.path)
+                            self.save_checkpoint()
                     
                     if train_accuracy!=None:
                         train_accuracy.reset_states()
@@ -2205,7 +1897,7 @@ class Model:
                     if self.stop_training==True:
                         return
                     
-                    if self.steps_per_execution==None and self.end():
+                    if self.end():
                         break
                     
                     if not self.PR and hasattr(self, 'batch_size_fn') and self.batch_size_old != self.batch_size:
@@ -2294,53 +1986,7 @@ class Model:
                                     print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
-                            if self.save_param_only==False:
-                                if parallel_training_and_save:
-                                    if type(self.optimizer)==list:
-                                        self.state_dict=manager.list()
-                                        for i in range(len(self.optimizer)):
-                                            self.state_dict.append(dict())
-                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
-                                    else:
-                                        self.state_dict=manager.dict()
-                                        self.optimizer.save_own_variables(self.state_dict)
-                                    for i in range(len(self.param)):
-                                        if type(self.param[i])==list:
-                                            for j in range(len(self.param[i])):
-                                                self.param_[i][j]=tf.identity(self.param[i][j])
-                                        else:
-                                            self.param_[i]=tf.identity(self.param[i])
-                                    self._save(self.path)
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_(self.path)
-                            else:
-                                if parallel_training_and_save:
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save_param,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_param_(self.path)
+                            self.save_checkpoint()
                     
                     if train_accuracy!=None:
                         train_accuracy.reset_states()
@@ -2367,7 +2013,7 @@ class Model:
                     if self.stop_training==True:
                         return
                     
-                    if self.steps_per_execution==None and self.end():
+                    if self.end():
                         break
                     
                     for callback in self.callbacks:
@@ -2454,53 +2100,7 @@ class Model:
                                     print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
-                            if self.save_param_only==False:
-                                if parallel_training_and_save:
-                                    if type(self.optimizer)==list:
-                                        self.state_dict=manager.list()
-                                        for i in range(len(self.optimizer)):
-                                            self.state_dict.append(dict())
-                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
-                                    else:
-                                        self.state_dict=manager.dict()
-                                        self.optimizer.save_own_variables(self.state_dict)
-                                    for i in range(len(self.param)):
-                                        if type(self.param[i])==list:
-                                            for j in range(len(self.param[i])):
-                                                self.param_[i][j]=tf.identity(self.param[i][j])
-                                        else:
-                                            self.param_[i]=tf.identity(self.param[i])
-                                    self._save(self.path)
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_(self.path)
-                            else:
-                                if parallel_training_and_save:
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save_param,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_param_(self.path)
+                            self.save_checkpoint()
                     
                     if train_accuracy!=None:
                         train_accuracy.reset_states()
@@ -2527,7 +2127,7 @@ class Model:
                         if self.stop_training==True:
                             return
                         
-                        if self.steps_per_execution==None and self.end():
+                        if self.end():
                             break
                         
                         for callback in self.callbacks:
@@ -2614,53 +2214,7 @@ class Model:
                                         print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
-                            if self.save_param_only==False:
-                                if parallel_training_and_save:
-                                    if type(self.optimizer)==list:
-                                        self.state_dict=manager.list()
-                                        for i in range(len(self.optimizer)):
-                                            self.state_dict.append(dict())
-                                            self.optimizer[i].save_own_variables(self.state_dict[-1])
-                                    else:
-                                        self.state_dict=manager.dict()
-                                        self.optimizer.save_own_variables(self.state_dict)
-                                    for i in range(len(self.param)):
-                                        if type(self.param[i])==list:
-                                            for j in range(len(self.param[i])):
-                                                self.param_[i][j]=tf.identity(self.param[i][j])
-                                        else:
-                                            self.param_[i]=tf.identity(self.param[i])
-                                    self._save(self.path)
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_(self.path)
-                            else:
-                                if parallel_training_and_save:
-                                    if parallel_dump:
-                                        if self.train_acc!=None and self.test_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                                        elif self.train_acc!=None:
-                                            path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                                        else:
-                                            path=self.path+'-{0}.dat'.format(self.total_epoch)
-                                        process=multiprocessing.Process(target=self.save_param,args=(path))
-                                        process.start()
-                                    else:
-                                        process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
-                                        process.start()
-                                else:
-                                    self.save_param_(self.path)
+                            self.save_checkpoint()
                         
                         if train_accuracy!=None:
                             train_accuracy.reset_states()
@@ -2738,19 +2292,6 @@ class Model:
             num_updates = np.clip(num_updates, self.min_num_updates, self.max_num_updates)
             num_updates = int(num_updates)
         while self.step_in_epoch < num_steps_per_epoch:
-            if self.parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
-                if self.test_loss_dict[7] is not None:
-                    self.test_loss = self.test_loss_dict[7]
-                    self.test_loss_list.append(self.test_loss_dict[7])
-                    self.test_loss_dict[7] = None
-                if self.test_accuracy!=None:
-                    if self.test_accuracy_dict[7] is not None:
-                        self.test_acc = self.test_acc_dict[7]
-                        self.test_acc_list.append(self.test_accuracy_dict[7])
-                        self.test_accuracy_dict[7] = None
-                self.end_test_func()
-                if self.end():
-                    return total_loss / num_batches
             index2 = index1 + self.batch_size
             if self.PR and self.total_epoch % 2 != 0:
                 train_data, labels = self.prioritized_replay.sample(self.train_data, self.train_labels, self.alpha, self.batch_size)
@@ -2790,21 +2331,23 @@ class Model:
                 return total_loss / num_batches
             if hasattr(self, 'batch_size_fn'):
                 iterator = iter(self.batch_size_fn(multi_worker_dataset))
-            if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
-                self.train_loss = total_loss / num_batches
-                if self.end():
-                    if self.save_param_only==False:
-                        self.save_(self.path)
-                    else:
-                        self.save_param_(self.path)
             if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                if self.save_param_only==False:
-                    self.save_(self.path)
-                else:
-                    self.save_param_(self.path)
+                self.save_checkpoint()
             if self.stop_training==True:
                 return total_loss / num_batches
-      
+            if self.parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+                if self.test_loss_dict[7] is not None:
+                    self.test_loss = self.test_loss_dict[7]
+                    self.test_loss_list.append(self.test_loss_dict[7])
+                    self.test_loss_dict[7] = None
+                if self.test_accuracy!=None:
+                    if self.test_accuracy_dict[7] is not None:
+                        self.test_acc = self.test_acc_dict[7]
+                        self.test_acc_list.append(self.test_accuracy_dict[7])
+                        self.test_accuracy_dict[7] = None
+                self.end_test_func()
+                if self.end():
+                    return total_loss / num_batches
         train_loss = total_loss / num_batches
         return train_loss
     
@@ -2847,20 +2390,6 @@ class Model:
             num_updates = np.clip(num_updates, self.min_num_updates, self.max_num_updates)
             num_updates = int(num_updates)
         while self.step_in_epoch < num_steps_per_epoch:
-            if self.parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
-                if self.test_loss_dict[7] is not None:
-                    self.test_loss = self.test_loss_dict[7]
-                    self.test_loss_list.append(self.test_loss_dict[7])
-                    self.test_loss_dict[7] = None
-                if self.test_accuracy!=None:
-                    if self.test_accuracy_dict[7] is not None:
-                        self.test_acc = self.test_acc_dict[7]
-                        self.test_acc_list.append(self.test_accuracy_dict[7])
-                        self.test_accuracy_dict[7] = None
-                self.end_test_func()
-                if self.end():
-                    coordinator.join()
-                    return total_loss.fetch() / num_batches
             index2 = index1 + self.batch_size
             if self.PR and self.total_epoch % 2 != 0:
                 if jit_compile==True:
@@ -2896,13 +2425,6 @@ class Model:
             if self.PR and self.total_epoch % 2 != 0 and batch_counter % num_updates == 0:
                 coordinator.join()
                 return total_loss.fetch() / num_batches
-            if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
-                self.train_loss=total_loss.fetch() / num_batches
-                if self.end():
-                    if self.save_param_only==False:
-                        self.save_(self.path)
-                    else:
-                        self.save_param_(self.path)
             if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
                 if self.save_param_only==False:
                     self.save_(self.path)
@@ -2911,6 +2433,20 @@ class Model:
             if self.stop_training==True:
                 coordinator.join()
                 return total_loss.fetch() / num_batches
+            if self.parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+                if self.test_loss_dict[7] is not None:
+                    self.test_loss = self.test_loss_dict[7]
+                    self.test_loss_list.append(self.test_loss_dict[7])
+                    self.test_loss_dict[7] = None
+                if self.test_accuracy!=None:
+                    if self.test_accuracy_dict[7] is not None:
+                        self.test_acc = self.test_acc_dict[7]
+                        self.test_acc_list.append(self.test_accuracy_dict[7])
+                        self.test_accuracy_dict[7] = None
+                self.end_test_func()
+                if self.end():
+                    coordinator.join()
+                    return total_loss.fetch() / num_batches
         coordinator.join()
       
         train_loss = total_loss.fetch() / num_batches
@@ -3167,6 +2703,23 @@ class Model:
     def save(self,path):
         if self.parallel_training_and_save:
             self.save_flag.value=False
+            if self.save_best_only==True:
+                if self.monitor=='val_loss':
+                    if self.test_loss>self.val_loss:
+                        return
+                    elif self.test_loss<self.val_loss:
+                        self.val_loss=self.test_loss
+                    if self.val_loss==0:
+                        self.val_loss=self.test_loss
+                        return
+                elif self.monitor=='val_accuracy':
+                    if self.test_acc<self.val_accuracy:
+                        return
+                    elif self.test_acc>self.val_accuracy:
+                        self.val_accuracy=self.test_acc
+                    if self.val_accuracy==1:
+                        self.val_accuracy=self.test_acc
+                        return
             self.param_save_flag_list.clear()
             self.state_save_flag_list.clear()
             if self.parallel_dump:
@@ -3247,6 +2800,57 @@ class Model:
                 pickle.dump(state_dict,output_file)
             output_file.close()
         return
+    
+    
+    def save_checkpoint(self):
+        manager=multiprocessing.Manager()
+        if self.save_param_only==False:
+            if self.parallel_training_and_save:
+                if type(self.optimizer)==list:
+                    self.state_dict=manager.list()
+                    for i in range(len(self.optimizer)):
+                        self.state_dict.append(dict())
+                        self.optimizer[i].save_own_variables(self.state_dict[-1])
+                else:
+                    self.state_dict=manager.dict()
+                    self.optimizer.save_own_variables(self.state_dict)
+                for i in range(len(self.param)):
+                    if type(self.param[i])==list:
+                        for j in range(len(self.param[i])):
+                            self.param_[i][j]=tf.identity(self.param[i][j])
+                    else:
+                        self.param_[i]=tf.identity(self.param[i])
+                self._save(self.path)
+                if self.parallel_dump:
+                    if self.train_acc!=None and self.test_acc!=None:
+                        path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
+                    elif self.train_acc!=None:
+                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
+                    else:
+                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                    process=multiprocessing.Process(target=self.save,args=(path))
+                    process.start()
+                else:
+                    process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                    process.start()
+            else:
+                self.save_(self.path)
+        else:
+            if self.parallel_training_and_save:
+                if self.parallel_dump:
+                    if self.train_acc!=None and self.test_acc!=None:
+                        path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
+                    elif self.train_acc!=None:
+                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
+                    else:
+                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                    process=multiprocessing.Process(target=self.save_param,args=(path))
+                    process.start()
+                else:
+                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                    process.start()
+            else:
+                self.save_param_(self.path)
     
     
     def restore(self,path):
