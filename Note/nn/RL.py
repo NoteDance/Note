@@ -2657,7 +2657,7 @@ class RL:
     
     
     def train(self, train_loss, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, parallel_dump=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
-        avg_reward=None
+        self.avg_reward=None
         if p!=0:
             if p==None:
                 self.p=9
@@ -2703,10 +2703,10 @@ class RL:
             elif self.PR:
                 self.share_TD=manager.dict()
             if type(self.optimizer)==list:
-                self.share_opt_class[7]=[opt.__class__ for opt in self.optimizer]
-                self.share_trainable_variables[7]=[None for _ in self.optimizer]
-                self.share_opt.config[7]=[opt.get_config() for opt in self.optimizer]
-                self.share_opt_variables[7]=[None for _ in self.optimizer]
+                self.share_opt_class[7]=manager.list([opt.__class__ for opt in self.optimizer])
+                self.share_trainable_variables[7]=manager.list([None for _ in self.optimizer])
+                self.share_opt.config[7]=manager.list([opt.get_config() for opt in self.optimizer])
+                self.share_opt_variables[7]=manager.list([None for _ in self.optimizer])
             else:
                 self.share_opt_class[7]=self.optimizer.__class__
                 self.share_trainable_variables[7]=None
@@ -2727,7 +2727,7 @@ class RL:
             self.path_list_=manager.list()
             for i in range(len(self.param)):
                 if type(self.param[i])==list:
-                    self.param_.append([])
+                    self.param_.append(manager.list())
                     for j in range(len(self.param[i])):
                         self.param_[-1].append(None)
                 else:
@@ -2882,7 +2882,11 @@ class RL:
                                     self.param_[i]=tf.identity(self.param[i])
                             self._save(self.path)
                             if parallel_dump:
-                                process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                if self.avg_reward!=None:
+                                    path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                else:
+                                    path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                process=mp.Process(target=self.save,args=(path))
                                 process.start()
                             else:
                                 process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -2892,7 +2896,11 @@ class RL:
                     else:
                         if parallel_training_and_save:
                             if parallel_dump:
-                                process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                if self.avg_reward!=None:
+                                    path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                else:
+                                    path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                process=mp.Process(target=self.save_param,args=(path))
                                 process.start()
                             else:
                                 process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -2901,8 +2909,8 @@ class RL:
                             self.save_param_(self.path)
                 if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
-                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                        if self.criterion!=None and avg_reward>=self.criterion:
+                        self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                        if self.criterion!=None and self.avg_reward>=self.criterion:
                             t2=time.time()
                             self.total_time+=(t2-t1)
                             time_=self.total_time-int(self.total_time)
@@ -2912,7 +2920,7 @@ class RL:
                                 self.total_time=int(self.total_time)+1
                             if p!=0:
                                 print('episode:{0}'.format(self.total_episode))
-                                print('average reward:{0}'.format(avg_reward))
+                                print('average reward:{0}'.format(self.avg_reward))
                                 print()
                                 print('time:{0}s'.format(self.total_time))
                             return
@@ -2920,8 +2928,8 @@ class RL:
                     if i%p==0:
                         if len(self.state_pool)>=self.batch:
                             print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
-                        if avg_reward!=None:
-                            print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                        if self.avg_reward!=None:
+                            print('episode:{0}   average reward:{1}'.format(i+1,self.avg_reward))
                         else:
                             print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                         print()
@@ -2986,7 +2994,11 @@ class RL:
                                     self.param_[i]=tf.identity(self.param[i])
                             self._save(self.path)
                             if parallel_dump:
-                                process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                if self.avg_reward!=None:
+                                    path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                else:
+                                    path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                process=mp.Process(target=self.save,args=(path))
                                 process.start()
                             else:
                                 process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -2996,7 +3008,11 @@ class RL:
                     else:
                         if parallel_training_and_save:
                             if parallel_dump:
-                                process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                if self.avg_reward!=None:
+                                    path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                else:
+                                    path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                process=mp.Process(target=self.save_param,args=(path))
                                 process.start()
                             else:
                                 process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3005,8 +3021,8 @@ class RL:
                             self.save_param_(self.path)
                 if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
-                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                        if self.criterion!=None and avg_reward>=self.criterion:
+                        self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                        if self.criterion!=None and self.avg_reward>=self.criterion:
                             t2=time.time()
                             self.total_time+=(t2-t1)
                             time_=self.total_time-int(self.total_time)
@@ -3016,7 +3032,7 @@ class RL:
                                 self.total_time=int(self.total_time)+1
                             if p!=0:
                                 print('episode:{0}'.format(self.total_episode))
-                                print('average reward:{0}'.format(avg_reward))
+                                print('average reward:{0}'.format(self.avg_reward))
                                 print()
                                 print('time:{0}s'.format(self.total_time))
                             return
@@ -3024,8 +3040,8 @@ class RL:
                     if i%p==0:
                         if len(self.state_pool)>=self.batch:
                             print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
-                        if avg_reward!=None:
-                            print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                        if self.avg_reward!=None:
+                            print('episode:{0}   average reward:{1}'.format(i+1,self.avg_reward))
                         else:
                             print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                         print()
@@ -3071,7 +3087,7 @@ class RL:
     
     
     def distributed_training(self, optimizer=None, strategy=None, episodes=None, num_episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, parallel_dump=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
-        avg_reward=None
+        self.avg_reward=None
         if num_episodes!=None:
             episodes=num_episodes
         if p!=0:
@@ -3120,10 +3136,10 @@ class RL:
             elif self.PR:
                 self.share_TD=manager.dict()
             if type(self.optimizer)==list:
-                self.share_opt_class[7]=[opt.__class__ for opt in self.optimizer]
-                self.share_trainable_variables[7]=[None for _ in self.optimizer]
-                self.share_opt.config[7]=[opt.get_config() for opt in self.optimizer]
-                self.share_opt_variables[7]=[None for _ in self.optimizer]
+                self.share_opt_class[7]=manager.list([opt.__class__ for opt in self.optimizer])
+                self.share_trainable_variables[7]=manager.list([None for _ in self.optimizer])
+                self.share_opt.config[7]=manager.list([opt.get_config() for opt in self.optimizer])
+                self.share_opt_variables[7]=manager.list([None for _ in self.optimizer])
             else:
                 self.share_opt_class[7]=self.optimizer.__class__
                 self.share_trainable_variables[7]=None
@@ -3302,7 +3318,11 @@ class RL:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
                                 if parallel_dump:
-                                    process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    if self.avg_reward!=None:
+                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                    else:
+                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                    process=mp.Process(target=self.save,args=(path))
                                     process.start()
                                 else:
                                     process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3312,7 +3332,11 @@ class RL:
                         else:
                             if parallel_training_and_save:
                                 if parallel_dump:
-                                    process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    if self.avg_reward!=None:
+                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                    else:
+                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                    process=mp.Process(target=self.save_param,args=(path))
                                     process.start()
                                 else:
                                     process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3321,8 +3345,8 @@ class RL:
                                 self.save_param_(self.path)
                     if self.trial_count!=None:
                         if len(self.reward_list)>=self.trial_count:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                            if self.criterion!=None and avg_reward>=self.criterion:
+                            self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and self.avg_reward>=self.criterion:
                                 t2=time.time()
                                 self.total_time+=(t2-t1)
                                 time_=self.total_time-int(self.total_time)
@@ -3332,7 +3356,7 @@ class RL:
                                     self.total_time=int(self.total_time)+1
                                 if p!=0:
                                     print('episode:{0}'.format(self.total_episode))
-                                    print('average reward:{0}'.format(avg_reward))
+                                    print('average reward:{0}'.format(self.avg_reward))
                                     print()
                                     print('time:{0}s'.format(self.total_time))
                                 return
@@ -3340,8 +3364,8 @@ class RL:
                         if i%p==0:
                             if len(self.state_pool)>=self.batch:
                                 print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
-                            if avg_reward!=None:
-                                print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                            if self.avg_reward!=None:
+                                print('episode:{0}   average reward:{1}'.format(i+1,self.avg_reward))
                             else:
                                 print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                             print()
@@ -3405,7 +3429,11 @@ class RL:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
                                 if parallel_dump:
-                                    process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    if self.avg_reward!=None:
+                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                    else:
+                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                    process=mp.Process(target=self.save,args=(path))
                                     process.start()
                                 else:
                                     process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3415,7 +3443,11 @@ class RL:
                         else:
                             if parallel_training_and_save:
                                 if parallel_dump:
-                                    process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    if self.avg_reward!=None:
+                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                    else:
+                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                    process=mp.Process(target=self.save_param,args=(path))
                                     process.start()
                                 else:
                                     process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3424,8 +3456,8 @@ class RL:
                                 self.save_param_(self.path)
                     if self.trial_count!=None:
                         if len(self.reward_list)>=self.trial_count:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                            if self.criterion!=None and avg_reward>=self.criterion:
+                            self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and self.avg_reward>=self.criterion:
                                 t2=time.time()
                                 self.total_time+=(t2-t1)
                                 time_=self.total_time-int(self.total_time)
@@ -3435,7 +3467,7 @@ class RL:
                                     self.total_time=int(self.total_time)+1
                                 if p!=0:
                                     print('episode:{0}'.format(self.total_episode))
-                                    print('average reward:{0}'.format(avg_reward))
+                                    print('average reward:{0}'.format(self.avg_reward))
                                     print()
                                     print('time:{0}s'.format(self.total_time))
                                 return
@@ -3443,8 +3475,8 @@ class RL:
                         if i%p==0:
                             if len(self.state_pool)>=self.batch:
                                 print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
-                            if avg_reward!=None:
-                                print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                            if self.avg_reward!=None:
+                                print('episode:{0}   average reward:{1}'.format(i+1,self.avg_reward))
                             else:
                                 print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                             print()
@@ -3502,7 +3534,11 @@ class RL:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
                                 if parallel_dump:
-                                    process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    if self.avg_reward!=None:
+                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                    else:
+                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                    process=mp.Process(target=self.save,args=(path))
                                     process.start()
                                 else:
                                     process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3512,7 +3548,11 @@ class RL:
                         else:
                             if parallel_training_and_save:
                                 if parallel_dump:
-                                    process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    if self.avg_reward!=None:
+                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                    else:
+                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                    process=mp.Process(target=self.save_param,args=(path))
                                     process.start()
                                 else:
                                     process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3533,8 +3573,8 @@ class RL:
                     self.total_episode+=1
                     if self.trial_count!=None:
                         if len(self.reward_list)>=self.trial_count:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                            if self.criterion!=None and avg_reward>=self.criterion:
+                            self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and self.avg_reward>=self.criterion:
                                 t2=time.time()
                                 self.total_time+=(t2-t1)
                                 time_=self.total_time-int(self.total_time)
@@ -3544,7 +3584,7 @@ class RL:
                                     self.total_time=int(self.total_time)+1
                                 if p!=0:
                                     print('episode:{0}'.format(self.total_episode))
-                                    print('average reward:{0}'.format(avg_reward))
+                                    print('average reward:{0}'.format(self.avg_reward))
                                     print()
                                     print('time:{0}s'.format(self.total_time))
                                 return
@@ -3552,8 +3592,8 @@ class RL:
                         if episode%p==0:
                             if len(self.state_pool)>=self.batch:
                                 print('episode:{0}   loss:{1:.4f}'.format(episode+1,loss))
-                            if avg_reward!=None:
-                                print('episode:{0}   average reward:{1}'.format(episode+1,avg_reward))
+                            if self.avg_reward!=None:
+                                print('episode:{0}   average reward:{1}'.format(episode+1,self.avg_reward))
                             else:
                                 print('episode:{0}   reward:{1}'.format(episode+1,self.reward))
                             print()
@@ -3612,7 +3652,11 @@ class RL:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
                                 if parallel_dump:
-                                    process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    if self.avg_reward!=None:
+                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                    else:
+                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                    process=mp.Process(target=self.save,args=(path))
                                     process.start()
                                 else:
                                     process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3622,7 +3666,11 @@ class RL:
                         else:
                             if parallel_training_and_save:
                                 if parallel_dump:
-                                    process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    if self.avg_reward!=None:
+                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                    else:
+                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                    process=mp.Process(target=self.save_param,args=(path))
                                     process.start()
                                 else:
                                     process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3643,8 +3691,8 @@ class RL:
                     self.total_episode+=1
                     if self.trial_count!=None:
                         if len(self.reward_list)>=self.trial_count:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                            if self.criterion!=None and avg_reward>=self.criterion:
+                            self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and self.avg_reward>=self.criterion:
                                 t2=time.time()
                                 self.total_time+=(t2-t1)
                                 time_=self.total_time-int(self.total_time)
@@ -3654,7 +3702,7 @@ class RL:
                                     self.total_time=int(self.total_time)+1
                                 if p!=0:
                                     print('episode:{0}'.format(self.total_episode))
-                                    print('average reward:{0}'.format(avg_reward))
+                                    print('average reward:{0}'.format(self.avg_reward))
                                     print()
                                     print('time:{0}s'.format(self.total_time))
                                 return
@@ -3662,8 +3710,8 @@ class RL:
                         if episode%p==0:
                             if len(self.state_pool)>=self.batch:
                                 print('episode:{0}   loss:{1:.4f}'.format(episode+1,loss))
-                            if avg_reward!=None:
-                                print('episode:{0}   average reward:{1}'.format(episode+1,avg_reward))
+                            if self.avg_reward!=None:
+                                print('episode:{0}   average reward:{1}'.format(episode+1,self.avg_reward))
                             else:
                                 print('episode:{0}   reward:{1}'.format(episode+1,self.reward))
                             print()
@@ -3720,7 +3768,11 @@ class RL:
                                         self.param_[i]=tf.identity(self.param[i])
                                 self._save(self.path)
                                 if parallel_dump:
-                                    process=mp.Process(target=self.save,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    if self.avg_reward!=None:
+                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                    else:
+                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                    process=mp.Process(target=self.save,args=(path))
                                     process.start()
                                 else:
                                     process=mp.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3730,7 +3782,11 @@ class RL:
                         else:
                             if parallel_training_and_save:
                                 if parallel_dump:
-                                    process=mp.Process(target=self.save_param,args=(self.path+'-{0}'.format(self.total_epoch)))
+                                    if self.avg_reward!=None:
+                                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward)
+                                    else:
+                                        path=self.path+'-{0}.dat'.format(self.total_epoch)
+                                    process=mp.Process(target=self.save_param,args=(path))
                                     process.start()
                                 else:
                                     process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
@@ -3751,8 +3807,8 @@ class RL:
                     self.total_episode+=1
                     if self.trial_count!=None:
                         if len(self.reward_list)>=self.trial_count:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                            if self.criterion!=None and avg_reward>=self.criterion:
+                            self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and self.avg_reward>=self.criterion:
                                 t2=time.time()
                                 self.total_time+=(t2-t1)
                                 time_=self.total_time-int(self.total_time)
@@ -3762,7 +3818,7 @@ class RL:
                                     self.total_time=int(self.total_time)+1
                                 if p!=0:
                                     print('episode:{0}'.format(self.total_episode))
-                                    print('average reward:{0}'.format(avg_reward))
+                                    print('average reward:{0}'.format(self.avg_reward))
                                     print()
                                     print('time:{0}s'.format(self.total_time))
                                 return
@@ -3770,8 +3826,8 @@ class RL:
                         if episode%p==0:
                             if len(self.state_pool)>=self.batch:
                                 print('episode:{0}   loss:{1:.4f}'.format(episode+1,loss))
-                            if avg_reward!=None:
-                                print('episode:{0}   average reward:{1}'.format(episode+1,avg_reward))
+                            if self.avg_reward!=None:
+                                print('episode:{0}   average reward:{1}'.format(episode+1,self.avg_reward))
                             else:
                                 print('episode:{0}   reward:{1}'.format(episode+1,self.reward))
                             print()
@@ -3943,10 +3999,8 @@ class RL:
             if self.max_save_files==None or self.max_save_files==1:
                 path=path
             else:
-                if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
-                elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+                if self.avg_reward!=None:
+                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
             self.path_list.append(path)
@@ -3957,10 +4011,10 @@ class RL:
         else:
             if self.trial_count!=None:
                 if len(self.reward_list)>=self.trial_count:
-                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                    if self.avg_reward==None or avg_reward>self.avg_reward:
+                    self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                    if self.self.avg_reward==None or self.avg_reward>self.self.avg_reward:
                         self.save_param(path)
-                        self.avg_reward=avg_reward
+                        self.self.avg_reward=self.avg_reward
         return
     
     
@@ -4024,10 +4078,8 @@ class RL:
             if self.max_save_files==None or self.max_save_files==1:
                 path=path
             else:
-                if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
-                elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+                if self.avg_reward!=None:
+                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
             self.path_list.append(path)
@@ -4038,10 +4090,10 @@ class RL:
         else:
             if self.trial_count!=None:
                 if len(self.reward_list)>=self.trial_count:
-                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                    if self.avg_reward==None or avg_reward>self.avg_reward:
+                    self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                    if self.self.avg_reward==None or self.avg_reward>self.self.avg_reward:
                         self.save(path)
-                        self.avg_reward=avg_reward
+                        self.self.avg_reward=self.avg_reward
         if self.pool_network and not self.save_data:
             for i in range(self.processes):
                 self.state_pool_list[i]=state_pool_list[i]
@@ -4057,10 +4109,8 @@ class RL:
             if self.max_save_files==None or self.max_save_files==1:
                 path=path
             else:
-                if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
-                elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+                if self.avg_reward!=None:
+                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
             self.path_list.append(path)
@@ -4106,7 +4156,7 @@ class RL:
         self.param_save_flag_list[counter]=True
             
     
-    def parallel_state_dict_dump(self, index1, index2, path, counter):
+    def parallel_state_dump(self, index1, index2, path, counter):
         self.state_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
         path = os.path.join(path, f"state_{counter}.dat")
@@ -4216,12 +4266,12 @@ class RL:
                     for i in range(len(self.optimizer)):
                         for j in range(len(self.state_dict[i])):
                             counter+=1
-                            process=mp.Process(target=self.parallel_state_dict_dump,args=(i, j, path, counter))
+                            process=mp.Process(target=self.parallel_state_dump,args=(i, j, path, counter))
                             process.start()
                 else:
                     for i in range(len(self.state_dict)):
                         counter+=1
-                        process=mp.Process(target=self.parallel_state_dict_dump,args=(i, None, path, counter))
+                        process=mp.Process(target=self.parallel_state_dump,args=(i, None, path, counter))
                         process.start()
             else:
                 pickle.dump(self.state_dict,output_file)
@@ -4271,6 +4321,26 @@ class RL:
         return
     
     
+    def parallel_param_load(self, param, param_index, path, counter):
+        input_file2=open(os.path.join(path,f"param_{counter}.dat"),'rb')
+        if type(param[param_index[0]])==list:
+            param[param_index[0]][param_index[1]]=pickle.load(input_file2)
+            input_file2.close()
+        else:
+            param[param_index]=pickle.load(input_file2)
+            input_file2.close()
+            
+    
+    def parallel_state_load(self, state_dict, state_index, path, counter):
+        input_file2=open(os.path.join(path,f"state_{counter}.dat"),'rb')
+        if type(self.optimizer)==list:
+            state_dict[state_index[0]][self.state_index[1]]=pickle.load(input_file2)
+            input_file2.close()
+        else:
+            state_dict[state_index]=pickle.load(input_file2)
+            input_file2.close()
+    
+    
     def restore_p(self,path1,path2):
         input_file1=open(path1,'rb')
         if not self.parallel_dump:
@@ -4279,66 +4349,61 @@ class RL:
         param=self.param
         self.__dict__.update(model.__dict__)
         if self.parallel_dump==True:
-            param=[]
+            manager=multiprocessing.Manager()
+            param=manager.list()
             counter=0
             for i in range(len(self.param)):
                 if type(self.param[i])==list:
-                    param.append([None for _ in range(len(self.param[i]))])
+                    param.append(manager.list([None for _ in range(len(self.param[i]))]))
                 else:
-                    param=[None for _ in range(len(self.param[i]))]
+                    param.append(None)
+            process_list=[]
             for i in range(len(self.param)):
                 if type(self.param[i])==list:
                     for j in range(len(self.param[i])):
                         counter+=1
-                        input_file2=open(os.path.join(path2,f"param_{counter}.dat"),'rb')
                         input_file3=open(os.path.join(path2,"param_index_{counter}.dat"),'rb')
                         param_index=pickle.load(input_file3)
-                        param[param_index[0]][param_index[1]]=pickle.load(input_file2)
-                        input_file2.close()
+                        process=multiprocessing.Process(target=self.parallel_param_load,args=(param, param_index, path2, counter))
+                        process.start()
+                        process_list.append(process)
                         input_file3.close()
                 else:
                     counter+=1
-                    input_file2=open(os.path.join(path2,f"param_{counter}.dat"),'rb')
                     input_file3=open(os.path.join(path2,"param_index_{counter}.dat"),'rb')
                     param_index=pickle.load(input_file3)
-                    param[param_index]=pickle.load(input_file2)
-                    input_file2.close()
+                    process=multiprocessing.Process(target=self.parallel_state_load,args=(param, param_index, path2, counter))
+                    process.start()
+                    process_list.append(process)
                     input_file3.close()
         else:
             self.param=param
             param=pickle.load(input_file2)
-        nn.assign_param(self.param,param)
+            nn.assign_param(self.param,param)
         if self.parallel_dump==True:
             counter=0
-            self.state_index_list=pickle.load(input_file3)
             if type(self.optimizer)==list:
-                state_dict=[]
+                state_dict=manager.list()
                 for i in range(len(self.optimizer)):
-                    state_dict.append(dict())
+                    state_dict.append(manager.dict())
                 for i in range(len(self.optimizer)):
                     for j in range(len(self.state_dict[i])):
                         counter+=1
-                        input_file2=open(os.path.join(path2,f"state_{counter}.dat"),'rb')
                         input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
                         state_index=pickle.load(input_file3)
-                        state_dict[state_index[0]][self.state_index[1]]=pickle.load(input_file2)
-                    self.optimizer[state_index[0]].built=False
-                    self.optimizer[state_index[0]].build(self.optimizer[state_index[0]]._trainable_variables)
-                    self.optimizer[state_index[0]].load_own_variables(state_dict[state_index[0]])
-                    input_file2.close()
+                        process=multiprocessing.Process(target=self.parallel_state_load,args=(state_dict, state_index, path2, counter))
+                        process.start()
+                        process_list.append(process)
                     input_file3.close()
             else:
-                state_dict=dict()
+                state_dict=manager.dict()
                 for i in range(len(self.state_dict)):
                     counter+=1
-                    input_file2=open(os.path.join(path2,f"state_{counter}.dat"),'rb')
                     input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
                     state_index=pickle.load(input_file3)
-                    state_dict[state_index]=pickle.load(input_file2)
-                self.optimizer.built=False
-                self.optimizer.build(self.optimizer._trainable_variables)
-                self.optimizer.load_own_variables(state_dict)
-                input_file2.close()
+                    process=multiprocessing.Process(target=self.parallel_param_load,args=(state_dict, state_index, path2, counter))
+                    process.start()
+                    process_list.append(process)
                 input_file3.close()
         else:
             if type(self.optimizer)==list:
@@ -4355,4 +4420,24 @@ class RL:
         input_file1.close()
         if not self.parallel_dump:
             input_file2.close()
+        else:
+            for process in process_list:
+                process.join()
+            nn.assign_param(self.param,param)
+            counter=0
+            if type(self.optimizer)==list:
+                for i in range(len(self.optimizer)):
+                    for j in range(len(self.state_dict[i])):
+                        counter+=1
+                        input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
+                        state_index=pickle.load(input_file3)
+                    self.optimizer[state_index[0]].built=False
+                    self.optimizer[state_index[0]].build(self.optimizer[state_index[0]]._trainable_variables)
+                    self.optimizer[state_index[0]].load_own_variables(state_dict[state_index[0]])
+                    input_file3.close()
+            else:
+                self.optimizer.built=False
+                self.optimizer.build(self.optimizer._trainable_variables)
+                self.optimizer.load_own_variables(state_dict)
+                input_file3.close()
         return

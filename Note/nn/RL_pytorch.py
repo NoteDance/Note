@@ -1652,7 +1652,7 @@ class RL_pytorch:
     
     
     def train(self, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, p=None):
-        avg_reward=None
+        self.avg_reward=None
         if p==None:
             self.p=9
         else:
@@ -1685,8 +1685,8 @@ class RL_pytorch:
             elif self.PR:
                 self.share_TD=manager.dict()
             if type(self.optimizer)==list:
-                self.share_opt_class[7]=[opt.__class__ for opt in self.optimizer]
-                self.share_state_dict[7]=[None for _ in self.optimizer]
+                self.share_opt_class[7]=manager.list([opt.__class__ for opt in self.optimizer])
+                self.share_state_dict[7]=manager.list([None for _ in self.optimizer])
             else:
                 self.share_opt_class[7]=self.optimizer.__class__
                 self.share_state_dict[7]=None
@@ -1812,8 +1812,8 @@ class RL_pytorch:
                         self.save_(self.path)
                 if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
-                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                        if self.criterion!=None and avg_reward>=self.criterion:
+                        self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                        if self.criterion!=None and self.avg_reward>=self.criterion:
                             t2=time.time()
                             self.total_time+=(t2-t1)
                             time_=self.total_time-int(self.total_time)
@@ -1822,15 +1822,15 @@ class RL_pytorch:
                             else:
                                 self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
-                            print('average reward:{0}'.format(avg_reward))
+                            print('average reward:{0}'.format(self.avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
                             return
                 if i%p==0:
                     if len(self.state_pool)>=self.batch:
                         print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
-                    if avg_reward!=None:
-                        print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                    if self.avg_reward!=None:
+                        print('episode:{0}   average reward:{1}'.format(i+1,self.avg_reward))
                     else:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
@@ -1868,8 +1868,8 @@ class RL_pytorch:
                         self.save_(self.path)
                 if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
-                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                        if self.criterion!=None and avg_reward>=self.criterion:
+                        self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                        if self.criterion!=None and self.avg_reward>=self.criterion:
                             t2=time.time()
                             self.total_time+=(t2-t1)
                             time_=self.total_time-int(self.total_time)
@@ -1878,15 +1878,15 @@ class RL_pytorch:
                             else:
                                 self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
-                            print('average reward:{0}'.format(avg_reward))
+                            print('average reward:{0}'.format(self.avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
                             return
                 if i%p==0:
                     if len(self.state_pool)>=self.batch:
                         print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
-                    if avg_reward!=None:
-                        print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                    if self.avg_reward!=None:
+                        print('episode:{0}   average reward:{1}'.format(i+1,self.avg_reward))
                     else:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
@@ -1994,10 +1994,8 @@ class RL_pytorch:
             if self.max_save_files==None or self.max_save_files==1:
                 output_file=open(path,'wb')
             else:
-                if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
-                elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+                if self.avg_reward!=None:
+                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
                 output_file=open(path,'wb')
@@ -2010,10 +2008,10 @@ class RL_pytorch:
         else:
             if self.trial_count!=None:
                 if len(self.reward_list)>=self.trial_count:
-                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                    if self.avg_reward==None or avg_reward>self.avg_reward:
+                    self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                    if self.self.avg_reward==None or self.avg_reward>self.self.avg_reward:
                         self.save_param(path)
-                        self.avg_reward=avg_reward
+                        self.self.avg_reward=self.avg_reward
         return
     
     
@@ -2067,10 +2065,8 @@ class RL_pytorch:
             if self.max_save_files==None or self.max_save_files==1:
                 output_file=open(path,'wb')
             else:
-                if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
-                elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+                if self.avg_reward!=None:
+                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.avg_reward))
                 else:
                     path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
                 output_file=open(path,'wb')
@@ -2083,10 +2079,10 @@ class RL_pytorch:
         else:
             if self.trial_count!=None:
                 if len(self.reward_list)>=self.trial_count:
-                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                    if self.avg_reward==None or avg_reward>self.avg_reward:
+                    self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                    if self.self.avg_reward==None or self.avg_reward>self.self.avg_reward:
                         self.save(path)
-                        self.avg_reward=avg_reward
+                        self.self.avg_reward=self.avg_reward
         if self.pool_network and not self.save_data:
             for i in range(self.processes):
                 self.state_pool_list[i]=state_pool_list[i]
