@@ -3101,6 +3101,11 @@ class Model:
         self.param=None
         param_=self.param_
         self.param_=None
+        if type(self.optimizer)==list:
+            opt_config=[opt.get_config() for opt in self.optimizer]
+        else:
+            opt_config=self.optimizer.get_config()
+        self.opt_config=opt_config
         optimizer=self.optimizer
         self.optimizer=None
         pickle.dump(self,output_file)
@@ -3184,6 +3189,11 @@ class Model:
             output_file=open(path,'wb')
             param=self.param
             self.param=None
+            if type(self.optimizer)==list:
+                opt_config=[opt.get_config() for opt in self.optimizer]
+            else:
+                opt_config=self.optimizer.get_config()
+            self.opt_config=opt_config
             optimizer=self.optimizer
             self.optimizer=None
             pickle.dump(self,output_file)
@@ -3250,11 +3260,13 @@ class Model:
         if type(self.optimizer)==list:
             state_dict=pickle.load(input_file)
             for i in range(len(self.optimizer)):
+                self.optimizer[i].from_config(self.opt_config[i])
                 self.optimizer[i].built=False
                 self.optimizer[i].build(self.optimizer[i]._trainable_variables)
                 self.optimizer[i].load_own_variables(state_dict[i])
         else:
             state_dict=pickle.load(input_file)
+            self.optimizer.from_config(self.opt_config)
             self.optimizer.built=False
             self.optimizer.build(self.optimizer._trainable_variables)
             self.optimizer.load_own_variables(state_dict)
@@ -3350,11 +3362,13 @@ class Model:
             if type(self.optimizer)==list:
                 state_dict=pickle.load(input_file2)
                 for i in range(len(self.optimizer)):
+                    self.optimizer[i].from_config(self.opt_config[i])
                     self.optimizer[i].built=False
                     self.optimizer[i].build(self.optimizer[i]._trainable_variables)
                     self.optimizer[i].load_own_variables(state_dict[i])
             else:
                 state_dict=pickle.load(input_file2)
+                self.optimizer.from_config(self.opt_config)
                 self.optimizer.built=False
                 self.optimizer.build(self.optimizer._trainable_variables)
                 self.optimizer.load_own_variables(state_dict)
@@ -3372,11 +3386,13 @@ class Model:
                         counter+=1
                         input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
                         state_index=pickle.load(input_file3)
+                    self.optimizer[state_index[0]].from_config(self.opt_config[state_index[0]])
                     self.optimizer[state_index[0]].built=False
                     self.optimizer[state_index[0]].build(self.optimizer[state_index[0]]._trainable_variables)
                     self.optimizer[state_index[0]].load_own_variables(state_dict[state_index[0]])
                     input_file3.close()
             else:
+                self.optimizer.from_config(self.opt_config)
                 self.optimizer.built=False
                 self.optimizer.build(self.optimizer._trainable_variables)
                 self.optimizer.load_own_variables(state_dict)

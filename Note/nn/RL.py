@@ -1408,7 +1408,7 @@ class RL:
                             optimizer.append(self.share_opt_class[7][i]())
                     else:
                         optimizer.append(self.share_opt_class[7][i]())
-                    optimizer.from_config(self.share_opt.config[7][i])
+                    optimizer.from_config(self.share_opt_config[7][i])
                     if self.share_trainable_variables[7][i] is not None:
                         optimizer.build(self.share_trainable_variables[7][i])
                         optimizer.load_own_variables(self.share_opt_variables[7][i])
@@ -1418,7 +1418,7 @@ class RL:
                         optimizer = self.share_opt_class[7]()
                 else:
                     optimizer = self.share_opt_class[7]()
-                optimizer.from_config(self.share_opt.config[7])
+                optimizer.from_config(self.share_opt_config[7])
                 if self.share_trainable_variables[7] is not None:
                     optimizer.build(self.share_trainable_variables[7])
                     optimizer.load_own_variables(self.share_opt_variables[7])
@@ -2705,12 +2705,12 @@ class RL:
             if type(self.optimizer)==list:
                 self.share_opt_class[7]=manager.list([opt.__class__ for opt in self.optimizer])
                 self.share_trainable_variables[7]=manager.list([None for _ in self.optimizer])
-                self.share_opt.config[7]=manager.list([opt.get_config() for opt in self.optimizer])
+                self.share_opt_config[7]=manager.list([opt.get_config() for opt in self.optimizer])
                 self.share_opt_variables[7]=manager.list([None for _ in self.optimizer])
             else:
                 self.share_opt_class[7]=self.optimizer.__class__
                 self.share_trainable_variables[7]=None
-                self.share_opt.config[7]=self.optimizer.get_config()
+                self.share_opt_config[7]=self.optimizer.get_config()
                 self.share_opt_variables[7]=None
             self.done_length=manager.list([0 for _ in range(processes)])
             self.ess=mp.Value('f',0)
@@ -3138,12 +3138,12 @@ class RL:
             if type(self.optimizer)==list:
                 self.share_opt_class[7]=manager.list([opt.__class__ for opt in self.optimizer])
                 self.share_trainable_variables[7]=manager.list([None for _ in self.optimizer])
-                self.share_opt.config[7]=manager.list([opt.get_config() for opt in self.optimizer])
+                self.share_opt_config[7]=manager.list([opt.get_config() for opt in self.optimizer])
                 self.share_opt_variables[7]=manager.list([None for _ in self.optimizer])
             else:
                 self.share_opt_class[7]=self.optimizer.__class__
                 self.share_trainable_variables[7]=None
-                self.share_opt.config[7]=self.optimizer.get_config()
+                self.share_opt_config[7]=self.optimizer.get_config()
                 self.share_opt_variables[7]=None
             self.done_length=manager.list([0 for _ in range(processes)])
             self.ess=mp.Value('f',0)
@@ -4122,6 +4122,11 @@ class RL:
         self.param=None
         param_=self.param_
         self.param_=None
+        if type(self.optimizer)==list:
+            opt_config=[opt.get_config() for opt in self.optimizer]
+        else:
+            opt_config=self.optimizer.get_config()
+        self.opt_config=opt_config
         optimizer=self.optimizer
         self.optimizer=None
         pickle.dump(self,output_file)
@@ -4236,6 +4241,11 @@ class RL:
             output_file=open(path,'wb')
             param=self.param
             self.param=None
+            if type(self.optimizer)==list:
+                opt_config=[opt.get_config() for opt in self.optimizer]
+            else:
+                opt_config=self.optimizer.get_config()
+            self.opt_config=opt_config
             optimizer=self.optimizer
             self.optimizer=None
             pickle.dump(self,output_file)
@@ -4309,11 +4319,13 @@ class RL:
         if type(self.optimizer)==list:
             state_dict=pickle.load(input_file)
             for i in range(len(self.optimizer)):
+                self.optimizer[i].from_config(self.opt_config[i])
                 self.optimizer[i].built=False
                 self.optimizer[i].build(self.optimizer[i]._trainable_variables)
                 self.optimizer[i].load_own_variables(state_dict[i])
         else:
             state_dict=pickle.load(input_file)
+            self.optimizer.from_config(self.opt_config)
             self.optimizer.built=False
             self.optimizer.build(self.optimizer._trainable_variables)
             self.optimizer.load_own_variables(state_dict)
@@ -4349,7 +4361,7 @@ class RL:
         param=self.param
         self.__dict__.update(model.__dict__)
         if self.parallel_dump==True:
-            manager=multiprocessing.Manager()
+            manager=mp.Manager()
             param=manager.list()
             counter=0
             for i in range(len(self.param)):
@@ -4364,7 +4376,7 @@ class RL:
                         counter+=1
                         input_file3=open(os.path.join(path2,"param_index_{counter}.dat"),'rb')
                         param_index=pickle.load(input_file3)
-                        process=multiprocessing.Process(target=self.parallel_param_load,args=(param, param_index, path2, counter))
+                        process=mp.Process(target=self.parallel_param_load,args=(param, param_index, path2, counter))
                         process.start()
                         process_list.append(process)
                         input_file3.close()
@@ -4372,7 +4384,7 @@ class RL:
                     counter+=1
                     input_file3=open(os.path.join(path2,"param_index_{counter}.dat"),'rb')
                     param_index=pickle.load(input_file3)
-                    process=multiprocessing.Process(target=self.parallel_state_load,args=(param, param_index, path2, counter))
+                    process=mp.Process(target=self.parallel_state_load,args=(param, param_index, path2, counter))
                     process.start()
                     process_list.append(process)
                     input_file3.close()
@@ -4391,7 +4403,7 @@ class RL:
                         counter+=1
                         input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
                         state_index=pickle.load(input_file3)
-                        process=multiprocessing.Process(target=self.parallel_state_load,args=(state_dict, state_index, path2, counter))
+                        process=mp.Process(target=self.parallel_state_load,args=(state_dict, state_index, path2, counter))
                         process.start()
                         process_list.append(process)
                     input_file3.close()
@@ -4401,7 +4413,7 @@ class RL:
                     counter+=1
                     input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
                     state_index=pickle.load(input_file3)
-                    process=multiprocessing.Process(target=self.parallel_param_load,args=(state_dict, state_index, path2, counter))
+                    process=mp.Process(target=self.parallel_param_load,args=(state_dict, state_index, path2, counter))
                     process.start()
                     process_list.append(process)
                 input_file3.close()
@@ -4409,11 +4421,13 @@ class RL:
             if type(self.optimizer)==list:
                 state_dict=pickle.load(input_file2)
                 for i in range(len(self.optimizer)):
+                    self.optimizer[i].from_config(self.opt_config[i])
                     self.optimizer[i].built=False
                     self.optimizer[i].build(self.optimizer[i]._trainable_variables)
                     self.optimizer[i].load_own_variables(state_dict[i])
             else:
                 state_dict=pickle.load(input_file2)
+                self.optimizer.from_config(self.opt_config)
                 self.optimizer.built=False
                 self.optimizer.build(self.optimizer._trainable_variables)
                 self.optimizer.load_own_variables(state_dict)
@@ -4431,11 +4445,13 @@ class RL:
                         counter+=1
                         input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
                         state_index=pickle.load(input_file3)
+                    self.optimizer[state_index[0]].from_config(self.opt_config[state_index[0]])
                     self.optimizer[state_index[0]].built=False
                     self.optimizer[state_index[0]].build(self.optimizer[state_index[0]]._trainable_variables)
                     self.optimizer[state_index[0]].load_own_variables(state_dict[state_index[0]])
                     input_file3.close()
             else:
+                self.optimizer.from_config(self.opt_config)
                 self.optimizer.built=False
                 self.optimizer.build(self.optimizer._trainable_variables)
                 self.optimizer.load_own_variables(state_dict)
