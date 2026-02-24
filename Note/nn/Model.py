@@ -54,7 +54,7 @@ class Model:
         self.path=None
         self.save_freq=1
         self.save_freq_=None
-        self.max_save_files=None
+        self.max_save_files=1
         self.monitor='val_loss'
         self.val_loss=0
         self.val_accuracy=1
@@ -1061,8 +1061,11 @@ class Model:
                         break
                     if hasattr(self, 'batch_size_fn'):
                         train_ds = self.batch_size_fn(train_ds)
-                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                        self.save_checkpoint()
+                    if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
+                        if self.parallel_training_and_test and self.test_flag.value:
+                            self.save_checkpoint()
+                        elif not self.parallel_training_and_test:
+                            self.save_checkpoint()
                 if test_ds!=None and epoch % test_freq == 0:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_begin'):
@@ -1130,7 +1133,7 @@ class Model:
                                 print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                                 print()
                 if self.save_freq_==None:
-                    if self.path!=None and epoch%self.save_freq==0:
+                    if epoch%self.save_freq==0:
                         self.save_checkpoint()
                 t2=time.time()
                 self.time+=(t2-t1)
@@ -1211,9 +1214,11 @@ class Model:
                         break
                     if hasattr(self, 'batch_size_fn'):
                         train_ds = self.batch_size_fn(train_ds)
-                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                        self.save_checkpoint()
-                
+                    if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
+                        if self.parallel_training_and_test and self.test_flag.value:
+                            self.save_checkpoint()
+                        elif not self.parallel_training_and_test:
+                            self.save_checkpoint()
                 if test_ds!=None and i % test_freq == 0:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_begin'):
@@ -1282,7 +1287,7 @@ class Model:
                                 print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                                 print()
                 if self.save_freq_==None:
-                    if self.path!=None and epoch%self.save_freq==0:
+                    if epoch%self.save_freq==0:
                         self.save_checkpoint()
                 t2=time.time()
                 self.time+=(t2-t1)
@@ -1503,9 +1508,12 @@ class Model:
                             break
                         if hasattr(self, 'batch_size_fn'):
                             train_dist_dataset = self.batch_size_fn(train_dist_dataset)
-                        if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                            self.save_checkpoint()
-                    
+                        if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
+                            if self.parallel_training_and_test and self.test_flag.value:
+                                self.save_checkpoint()
+                            elif not self.parallel_training_and_test:
+                                self.save_checkpoint()
+                                
                     if test_loss!=None:
                         test_loss.reset_states()
                     if test_accuracy!=None:
@@ -1583,7 +1591,7 @@ class Model:
                                     print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                                     print()
                     if self.save_freq_==None:
-                        if self.path!=None and epoch%self.save_freq==0:
+                        if epoch%self.save_freq==0:
                             self.save_checkpoint()
                     t2=time.time()
                     self.time+=(t2-t1)
@@ -1675,9 +1683,12 @@ class Model:
                             break
                         if hasattr(self, 'batch_size_fn'):
                             train_dist_dataset = self.batch_size_fn(train_dist_dataset)
-                        if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                            self.save_checkpoint()
-                    
+                        if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
+                            if self.parallel_training_and_test and self.test_flag.value:
+                                self.save_checkpoint()
+                            elif not self.parallel_training_and_test:
+                                self.save_checkpoint()
+                                
                     if test_loss!=None:
                         test_loss.reset_states()
                     if test_accuracy!=None:
@@ -1757,7 +1768,7 @@ class Model:
                                     print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                                     print()
                     if self.save_freq_==None:
-                        if self.path!=None and epoch%self.save_freq==0:
+                        if epoch%self.save_freq==0:
                             self.save_checkpoint()
                     t2=time.time()
                     self.time+=(t2-t1)
@@ -1866,7 +1877,7 @@ class Model:
                                     print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                                     print()
                     if self.save_freq_==None:
-                        if self.path!=None and epoch%self.save_freq==0:
+                        if epoch%self.save_freq==0:
                             self.save_checkpoint()
                     
                     if train_accuracy!=None:
@@ -1985,7 +1996,7 @@ class Model:
                                     print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                                     print()
                     if self.save_freq_==None:
-                        if self.path!=None and epoch%self.save_freq==0:
+                        if epoch%self.save_freq==0:
                             self.save_checkpoint()
                     
                     if train_accuracy!=None:
@@ -2099,7 +2110,7 @@ class Model:
                                     print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                                     print()
                     if self.save_freq_==None:
-                        if self.path!=None and epoch%self.save_freq==0:
+                        if epoch%self.save_freq==0:
                             self.save_checkpoint()
                     
                     if train_accuracy!=None:
@@ -2213,7 +2224,7 @@ class Model:
                                         print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                                         print()
                     if self.save_freq_==None:
-                        if self.path!=None and epoch%self.save_freq==0:
+                        if epoch%self.save_freq==0:
                             self.save_checkpoint()
                         
                         if train_accuracy!=None:
@@ -2331,8 +2342,6 @@ class Model:
                 return total_loss / num_batches
             if hasattr(self, 'batch_size_fn'):
                 iterator = iter(self.batch_size_fn(multi_worker_dataset))
-            if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                self.save_checkpoint()
             if self.stop_training==True:
                 return total_loss / num_batches
             if self.parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
@@ -2348,6 +2357,11 @@ class Model:
                 self.end_test_func()
                 if self.end():
                     return total_loss / num_batches
+            if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
+                if self.parallel_training_and_test and self.test_flag.value:
+                    self.save_checkpoint()
+                elif not self.parallel_training_and_test:
+                    self.save_checkpoint()
         train_loss = total_loss / num_batches
         return train_loss
     
@@ -2425,11 +2439,6 @@ class Model:
             if self.PR and self.total_epoch % 2 != 0 and batch_counter % num_updates == 0:
                 coordinator.join()
                 return total_loss.fetch() / num_batches
-            if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                if self.save_param_only==False:
-                    self.save_(self.path)
-                else:
-                    self.save_param_(self.path)
             if self.stop_training==True:
                 coordinator.join()
                 return total_loss.fetch() / num_batches
@@ -2447,6 +2456,11 @@ class Model:
                 if self.end():
                     coordinator.join()
                     return total_loss.fetch() / num_batches
+            if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
+                if self.parallel_training_and_test and self.test_flag.value:
+                    self.save_checkpoint()
+                elif not self.parallel_training_and_test:
+                    self.save_checkpoint()
         coordinator.join()
       
         train_loss = total_loss.fetch() / num_batches
@@ -2530,15 +2544,13 @@ class Model:
     
     def save_param_(self,path):
         if self.save_best_only==False:
-            if self.max_save_files==None or self.max_save_files==1:
+            if self.max_save_files==1:
                 path=path
             else:
                 if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
                 elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
-                else:
-                    path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
             self.path_list.append(path)
             if len(self.path_list)>self.max_save_files:
                 os.remove(self.path_list[0])
@@ -2547,12 +2559,20 @@ class Model:
         else:
             if self.monitor=='val_loss':
                 if self.test_loss<self.val_loss:
+                    self.path_list.append(path)
+                    if len(self.path_list)>self.max_save_files:
+                        os.remove(self.path_list[0])
+                        del self.path_list[0]
                     self.val_loss=self.test_loss
                     self.save_param(path)
                 if self.val_loss==0:
                     self.val_loss=self.test_loss
             elif self.monitor=='val_accuracy':
                 if self.test_acc>self.val_accuracy:
+                    self.path_list.append(path)
+                    if len(self.path_list)>self.max_save_files:
+                        os.remove(self.path_list[0])
+                        del self.path_list[0]
                     self.val_accuracy=self.test_acc
                     self.save_param(path)
                 if self.val_accuracy==1:
@@ -2563,13 +2583,57 @@ class Model:
     def save_param(self,path):
         if self.parallel_training_and_save:
             self.save_flag.value=False
-            self.path_list_.append(path)
-            if len(self.path_list_)>self.max_save_files:
-                os.remove(self.path_list_[0])
-                del self.path_list_[0]
+            if self.save_best_only==True:
+                if self.monitor=='val_loss':
+                    if self.test_loss>self.val_loss:
+                        return
+                    elif self.test_loss<self.val_loss:
+                        self.val_loss=self.test_loss
+                    if self.val_loss==0:
+                        self.val_loss=self.test_loss
+                        return
+                elif self.monitor=='val_accuracy':
+                    if self.test_acc<self.val_accuracy:
+                        return
+                    elif self.test_acc>self.val_accuracy:
+                        self.val_accuracy=self.test_acc
+                    if self.val_accuracy==1:
+                        self.val_accuracy=self.test_acc
+                        return
+            self.param_save_flag_list.clear()
+            if self.parallel_dump:
+                if self.max_save_files==1:
+                    self.path_list_.append(path)
+                else:
+                    self.path_list_.append(path)
+                if len(self.path_list_)>self.max_save_files:
+                    shutil.rmtree(self.path_list_[0])
+                    del self.path_list_[0]
+            else:
+                if self.max_save_files==1:
+                    self.path_list_.append(path)
+                else:
+                    self.path_list_.append(path)
+                if len(self.path_list_)>self.max_save_files:
+                    os.remove(self.path_list_[0])
+                    del self.path_list_[0]
         output_file=open(path,'wb')
         if self.parallel_training_and_save and hasattr(self, 'param_'):
-            pickle.dump(self.param_,output_file)
+            if self.parallel_dump==True:
+                counter=0
+                for i in range(len(self.param_)):
+                    if type(self.param_[i])==list:
+                        for j in range(len(self.param_[i])):
+                            counter+=1
+                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, j, path, counter))
+                            process.start()
+                    else:
+                        counter+=1
+                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, None, path, counter))
+                        process.start()
+            else:
+                output_file=open(path,'wb')
+                pickle.dump(self.param_,output_file)
         else:
             pickle.dump(self.param,output_file)
         output_file.close()
@@ -2579,24 +2643,54 @@ class Model:
     
     
     def restore_param(self,path):
-        input_file=open(path,'rb')
-        param=pickle.load(input_file)
-        nn.assign_param(self.param,param)
-        input_file.close()
+        if self.parallel_dump==True:
+            manager=multiprocessing.Manager()
+            param=manager.list()
+            counter=0
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    param.append(manager.list([None for _ in range(len(self.param[i]))]))
+                else:
+                    param.append(None)
+            process_list=[]
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    for j in range(len(self.param[i])):
+                        counter+=1
+                        input_file1=open(os.path.join(path,"param_index_{counter}.dat"),'rb')
+                        param_index=pickle.load(input_file1)
+                        process=multiprocessing.Process(target=self.parallel_param_load,args=(param, param_index, path, counter))
+                        process.start()
+                        process_list.append(process)
+                        input_file1.close()
+                else:
+                    counter+=1
+                    input_file1=open(os.path.join(path,"param_index_{counter}.dat"),'rb')
+                    param_index=pickle.load(input_file1)
+                    process=multiprocessing.Process(target=self.parallel_state_load,args=(param, param_index, path, counter))
+                    process.start()
+                    process_list.append(process)
+                    input_file1.close()
+            for process in process_list:
+                process.join()
+            nn.assign_param(self.param,param)
+        else:
+            input_file=open(path,'rb')
+            param=pickle.load(input_file)
+            nn.assign_param(self.param,param)
+            input_file.close()
         return
     
     
     def save_(self,path):
         if self.save_best_only==False:
-            if self.max_save_files==None or self.max_save_files==1:
+            if self.max_save_files==1:
                 path=path
             else:
                 if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
                 elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
-                else:
-                    path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
             self.path_list.append(path)
             if len(self.path_list)>self.max_save_files:
                 os.remove(self.path_list[0])
@@ -2605,12 +2699,20 @@ class Model:
         else:
             if self.monitor=='val_loss':
                 if self.test_loss<self.val_loss:
+                    self.path_list.append(path)
+                    if len(self.path_list)>self.max_save_files:
+                        os.remove(self.path_list[0])
+                        del self.path_list[0]
                     self.val_loss=self.test_loss
                     self.save(path)
                 if self.val_loss==0:
                     self.val_loss=self.test_loss
             elif self.monitor=='val_accuracy':
                 if self.test_acc>self.val_accuracy:
+                    self.path_list.append(path)
+                    if len(self.path_list)>self.max_save_files:
+                        os.remove(self.path_list[0])
+                        del self.path_list[0]
                     self.val_accuracy=self.test_acc
                     self.save(path)
                 if self.val_accuracy==1:
@@ -2619,19 +2721,43 @@ class Model:
     
     
     def _save(self,path):
-        if self.max_save_files==None or self.max_save_files==1:
-            path=path
-        else:
-            if self.train_acc!=None and self.test_acc!=None:
-                path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
-            elif self.train_acc!=None:
-                path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+        if self.save_best_only==False:
+            if self.max_save_files==1:
+                path=path
             else:
-                path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
-        self.path_list.append(path)
-        if len(self.path_list)>self.max_save_files:
-            os.remove(self.path_list[0])
-            del self.path_list[0]
+                if self.train_acc!=None and self.test_acc!=None:
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
+                elif self.train_acc!=None:
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
+            self.path_list.append(path)
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
+        else:
+            if self.monitor=='val_loss':
+                if self.test_loss>self.val_loss:
+                    return
+                elif self.test_loss<self.val_loss:
+                    self.path_list.append(path)
+                    if len(self.path_list)>self.max_save_files:
+                        os.remove(self.path_list[0])
+                        del self.path_list[0]
+                    self.val_loss=self.test_loss
+                if self.val_loss==0:
+                    self.val_loss=self.test_loss
+                    return
+            elif self.monitor=='val_accuracy':
+                if self.test_acc<self.val_accuracy:
+                    return
+                elif self.test_acc>self.val_accuracy:
+                    self.path_list.append(path)
+                    if len(self.path_list)>self.max_save_files:
+                        os.remove(self.path_list[0])
+                        del self.path_list[0]
+                    self.val_accuracy=self.test_acc
+                if self.val_accuracy==1:
+                    self.val_accuracy=self.test_acc
+                    return
         output_file=open(path,'wb')
         param=self.param
         self.param=None
@@ -2703,6 +2829,10 @@ class Model:
     def save(self,path):
         if self.parallel_training_and_save:
             self.save_flag.value=False
+            if self.train_acc!=None and self.test_acc!=None:
+                path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
+            elif self.train_acc!=None:
+                path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
             if self.save_best_only==True:
                 if self.monitor=='val_loss':
                     if self.test_loss>self.val_loss:
@@ -2723,7 +2853,7 @@ class Model:
             self.param_save_flag_list.clear()
             self.state_save_flag_list.clear()
             if self.parallel_dump:
-                if self.max_save_files==None or self.max_save_files==1:
+                if self.max_save_files==1:
                     self.path_list_.append(path)
                 else:
                     self.path_list_.append(path)
@@ -2731,7 +2861,7 @@ class Model:
                     shutil.rmtree(self.path_list_[0])
                     del self.path_list_[0]
             else:
-                if self.max_save_files==None or self.max_save_files==1:
+                if self.max_save_files==1:
                     self.path_list_.append(path)
                 else:
                     self.path_list_.append(path)
@@ -2803,9 +2933,13 @@ class Model:
     
     
     def save_checkpoint(self):
-        manager=multiprocessing.Manager()
+        if self.save_freq!=None:
+            path=self.path+'-{0}.dat'.format(self.total_epoch)
+        elif self.save_freq_!=None:
+            path=self.path+'-{0}.dat'.format(self.batch_counter)
         if self.save_param_only==False:
             if self.parallel_training_and_save:
+                manager=multiprocessing.Manager()
                 if type(self.optimizer)==list:
                     self.state_dict=manager.list()
                     for i in range(len(self.optimizer)):
@@ -2820,37 +2954,25 @@ class Model:
                             self.param_[i][j]=tf.identity(self.param[i][j])
                     else:
                         self.param_[i]=tf.identity(self.param[i])
-                self._save(self.path)
+                self._save(path)
                 if self.parallel_dump:
-                    if self.train_acc!=None and self.test_acc!=None:
-                        path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                    elif self.train_acc!=None:
-                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                    else:
-                        path=self.path+'-{0}.dat'.format(self.total_epoch)
-                    process=multiprocessing.Process(target=self.save,args=(path))
+                    process=multiprocessing.Process(target=self.save,args=(path,))
                     process.start()
                 else:
-                    process=multiprocessing.Process(target=self.save,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                    process=multiprocessing.Process(target=self.save,args=(path.replace(path[self.path.find('.'):],'-parallel.dat'),))
                     process.start()
             else:
-                self.save_(self.path)
+                self.save_(path)
         else:
             if self.parallel_training_and_save:
                 if self.parallel_dump:
-                    if self.train_acc!=None and self.test_acc!=None:
-                        path=self.path+'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc)
-                    elif self.train_acc!=None:
-                        path=self.path+'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc)
-                    else:
-                        path=self.path+'-{0}.dat'.format(self.total_epoch)
-                    process=multiprocessing.Process(target=self.save_param,args=(path))
+                    process=multiprocessing.Process(target=self.save_param,args=(path,))
                     process.start()
                 else:
-                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-{0}-parallel.dat'.format(self.total_epoch))))
+                    process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-parallel.dat'),))
                     process.start()
             else:
-                self.save_param_(self.path)
+                self.save_param_(path)
     
     
     def restore(self,path):
