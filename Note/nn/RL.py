@@ -4020,8 +4020,6 @@ class RL:
             self.build_opt(self.optimizer)
         if self.parallel_training_and_save:
             self.save_flag.value=False
-            if self.avg_reward!=None:
-                path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.avg_reward))
             if self.save_best_only==True:
                 if self.avg_reward is not None and self.avg_reward<self.best_avg_reward:
                     return
@@ -4123,9 +4121,11 @@ class RL:
             path=self.path+'-{0}.dat'.format(self.total_epoch)
         elif self.save_freq_!=None:
             path=self.path+'-{0}.dat'.format(self.batch_counter)
-        manager=mp.Manager()
         if self.save_param_only==False:
             if self.parallel_training_and_save:
+                if self.avg_reward!=None:
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.avg_reward))
+                manager=mp.Manager()
                 if type(self.optimizer)==list:
                     self.state_dict=manager.list()
                     for i in range(len(self.optimizer)):

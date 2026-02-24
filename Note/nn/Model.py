@@ -2829,10 +2829,6 @@ class Model:
     def save(self,path):
         if self.parallel_training_and_save:
             self.save_flag.value=False
-            if self.train_acc!=None and self.test_acc!=None:
-                path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
-            elif self.train_acc!=None:
-                path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
             if self.save_best_only==True:
                 if self.monitor=='val_loss':
                     if self.test_loss>self.val_loss:
@@ -2939,6 +2935,10 @@ class Model:
             path=self.path+'-{0}.dat'.format(self.batch_counter)
         if self.save_param_only==False:
             if self.parallel_training_and_save:
+                if self.train_acc!=None and self.test_acc!=None:
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
+                elif self.train_acc!=None:
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
                 manager=multiprocessing.Manager()
                 if type(self.optimizer)==list:
                     self.state_dict=manager.list()
