@@ -3813,9 +3813,9 @@ class RL:
                 for i in range(len(self.param)):
                     if type(self.param[i])==list:
                         for j in range(len(self.param[i])):
-                            self.param_[i][j]=tf.identity(self.param[i][j])
+                            self.param_[i][j]=tf.Variable(self.param[i][j])
                     else:
-                        self.param_[i]=tf.identity(self.param[i])
+                        self.param_[i]=tf.Variable(self.param[i])
                 self._save(self.path)
                 if self.parallel_dump:
                     process=mp.Process(target=self.save,args=(path,))
