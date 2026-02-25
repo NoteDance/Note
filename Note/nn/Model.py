@@ -937,7 +937,6 @@ class Model:
         self.parallel_pickle=parallel_dump
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
-            self.param=manager.list(self.param)
             self.test_flag=multiprocessing.Value('b',False)
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
@@ -976,9 +975,6 @@ class Model:
             self.test_batch_size=test_ds._batch_size.numpy()
         self.processes=processes
         self.parallel_test_=parallel_test
-        if parallel_test:
-            manager=multiprocessing.Manager()
-            self.param=manager.list(self.param)
         self.jit_compile=jit_compile
         self.p=p
         self.info_flag=0
@@ -1370,7 +1366,6 @@ class Model:
         self.parallel_dump=parallel_dump
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
-            self.param=manager.list(self.param)
             self.test_flag=multiprocessing.Value('b',False)
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
@@ -2929,16 +2924,28 @@ class Model:
     
     
     def save_checkpoint(self):
-        if self.save_freq!=None:
-            path=self.path+'-{0}.dat'.format(self.total_epoch)
-        elif self.save_freq_!=None:
-            path=self.path+'-{0}.dat'.format(self.batch_counter)
+        if self.parallel_dump:
+            if self.save_freq!=None:
+                path=self.path+'-{0}.dat'.format(self.total_epoch)
+            elif self.save_freq_!=None:
+                path=self.path+'-{0}.dat'.format(self.batch_counter)
+        else:
+            if self.save_freq!=None:
+                path=self.path+'-{0}.dat'.format(self.total_epoch)
+            elif self.save_freq_!=None:
+                path=self.path+'-{0}.dat'.format(self.batch_counter)
         if self.save_param_only==False:
             if self.parallel_training_and_save:
-                if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
-                elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
+                if self.parallel_dump:
+                    if self.train_acc!=None and self.test_acc!=None:
+                        path=path+'-{0:.4f}-{1:.4f}'.format(self.train_acc,self.test_acc)
+                    elif self.train_acc!=None:
+                        path=path+'-{0:.4f}'.format(self.train_acc)
+                else:
+                    if self.train_acc!=None and self.test_acc!=None:
+                        path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
+                    elif self.train_acc!=None:
+                        path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
                 manager=multiprocessing.Manager()
                 if type(self.optimizer)==list:
                     self.state_dict=manager.list()
@@ -2951,9 +2958,9 @@ class Model:
                 for i in range(len(self.param)):
                     if type(self.param[i])==list:
                         for j in range(len(self.param[i])):
-                            self.param_[i][j]=tf.identity(self.param[i][j])
+                            self.param_[i][j]=tf.Variable(self.param[i][j])
                     else:
-                        self.param_[i]=tf.identity(self.param[i])
+                        self.param_[i]=tf.Variable(self.param[i])
                 self._save(path)
                 if self.parallel_dump:
                     process=multiprocessing.Process(target=self.save,args=(path,))
