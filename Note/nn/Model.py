@@ -58,7 +58,10 @@ class Model:
         self.monitor='val_loss'
         self.val_loss=0
         self.val_accuracy=1
-        self.save_best_only=False
+        self.patience=None
+        self.patience_counter=0
+        self.save_top_k=1
+        self.save_last=True
         self.save_param_only=False
         self.callbacks=[]
         self.stop_training=False
@@ -381,22 +384,22 @@ class Model:
                 if (self.train_acc is not None and self.test_acc is not None
                         and self.train_acc > self.end_acc
                         and self.test_acc > self.end_test_acc):
-                    return True
+                    self.stop_training = True
             elif self.end_loss is not None and self.end_test_loss is not None:
                 if (self.train_loss is not None and self.test_loss is not None
                         and self.train_loss < self.end_loss
                         and self.test_loss < self.end_test_loss):
-                    return True
+                    self.stop_training = True
             else:
                 if self.end_acc is not None and self.train_acc is not None and self.train_acc > self.end_acc:
-                    return True
+                    self.stop_training = True
                 if self.end_loss is not None and self.train_loss is not None and self.train_loss < self.end_loss:
-                    return True
+                    self.stop_training = True
                 if self.end_test_acc is not None and self.test_acc is not None and self.test_acc > self.end_test_acc:
-                    return True
+                    self.stop_training = True
                 if self.end_test_loss is not None and self.test_loss is not None and self.test_loss < self.end_test_loss:
-                    return True
-            return False
+                    self.stop_training = True
+            self.stop_training = False
     
     
     def segment_data(self, data, labels, processes):
@@ -710,6 +713,28 @@ class Model:
             if test_accuracy!=None:
                 self.test_accuracy_dict[7]=test_accuracy.result().numpy()
             self.test_flag.value=True
+    
+    
+    def check_early_stopping(self, val_loss, val_accuracy):
+        if self.monitor=='val_loss':
+            if self.test_loss>val_loss:
+                self.patience_counter += 1
+            elif self.test_loss<val_loss:
+                val_loss=self.test_loss
+                self.patience_counter = 0
+            if val_loss==0:
+                val_loss=self.test_loss
+        elif self.monitor=='val_accuracy':
+            if self.test_acc<val_accuracy:
+                self.patience_counter += 1
+            elif self.test_acc>val_accuracy:
+                val_accuracy=self.test_acc
+                self.patience_counter = 0
+            if val_accuracy==1:
+                val_accuracy=self.test_acc
+        if self.patience_counter == self.patience:
+            self.stop_training = True
+        return val_loss, val_accuracy
             
     
     def adjust_lr(self, lr_params, lr, ema, target): 
@@ -981,12 +1006,16 @@ class Model:
         for callback in self.callbacks:
             if hasattr(callback, 'on_train_begin'):
                 callback.on_train_begin(logs={})
+        if self.patience is not None:
+            val_loss = self.val_loss
+            val_accuracy = self.val_accuracy
         if epochs!=None:
             for epoch in range(epochs):
                 t1=time.time()
+                self.end()
+                if self.patience is not None and not parallel_training_and_test:
+                    val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
                 if self.stop_training==True:
-                    return
-                if self.end():
                     break
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_epoch_begin'):
@@ -1011,8 +1040,6 @@ class Model:
                     num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                     num_updates = int(num_updates)
                 for train_data, labels in train_ds:
-                    if self.stop_training==True:
-                        return
                     if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
                         if self.test_loss_dict[7] is not None:
                             self.test_loss = self.test_loss_dict[7]
@@ -1024,8 +1051,11 @@ class Model:
                                 self.test_acc_list.append(self.test_accuracy_dict[7])
                                 self.test_accuracy_dict[7] = None
                         self.end_test_func()
-                        if self.end():
-                            break
+                        self.end()
+                        if self.patience is not None:
+                            val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
+                    if self.stop_training==True:
+                        break
                     index2 = index1 + self.batch_size
                     if self.PR and epoch % 2 != 0:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1137,9 +1167,10 @@ class Model:
             i=0
             while True:
                 t1=time.time()
+                self.end()
+                if self.patience is not None and not parallel_training_and_test:
+                    val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
                 if self.stop_training==True:
-                    return
-                if self.end():
                     break
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_epoch_begin'):
@@ -1164,8 +1195,6 @@ class Model:
                     num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                     num_updates = int(num_updates)
                 for train_data, labels in train_ds:
-                    if self.stop_training==True:
-                        return
                     if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
                         if self.test_loss_dict[7] is not None:
                             self.test_loss = self.test_loss_dict[7]
@@ -1177,8 +1206,11 @@ class Model:
                                 self.test_acc_list.append(self.test_accuracy_dict[7])
                                 self.test_accuracy_dict[7] = None
                         self.end_test_func()
-                        if self.end():
-                            break
+                        self.end()
+                        if self.patience is not None:
+                            val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
+                    if self.stop_training==True:
+                        break
                     index2 = index1 + self.batch_size
                     if self.PR and i % 2 != 0:
                         train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1295,9 +1327,9 @@ class Model:
                 if parallel_training_and_save:
                     if self.save_param_only==False:
                         self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
-                    condition = (self.end() or self.test_flag.value) and self.save_flag.value
+                    condition = (self.stop_training or self.test_flag.value) and self.save_flag.value
                 else:
-                    condition = self.end() or self.test_flag.value
+                    condition = self.stop_training or self.test_flag.value
                 if condition:
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
@@ -1412,6 +1444,9 @@ class Model:
         for callback in self.callbacks:
             if hasattr(callback, 'on_train_begin'):
                 callback.on_train_begin(logs={})
+        if self.patience is not None:
+            val_loss = self.val_loss
+            val_accuracy = self.val_accuracy
         if isinstance(strategy,tf.distribute.MirroredStrategy):
             train_dist_dataset=strategy.experimental_distribute_dataset(train_dataset)
             if not parallel_training_and_test and test_dataset!=None:
@@ -1419,9 +1454,10 @@ class Model:
             if epochs!=None:
                 for epoch in range(epochs):
                     t1=time.time()
+                    self.end()
+                    if self.patience is not None and not parallel_training_and_test:
+                        val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
                     if self.stop_training==True:
-                        return
-                    if self.end():
                         break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_epoch_begin'):
@@ -1451,8 +1487,6 @@ class Model:
                         num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                         num_updates = int(num_updates)
                     for x in train_dist_dataset:
-                        if self.stop_training==True:
-                            return
                         if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
                             if self.test_loss_dict[7] is not None:
                                 self.test_loss = self.test_loss_dict[7]
@@ -1464,8 +1498,11 @@ class Model:
                                     self.test_acc_list.append(self.test_accuracy_dict[7])
                                     self.test_accuracy_dict[7] = None
                             self.end_test_func()
-                            if self.end():
-                                break
+                            self.end()
+                            if self.patience is not None:
+                                val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
+                        if self.stop_training==True:
+                            break
                         index2 = index1 + self.batch_size
                         if self.PR and hasattr(self, 'ess') and epoch % 2 != 0:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1594,9 +1631,10 @@ class Model:
                 i=0
                 while True:
                     t1=time.time()
+                    self.end()
+                    if self.patience is not None and not parallel_training_and_test:
+                        val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
                     if self.stop_training==True:
-                        return
-                    if self.end():
                         break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_epoch_begin'):
@@ -1626,8 +1664,6 @@ class Model:
                         num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                         num_updates = int(num_updates)
                     for x in train_dist_dataset:
-                        if self.stop_training==True:
-                            return
                         if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
                             if self.test_loss_dict[7] is not None:
                                 self.test_loss = self.test_loss_dict[7]
@@ -1639,8 +1675,11 @@ class Model:
                                     self.test_acc_list.append(self.test_accuracy_dict[7])
                                     self.test_accuracy_dict[7] = None
                             self.end_test_func()
-                            if self.end():
-                                break
+                            self.end()
+                            if self.patience is not None:
+                                val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
+                        if self.stop_training==True:
+                            break
                         index2 = index1 + self.batch_size
                         if self.PR and i % 2 != 0:
                             train_data, labels = self.prioritized_replay.sample(train_data, train_labels, alpha, self.batch_size)
@@ -1768,6 +1807,8 @@ class Model:
                     t2=time.time()
                     self.time+=(t2-t1)
         elif isinstance(strategy,tf.distribute.MultiWorkerMirroredStrategy):
+            if self.patience is not None and parallel_training_and_test:
+                self.val_loss_, self.val_accuracy_ = self.val_loss, self.val_accuracy
             if num_epochs!=None:
                 epoch = 0
                 self.step_in_epoch = 0
@@ -1782,10 +1823,12 @@ class Model:
                 while epoch < num_epochs:
                     t1=time.time()
                     
-                    if self.stop_training==True:
-                        return
+                    self.end()
                     
-                    if self.end():
+                    if self.patience is not None and not parallel_training_and_test:
+                        val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
+                    
+                    if self.stop_training==True:
                         break
                     
                     if not self.PR and hasattr(self, 'batch_size_fn') and self.batch_size_old != self.batch_size:
@@ -1900,10 +1943,12 @@ class Model:
                 while True:
                     t1=time.time()
                     
-                    if self.stop_training==True:
-                        return
+                    self.end()
                     
-                    if self.end():
+                    if self.patience is not None and not parallel_training_and_test:
+                        val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
+                    
+                    if self.stop_training==True:
                         break
                     
                     if not self.PR and hasattr(self, 'batch_size_fn') and self.batch_size_old != self.batch_size:
@@ -2010,16 +2055,20 @@ class Model:
             self.dataset_fn = dataset_fn
             self.test_dataset_fn = test_dataset_fn
             self.strategy = strategy
+            if self.patience is not None and parallel_training_and_test:
+                self.val_loss_, self.val_accuracy_ = self.val_loss, self.val_accuracy
             if num_epochs!=None:
                 epoch = 0
                 self.step_in_epoch = 0
                 while epoch < num_epochs:
                     t1=time.time()
                     
-                    if self.stop_training==True:
-                        return
+                    self.end()
                     
-                    if self.end():
+                    if self.patience is not None and not parallel_training_and_test:
+                        val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
+                    
+                    if self.stop_training==True:
                         break
                     
                     for callback in self.callbacks:
@@ -2130,10 +2179,12 @@ class Model:
                     while True:
                         t1=time.time()
                         
-                        if self.stop_training==True:
-                            return
+                        self.end()
                         
-                        if self.end():
+                        if self.patience is not None and not parallel_training_and_test:
+                            val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
+                        
+                        if self.stop_training==True:
                             break
                         
                         for callback in self.callbacks:
@@ -2239,9 +2290,9 @@ class Model:
                 if parallel_training_and_save:
                     if self.save_param_only==False:
                         self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
-                    condition = (self.end() or self.test_flag.value) and self.save_flag.value
+                    condition = (self.stop_training or self.test_flag.value) and self.save_flag.value
                 else:
-                    condition = self.end() or self.test_flag.value
+                    condition = self.stop_training or self.test_flag.value
                 if condition:
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
@@ -2337,8 +2388,6 @@ class Model:
                 return total_loss / num_batches
             if hasattr(self, 'batch_size_fn'):
                 iterator = iter(self.batch_size_fn(multi_worker_dataset))
-            if self.stop_training==True:
-                return total_loss / num_batches
             if self.parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
                 if self.test_loss_dict[7] is not None:
                     self.test_loss = self.test_loss_dict[7]
@@ -2350,13 +2399,16 @@ class Model:
                         self.test_acc_list.append(self.test_accuracy_dict[7])
                         self.test_accuracy_dict[7] = None
                 self.end_test_func()
-                if self.end():
-                    return total_loss / num_batches
+                self.end()
+                if self.patience is not None:
+                    self.val_loss_, self.val_accuracy_ = self.check_early_stopping(self.val_loss_, self.val_accuracy_)
             if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                 if self.parallel_training_and_test and self.test_flag.value:
                     self.save_checkpoint()
                 elif not self.parallel_training_and_test:
                     self.save_checkpoint()
+            if self.stop_training==True:
+                return total_loss / num_batches
         train_loss = total_loss / num_batches
         return train_loss
     
@@ -2434,9 +2486,6 @@ class Model:
             if self.PR and self.total_epoch % 2 != 0 and batch_counter % num_updates == 0:
                 coordinator.join()
                 return total_loss.fetch() / num_batches
-            if self.stop_training==True:
-                coordinator.join()
-                return total_loss.fetch() / num_batches
             if self.parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
                 if self.test_loss_dict[7] is not None:
                     self.test_loss = self.test_loss_dict[7]
@@ -2448,14 +2497,17 @@ class Model:
                         self.test_acc_list.append(self.test_accuracy_dict[7])
                         self.test_accuracy_dict[7] = None
                 self.end_test_func()
-                if self.end():
-                    coordinator.join()
-                    return total_loss.fetch() / num_batches
+                self.end()
+                if self.patience is not None:
+                    self.val_loss_, self.val_accuracy_ = self.check_early_stopping(self.val_loss_, self.val_accuracy_)
             if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                 if self.parallel_training_and_test and self.test_flag.value:
                     self.save_checkpoint()
                 elif not self.parallel_training_and_test:
                     self.save_checkpoint()
+            if self.stop_training==True:
+                coordinator.join()
+                return total_loss.fetch() / num_batches
         coordinator.join()
       
         train_loss = total_loss.fetch() / num_batches
@@ -2538,14 +2590,14 @@ class Model:
     
     
     def save_param_(self,path):
-        if self.save_best_only==False:
+        if self.save_top_k is None:
             if self.max_save_files==1:
                 path=path
             else:
-                if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
+                if self.test_acc!=None and self.test_acc!=None:
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.test_acc,self.test_acc))
                 elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.test_acc))
             self.path_list.append(path)
             if len(self.path_list)>self.max_save_files:
                 os.remove(self.path_list[0])
@@ -2554,64 +2606,64 @@ class Model:
         else:
             if self.monitor=='val_loss':
                 if self.test_loss<self.val_loss:
+                    self.val_loss=self.test_loss
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.test_loss))
+                    path=path.replace(path[path.find('.'):],'-best.dat')
                     self.path_list.append(path)
                     if len(self.path_list)>self.max_save_files:
                         os.remove(self.path_list[0])
                         del self.path_list[0]
-                    self.val_loss=self.test_loss
                     self.save_param(path)
                 if self.val_loss==0:
                     self.val_loss=self.test_loss
             elif self.monitor=='val_accuracy':
                 if self.test_acc>self.val_accuracy:
+                    self.val_accuracy=self.test_acc
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.test_acc))
+                    path=path.replace(path[path.find('.'):],'-best.dat')
                     self.path_list.append(path)
                     if len(self.path_list)>self.max_save_files:
                         os.remove(self.path_list[0])
                         del self.path_list[0]
-                    self.val_accuracy=self.test_acc
                     self.save_param(path)
                 if self.val_accuracy==1:
                     self.val_accuracy=self.test_acc
+        if self.save_last:
+            path=self.path+'-last.dat'
+            self.save(path)
         return
     
     
     def save_param(self,path):
         if self.parallel_training_and_save:
             self.save_flag.value=False
-            if self.save_best_only==True:
-                if self.monitor=='val_loss':
-                    if self.test_loss>self.val_loss:
-                        return
-                    elif self.test_loss<self.val_loss:
-                        self.val_loss=self.test_loss
-                    if self.val_loss==0:
-                        self.val_loss=self.test_loss
-                        return
-                elif self.monitor=='val_accuracy':
-                    if self.test_acc<self.val_accuracy:
-                        return
-                    elif self.test_acc>self.val_accuracy:
-                        self.val_accuracy=self.test_acc
-                    if self.val_accuracy==1:
-                        self.val_accuracy=self.test_acc
-                        return
             self.param_save_flag_list.clear()
-            if self.parallel_dump:
-                if self.max_save_files==1:
-                    self.path_list_.append(path)
+            if self.save_top_k is not None:
+                if self.parallel_dump:
+                    if path != self.path+'-last':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.save_top_k:
+                        shutil.rmtree(self.path_list_[0])
+                        del self.path_list_[0]
                 else:
-                    self.path_list_.append(path)
-                if len(self.path_list_)>self.max_save_files:
-                    shutil.rmtree(self.path_list_[0])
-                    del self.path_list_[0]
+                    if path != self.path+'-last.dat':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.save_top_k:
+                        os.remove(self.path_list_[0])
+                        del self.path_list_[0]
             else:
-                if self.max_save_files==1:
-                    self.path_list_.append(path)
+                if self.parallel_dump:
+                    if path != self.path+'-last':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.max_save_files:
+                        shutil.rmtree(self.path_list_[0])
+                        del self.path_list_[0]
                 else:
-                    self.path_list_.append(path)
-                if len(self.path_list_)>self.max_save_files:
-                    os.remove(self.path_list_[0])
-                    del self.path_list_[0]
+                    if path != self.path+'-last.dat':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.max_save_files:
+                        os.remove(self.path_list_[0])
+                        del self.path_list_[0]
         output_file=open(path,'wb')
         if self.parallel_training_and_save and hasattr(self, 'param_'):
             if self.parallel_dump==True:
@@ -2678,14 +2730,14 @@ class Model:
     
     
     def save_(self,path):
-        if self.save_best_only==False:
+        if self.save_top_k is None:
             if self.max_save_files==1:
                 path=path
             else:
-                if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
+                if self.test_acc!=None and self.test_acc!=None:
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.test_acc,self.test_acc))
                 elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.test_acc))
             self.path_list.append(path)
             if len(self.path_list)>self.max_save_files:
                 os.remove(self.path_list[0])
@@ -2694,65 +2746,47 @@ class Model:
         else:
             if self.monitor=='val_loss':
                 if self.test_loss<self.val_loss:
+                    self.val_loss=self.test_loss
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.test_loss))
+                    path=path.replace(path[path.find('.'):],'-best.dat')
                     self.path_list.append(path)
-                    if len(self.path_list)>self.max_save_files:
+                    if len(self.path_list)>self.save_top_k:
                         os.remove(self.path_list[0])
                         del self.path_list[0]
-                    self.val_loss=self.test_loss
                     self.save(path)
                 if self.val_loss==0:
                     self.val_loss=self.test_loss
             elif self.monitor=='val_accuracy':
                 if self.test_acc>self.val_accuracy:
+                    self.val_accuracy=self.test_acc
+                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.test_acc))
+                    path=path.replace(path[path.find('.'):],'-best.dat')
                     self.path_list.append(path)
-                    if len(self.path_list)>self.max_save_files:
+                    if len(self.path_list)>self.save_top_k:
                         os.remove(self.path_list[0])
                         del self.path_list[0]
-                    self.val_accuracy=self.test_acc
                     self.save(path)
                 if self.val_accuracy==1:
                     self.val_accuracy=self.test_acc
+        if self.save_last:
+            path=self.path+'-last.dat'
+            self.save(path)
         return
     
     
     def _save(self,path):
-        if self.save_best_only==False:
-            if self.max_save_files==1:
-                path=path
-            else:
-                if self.train_acc!=None and self.test_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
-                elif self.train_acc!=None:
-                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
-            self.path_list.append(path)
-            if len(self.path_list)>self.max_save_files:
+        if self.save_top_k is not None:
+            if path != self.path+'-last.dat':
+                self.path_list.append(path)
+            if len(self.path_list)>self.save_top_k:
                 os.remove(self.path_list[0])
                 del self.path_list[0]
         else:
-            if self.monitor=='val_loss':
-                if self.test_loss>self.val_loss:
-                    return
-                elif self.test_loss<self.val_loss:
-                    self.path_list.append(path)
-                    if len(self.path_list)>self.max_save_files:
-                        os.remove(self.path_list[0])
-                        del self.path_list[0]
-                    self.val_loss=self.test_loss
-                if self.val_loss==0:
-                    self.val_loss=self.test_loss
-                    return
-            elif self.monitor=='val_accuracy':
-                if self.test_acc<self.val_accuracy:
-                    return
-                elif self.test_acc>self.val_accuracy:
-                    self.path_list.append(path)
-                    if len(self.path_list)>self.max_save_files:
-                        os.remove(self.path_list[0])
-                        del self.path_list[0]
-                    self.val_accuracy=self.test_acc
-                if self.val_accuracy==1:
-                    self.val_accuracy=self.test_acc
-                    return
+            if path != self.path+'-last.dat':
+                self.path_list.append(path)
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
         output_file=open(path,'wb')
         param=self.param
         self.param=None
@@ -2824,41 +2858,34 @@ class Model:
     def save(self,path):
         if self.parallel_training_and_save:
             self.save_flag.value=False
-            if self.save_best_only==True:
-                if self.monitor=='val_loss':
-                    if self.test_loss>self.val_loss:
-                        return
-                    elif self.test_loss<self.val_loss:
-                        self.val_loss=self.test_loss
-                    if self.val_loss==0:
-                        self.val_loss=self.test_loss
-                        return
-                elif self.monitor=='val_accuracy':
-                    if self.test_acc<self.val_accuracy:
-                        return
-                    elif self.test_acc>self.val_accuracy:
-                        self.val_accuracy=self.test_acc
-                    if self.val_accuracy==1:
-                        self.val_accuracy=self.test_acc
-                        return
             self.param_save_flag_list.clear()
             self.state_save_flag_list.clear()
-            if self.parallel_dump:
-                if self.max_save_files==1:
-                    self.path_list_.append(path)
+            if self.save_top_k is not None:
+                if self.parallel_dump:
+                    if path != self.path+'-last':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.save_top_k:
+                        shutil.rmtree(self.path_list_[0])
+                        del self.path_list_[0]
                 else:
-                    self.path_list_.append(path)
-                if len(self.path_list_)>self.max_save_files:
-                    shutil.rmtree(self.path_list_[0])
-                    del self.path_list_[0]
+                    if path != self.path+'-last.dat':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.save_top_k:
+                        os.remove(self.path_list_[0])
+                        del self.path_list_[0]
             else:
-                if self.max_save_files==1:
-                    self.path_list_.append(path)
+                if self.parallel_dump:
+                    if path != self.path+'-last':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.max_save_files:
+                        shutil.rmtree(self.path_list_[0])
+                        del self.path_list_[0]
                 else:
-                    self.path_list_.append(path)
-                if len(self.path_list_)>self.max_save_files:
-                    os.remove(self.path_list_[0])
-                    del self.path_list_[0]
+                    if path != self.path+'-last.dat':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.max_save_files:
+                        os.remove(self.path_list_[0])
+                        del self.path_list_[0]
         else:
             output_file=open(path,'wb')
             param=self.param
@@ -2923,53 +2950,31 @@ class Model:
         return
     
     
-    def save_checkpoint(self):
-        if self.parallel_dump:
-            if self.save_freq!=None:
-                path=self.path+'-{0}.dat'.format(self.total_epoch)
-            elif self.save_freq_!=None:
-                path=self.path+'-{0}.dat'.format(self.batch_counter)
-        else:
-            if self.save_freq!=None:
-                path=self.path+'-{0}.dat'.format(self.total_epoch)
-            elif self.save_freq_!=None:
-                path=self.path+'-{0}.dat'.format(self.batch_counter)
+    def save_in_parallel(self, path):
         if self.save_param_only==False:
-            if self.parallel_training_and_save:
-                if self.parallel_dump:
-                    if self.train_acc!=None and self.test_acc!=None:
-                        path=path+'-{0:.4f}-{1:.4f}'.format(self.train_acc,self.test_acc)
-                    elif self.train_acc!=None:
-                        path=path+'-{0:.4f}'.format(self.train_acc)
-                else:
-                    if self.train_acc!=None and self.test_acc!=None:
-                        path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.train_acc,self.test_acc))
-                    elif self.train_acc!=None:
-                        path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.train_acc))
-                manager=multiprocessing.Manager()
-                if type(self.optimizer)==list:
-                    self.state_dict=manager.list()
-                    for i in range(len(self.optimizer)):
-                        self.state_dict.append(dict())
-                        self.optimizer[i].save_own_variables(self.state_dict[-1])
-                else:
-                    self.state_dict=manager.dict()
-                    self.optimizer.save_own_variables(self.state_dict)
-                for i in range(len(self.param)):
-                    if type(self.param[i])==list:
-                        for j in range(len(self.param[i])):
-                            self.param_[i][j]=tf.Variable(self.param[i][j])
-                    else:
-                        self.param_[i]=tf.Variable(self.param[i])
-                self._save(path)
-                if self.parallel_dump:
-                    process=multiprocessing.Process(target=self.save,args=(path,))
-                    process.start()
-                else:
-                    process=multiprocessing.Process(target=self.save,args=(path.replace(path[self.path.find('.'):],'-parallel.dat'),))
-                    process.start()
+            manager=multiprocessing.Manager()
+            if type(self.optimizer)==list:
+                self.state_dict=manager.list()
+                for i in range(len(self.optimizer)):
+                    self.state_dict.append(dict())
+                    self.optimizer[i].save_own_variables(self.state_dict[-1])
             else:
-                self.save_(path)
+                self.state_dict=manager.dict()
+                self.optimizer.save_own_variables(self.state_dict)
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    for j in range(len(self.param[i])):
+                        self.param_[i][j]=tf.Variable(self.param[i][j])
+                else:
+                    self.param_[i]=tf.Variable(self.param[i])
+            if self.parallel_dump:
+                self._save(path+'.dat')
+                process=multiprocessing.Process(target=self.save,args=(path,))
+                process.start()
+            else:
+                self._save(path)
+                process=multiprocessing.Process(target=self.save,args=(path.replace(path[self.path.find('.'):],'-parallel.dat'),))
+                process.start()
         else:
             if self.parallel_training_and_save:
                 if self.parallel_dump:
@@ -2978,8 +2983,67 @@ class Model:
                 else:
                     process=multiprocessing.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-parallel.dat'),))
                     process.start()
+
+    
+    def save_checkpoint(self):
+        if self.parallel_dump:
+            if self.save_freq!=None:
+                path=self.path+'-{0}'.format(self.total_epoch)
+            elif self.save_freq_!=None:
+                path=self.path+'-{0}'.format(self.batch_counter)
+        else:
+            if self.save_freq!=None:
+                path=self.path+'-{0}.dat'.format(self.total_epoch)
+            elif self.save_freq_!=None:
+                path=self.path+'-{0}.dat'.format(self.batch_counter)
+        if self.parallel_training_and_save:
+            if self.save_top_k is not None:
+                if self.monitor=='val_loss':
+                    if self.test_loss<self.val_loss:
+                        self.val_loss=self.test_loss
+                        if self.parallel_dump:
+                            path=path+'-{0:.4f}'.format(self.test_loss)
+                            path=path+'-best'
+                        else:
+                            path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.test_loss))
+                            path=path.replace(path[path.find('.'):],'-best.dat')
+                        self.save_in_parallel(path)
+                    if self.val_loss==0:
+                        self.val_loss=self.test_loss
+                elif self.monitor=='val_accuracy':
+                    if self.test_acc>self.val_accuracy:
+                        self.val_accuracy=self.test_acc
+                        if self.parallel_dump:
+                            path=path+'-{0:.4f}'.format(self.test_acc)
+                            path=path+'-best'
+                        else:
+                            path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.test_acc))
+                            path=path.replace(path[path.find('.'):],'-best.dat')
+                        self.save_in_parallel(path)
+                    if self.val_accuracy==1:
+                        self.val_accuracy=self.test_acc
             else:
-                self.save_param_(path)
+                if self.parallel_dump:
+                    if self.test_acc!=None and self.test_acc!=None:
+                        path=path+'-{0:.4f}-{1:.4f}'.format(self.test_acc,self.test_acc)
+                    elif self.test_acc!=None:
+                        path=path+'-{0:.4f}'.format(self.test_acc)
+                else:
+                    if self.test_acc!=None and self.test_acc!=None:
+                        path=path.replace(path[path.find('.'):],'-{0:.4f}-{1:.4f}.dat'.format(self.test_acc,self.test_acc))
+                    elif self.test_acc!=None:
+                        path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.test_acc))
+                self.save_in_parallel(path)
+            if self.save_last:
+                if self.parallel_dump:
+                    path=self.path+'-last'
+                    self._save(path+'.dat')
+                else:
+                    path=self.path+'-last.dat'
+                    self._save(path)
+                self.save_in_parallel(path)
+        else:
+            self.save_(path)
     
     
     def restore(self,path):

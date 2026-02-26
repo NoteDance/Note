@@ -33,7 +33,11 @@ class RL:
         self.save_freq_=None
         self.max_save_files=1
         self.best_avg_reward=None
-        self.save_best_only=False
+        self.best_avg_reward_=None
+        self.patience=None
+        self.patience_counter=0
+        self.save_top_k=1
+        self.save_last=True
         self.save_param_only=False
         self.callbacks=[]
         self.stop_training=False
@@ -372,6 +376,20 @@ class RL:
             else:
                 next_state,reward,done,_=self.env.step(a)
                 return next_state,reward,done
+    
+    
+    def check_early_stopping(self):
+        if len(self.reward_list)>=self.trial_count:
+            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+            if self.best_avg_reward_==None:
+                self.best_avg_reward_=avg_reward
+            if avg_reward<self.best_avg_reward_:
+                self.patience_counter += 1
+            elif avg_reward>self.best_avg_reward:
+                self.patience_counter = 0
+                self.best_avg_reward_=avg_reward
+        if self.patience_counter == self.patience:
+            self.stop_training = True
     
     
     def compute_ess_from_weights(self, weights):
@@ -2543,8 +2561,9 @@ class RL:
         if episodes!=None:
             for i in range(episodes):
                 t1=time.time()
+                self.check_early_stopping()
                 if self.stop_training==True:
-                    return
+                    break
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_episode_begin'):
                         callback.on_episode_begin(i, logs={})
@@ -2609,8 +2628,9 @@ class RL:
             i=0
             while True:
                 t1=time.time()
+                self.check_early_stopping()
                 if self.stop_training==True:
-                    return
+                    break
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_episode_begin'):
                         callback.on_episode_begin(i, logs={})
@@ -2677,6 +2697,8 @@ class RL:
             while True:
                 if self.save_param_only==False:
                     self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                else:
+                    self.save_flag.value=all(self.param_save_flag_list)
                 if self.save_flag.value:
                     del self.param_
                     del self.state_dict
@@ -2870,8 +2892,9 @@ class RL:
             if episodes!=None:
                 for i in range(episodes):
                     t1=time.time()
+                    self.check_early_stopping()
                     if self.stop_training==True:
-                        return
+                        break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
                             callback.on_episode_begin(i, logs={})
@@ -2935,8 +2958,9 @@ class RL:
                 i=0
                 while True:
                     t1=time.time()
+                    self.check_early_stopping()
                     if self.stop_training==True:
-                        return
+                        break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
                             callback.on_episode_begin(i, logs={})
@@ -3003,8 +3027,9 @@ class RL:
                 self.step_in_episode = 0
                 while episode < num_episodes:
                     t1=time.time()
+                    self.check_early_stopping()
                     if self.stop_training==True:
-                        return
+                        break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
                             callback.on_episode_begin(i, logs={})
@@ -3076,8 +3101,9 @@ class RL:
                 self.step_in_episode = 0
                 while episode < num_episodes:
                     t1=time.time()
+                    self.check_early_stopping()
                     if self.stop_training==True:
-                        return
+                        break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
                             callback.on_episode_begin(i, logs={})
@@ -3147,8 +3173,9 @@ class RL:
                 self.step_in_episode = 0
                 while True:
                     t1=time.time()
+                    self.check_early_stopping()
                     if self.stop_training==True:
-                        return
+                        break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
                             callback.on_episode_begin(i, logs={})
@@ -3218,6 +3245,8 @@ class RL:
             while True:
                 if self.save_param_only==False:
                     self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                else:
+                    self.save_flag.value=all(self.param_save_flag_list)
                 if self.save_flag.value:
                     del self.param_
                     del self.state_dict
@@ -3373,7 +3402,7 @@ class RL:
     
     
     def save_param_(self,path):
-        if self.save_best_only==False:
+        if self.save_top_k is None:
             if self.max_save_files==1:
                 path=path
             else:
@@ -3385,49 +3414,53 @@ class RL:
                 del self.path_list[0]
             self.save_param(path)
         else:
-            if self.trial_count!=None:
-                if len(self.reward_list)>=self.trial_count:
-                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                    if self.best_avg_reward==None:
-                        self.best_avg_reward=avg_reward
-                    if avg_reward>self.best_avg_reward:
-                        self.path_list.append(path)
-                        if len(self.path_list)>self.max_save_files:
-                            os.remove(self.path_list[0])
-                            del self.path_list[0]
-                        self.best_avg_reward=avg_reward
-                        self.save_param(path)
+            if len(self.reward_list)>=self.trial_count:
+                avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                if self.best_avg_reward==None:
+                    self.best_avg_reward=avg_reward
+                elif avg_reward>self.best_avg_reward:
+                    self.path_list.append(path)
+                    if len(self.path_list)>self.save_top_k:
+                        os.remove(self.path_list[0])
+                        del self.path_list[0]
+                    self.best_avg_reward=avg_reward
+                    self.save_param(path)
+        if self.save_last:
+            path=self.path+'-last.dat'
+            self.save_param(path)
         return
     
     
     def save_param(self,path):
         if self.parallel_training_and_save:
             self.save_flag.value=False
-            if self.save_best_only==True:
-                if self.avg_reward is not None and self.avg_reward<self.best_avg_reward:
-                    return
-                elif self.avg_reward>self.best_avg_reward:
-                    self.best_avg_reward=self.avg_reward
-                if self.avg_reward is not None and self.best_avg_reward==None:
-                    self.best_avg_reward=self.avg_reward
-                    return
             self.param_save_flag_list.clear()
-            if self.parallel_dump:
-                if self.max_save_files==1:
-                    self.path_list_.append(path)
+            if self.save_top_k is not None:
+                if self.parallel_dump:
+                    if path != self.path+'-last':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.save_top_k:
+                        shutil.rmtree(self.path_list_[0])
+                        del self.path_list_[0]
                 else:
-                    self.path_list_.append(path)
-                if len(self.path_list_)>self.max_save_files:
-                    shutil.rmtree(self.path_list_[0])
-                    del self.path_list_[0]
+                    if path != self.path+'-last.dat':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.save_top_k:
+                        os.remove(self.path_list_[0])
+                        del self.path_list_[0]
             else:
-                if self.max_save_files==1:
-                    self.path_list_.append(path)
+                if self.parallel_dump:
+                    if path != self.path+'-last':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.max_save_files:
+                        shutil.rmtree(self.path_list_[0])
+                        del self.path_list_[0]
                 else:
-                    self.path_list_.append(path)
-                if len(self.path_list_)>self.max_save_files:
-                    os.remove(self.path_list_[0])
-                    del self.path_list_[0]
+                    if path != self.path+'-last.dat':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.max_save_files:
+                        os.remove(self.path_list_[0])
+                        del self.path_list_[0]
         output_file=open(path,'wb')
         if self.parallel_training_and_save and hasattr(self, 'param_'):
             if self.parallel_dump==True:
@@ -3523,7 +3556,7 @@ class RL:
                 self.next_state_pool_list[i]=None
                 self.reward_pool_list[i]=None
                 self.done_pool_list[i]=None
-        if self.save_best_only==False:
+        if self.save_top_k is None:
             if self.max_save_files==1:
                 path=path
             else:
@@ -3535,18 +3568,20 @@ class RL:
                 del self.path_list[0]
             self.save(path)
         else:
-            if self.trial_count!=None:
-                if len(self.reward_list)>=self.trial_count:
-                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                    if self.best_avg_reward==None:
-                        self.best_avg_reward=avg_reward
-                    if avg_reward>self.best_avg_reward:
-                        self.path_list.append(path)
-                        if len(self.path_list)>self.max_save_files:
-                            os.remove(self.path_list[0])
-                            del self.path_list[0]
-                        self.best_avg_reward=avg_reward
-                        self.save_param(path)
+            if len(self.reward_list)>=self.trial_count:
+                avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                if self.best_avg_reward==None:
+                    self.best_avg_reward=avg_reward
+                elif avg_reward>self.best_avg_reward:
+                    self.path_list.append(path)
+                    if len(self.path_list)>self.save_top_k:
+                        os.remove(self.path_list[0])
+                        del self.path_list[0]
+                    self.best_avg_reward=avg_reward
+                    self.save(path)
+        if self.save_last:
+            path=self.path+'-last.dat'
+            self.save(path)
         if self.pool_network and not self.save_data:
             for i in range(self.processes):
                 self.state_pool_list[i]=state_pool_list[i]
@@ -3558,32 +3593,18 @@ class RL:
     
     
     def _save(self,path):
-        if self.save_best_only==False:
-            if self.max_save_files==1:
-                path=path
-            else:
-                if self.avg_reward!=None:
-                    path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.avg_reward))
-            self.path_list.append(path)
-            if len(self.path_list)>self.max_save_files:
+        if self.save_top_k is not None:
+            if path != self.path+'-last.dat':
+                self.path_list.append(path)
+            if len(self.path_list)>self.save_top_k:
                 os.remove(self.path_list[0])
                 del self.path_list[0]
         else:
-            if self.trial_count!=None:
-                if len(self.reward_list)>=self.trial_count:
-                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                    if self.best_avg_reward==None:
-                        self.best_avg_reward=avg_reward
-                        return
-                    if avg_reward<self.best_avg_reward:
-                        return
-                    elif avg_reward>self.best_avg_reward:
-                        self.path_list.append(path)
-                        if len(self.path_list)>self.max_save_files:
-                            os.remove(self.path_list[0])
-                            del self.path_list[0]
-                        self.best_avg_reward=avg_reward
-                        self.save_param(path)
+            if path != self.path+'-last.dat':
+                self.path_list.append(path)
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
         output_file=open(path,'wb')
         param=self.param
         self.param=None
@@ -3684,32 +3705,32 @@ class RL:
                 self.done_pool_list[i]=None
         if self.parallel_training_and_save:
             self.save_flag.value=False
-            if self.save_best_only==True:
-                if self.avg_reward is not None and self.avg_reward<self.best_avg_reward:
-                    return
-                elif self.avg_reward>self.best_avg_reward:
-                    self.best_avg_reward=self.avg_reward
-                if self.avg_reward is not None and self.best_avg_reward==None:
-                    self.best_avg_reward=self.avg_reward
-                    return
-            self.param_save_flag_list.clear()
-            self.state_save_flag_list.clear()
-            if self.parallel_dump:
-                if self.max_save_files==1:
-                    self.path_list_.append(path)
+            if self.save_top_k is not None:
+                if self.parallel_dump:
+                    if path != self.path+'-last':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.save_top_k:
+                        shutil.rmtree(self.path_list_[0])
+                        del self.path_list_[0]
                 else:
-                    self.path_list_.append(path)
-                if len(self.path_list_)>self.max_save_files:
-                    shutil.rmtree(self.path_list_[0])
-                    del self.path_list_[0]
+                    if path != self.path+'-last.dat':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.save_top_k:
+                        os.remove(self.path_list_[0])
+                        del self.path_list_[0]
             else:
-                if self.max_save_files==1:
-                    self.path_list_.append(path)
+                if self.parallel_dump:
+                    if path != self.path+'-last':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.max_save_files:
+                        shutil.rmtree(self.path_list_[0])
+                        del self.path_list_[0]
                 else:
-                    self.path_list_.append(path)
-                if len(self.path_list_)>self.max_save_files:
-                    os.remove(self.path_list_[0])
-                    del self.path_list_[0]
+                    if path != self.path+'-last.dat':
+                        self.path_list_.append(path)
+                    if len(self.path_list_)>self.max_save_files:
+                        os.remove(self.path_list_[0])
+                        del self.path_list_[0]
         else:
             output_file=open(path,'wb')
             param=self.param
@@ -3781,12 +3802,47 @@ class RL:
         return
     
     
+    def save_in_parallel(self, path):
+        if self.save_param_only==False:
+            manager=mp.Manager()
+            if type(self.optimizer)==list:
+                self.state_dict=manager.list()
+                for i in range(len(self.optimizer)):
+                    self.state_dict.append(dict())
+                    self.optimizer[i].save_own_variables(self.state_dict[-1])
+            else:
+                self.state_dict=manager.dict()
+                self.optimizer.save_own_variables(self.state_dict)
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    for j in range(len(self.param[i])):
+                        self.param_[i][j]=tf.Variable(self.param[i][j])
+                else:
+                    self.param_[i]=tf.Variable(self.param[i])
+            if self.parallel_dump:
+                self._save(path+'.dat')
+                process=mp.Process(target=self.save,args=(path,))
+                process.start()
+            else:
+                self._save(path)
+                process=mp.Process(target=self.save,args=(path.replace(path[self.path.find('.'):],'-parallel.dat'),))
+                process.start()
+        else:
+            if self.parallel_training_and_save:
+                if self.parallel_dump:
+                    process=mp.Process(target=self.save_param,args=(path,))
+                    process.start()
+                else:
+                    process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-parallel.dat'),))
+                    process.start()
+    
+    
     def save_checkpoint(self):
         if self.parallel_dump:
             if self.save_freq!=None:
-                path=self.path+'-{0}.dat'.format(self.total_epoch)
+                path=self.path+'-{0}'.format(self.total_epoch)
             elif self.save_freq_!=None:
-                path=self.path+'-{0}.dat'.format(self.batch_counter)
+                path=self.path+'-{0}'.format(self.batch_counter)
         else:
             if self.save_freq!=None:
                 path=self.path+'-{0}.dat'.format(self.total_epoch)
@@ -3794,47 +3850,38 @@ class RL:
                 path=self.path+'-{0}.dat'.format(self.batch_counter)
         if self.save_param_only==False:
             if self.parallel_training_and_save:
-                if self.parallel_dump:
-                    if self.avg_reward!=None:
-                        path=path+'-{0:.4f}'.format(self.avg_reward)
+                if self.save_top_k is not None:
+                    if len(self.reward_list)>=self.trial_count:
+                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                        if self.best_avg_reward==None:
+                            self.best_avg_reward=avg_reward
+                        elif avg_reward>self.best_avg_reward:
+                            self.best_avg_reward=avg_reward
+                            if self.parallel_dump:
+                                path=path+'-{0:.4f}'.format(self.avg_reward)
+                                path=path+'-best'
+                            else:
+                                path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.avg_reward))
+                                path=path.replace(path[path.find('.'):],'-best.dat')
+                            self.save_in_parallel(path)
                 else:
-                    if self.avg_reward!=None:
-                        path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.avg_reward))
-                manager=mp.Manager()
-                if type(self.optimizer)==list:
-                    self.state_dict=manager.list()
-                    for i in range(len(self.optimizer)):
-                        self.state_dict.append(dict())
-                        self.optimizer[i].save_own_variables(self.state_dict[-1])
-                else:
-                    self.state_dict=manager.dict()
-                    self.optimizer.save_own_variables(self.state_dict)
-                self.param_=manager.list([None for _ in range(len(self.param))])
-                for i in range(len(self.param)):
-                    if type(self.param[i])==list:
-                        for j in range(len(self.param[i])):
-                            self.param_[i][j]=tf.Variable(self.param[i][j])
+                    if self.parallel_dump:
+                        if self.avg_reward!=None:
+                            path=path+'-{0:.4f}'.format(self.avg_reward)
                     else:
-                        self.param_[i]=tf.Variable(self.param[i])
-                self._save(self.path)
-                if self.parallel_dump:
-                    process=mp.Process(target=self.save,args=(path,))
-                    process.start()
-                else:
-                    process=mp.Process(target=self.save,args=(path.replace(path[path.find('.'):],'-parallel.dat'),))
-                    process.start()
+                        if self.avg_reward!=None:
+                            path=path.replace(path[path.find('.'):],'-{0:.4f}.dat'.format(self.avg_reward))
+                    self.save_in_parallel(path)
+                if self.save_last:
+                    if self.parallel_dump:
+                        path=self.path+'-last'
+                        self._save(path+'.dat')
+                    else:
+                        path=self.path+'-last.dat'
+                        self._save(path)
+                    self.save_in_parallel(path)
             else:
-                self.save_(self.path)
-        else:
-            if self.parallel_training_and_save:
-                if self.parallel_dump:
-                    process=mp.Process(target=self.save_param,args=(path,))
-                    process.start()
-                else:
-                    process=mp.Process(target=self.save_param,args=(path.replace(path[path.find('.'):],'-parallel.dat'),))
-                    process.start()
-            else:
-                self.save_param_(self.path)
+                self.save_(path)
     
     
     def restore(self,path):
