@@ -86,6 +86,8 @@ class RL:
                 self.info['episodes']=self.episodes
                 self.info['jit_compile']=self.jit_compile
                 self.info['pool_network']=self.pool_network
+                self.info['parallel_store_and_training']=self.parallel_store_and_training
+                self.info['parallel_training_and_save']=self.parallel_training_and_save
                 self.info['processes']=self.processes
                 self.info['num_store']=self.num_store
                 self.info['processes_her']=self.processes_her
@@ -112,6 +114,8 @@ class RL:
                 self.info['num_episodes']=self.num_episodes
                 self.info['jit_compile']=self.jit_compile
                 self.info['pool_network']=self.pool_network
+                self.info['parallel_store_and_training']=self.parallel_store_and_training
+                self.info['parallel_training_and_save']=self.parallel_training_and_save
                 self.info['processes']=self.processes
                 self.info['num_store']=self.num_store
                 self.info['processes_her']=self.processes_her
@@ -1178,10 +1182,7 @@ class RL:
                 if self.stop_training==True:
                     return total_loss,num_batches
                 if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                    if self.parallel_training_and_test and self.test_flag.value:
-                        self.save_checkpoint()
-                    elif not self.parallel_training_and_test:
-                        self.save_checkpoint()
+                    self.save_checkpoint()
             return total_loss,num_batches
         
         
@@ -1343,10 +1344,7 @@ class RL:
                     coordinator.join()
                     return total_loss,num_batches
                 if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                    if self.parallel_training_and_test and self.test_flag.value:
-                        self.save_checkpoint()
-                    elif not self.parallel_training_and_test:
-                        self.save_checkpoint()
+                    self.save_checkpoint()
             coordinator.join()
             return total_loss,num_batches
     
@@ -1591,10 +1589,7 @@ class RL:
                 if self.PPO and self.batch_counter%self.update_batches==0:
                     return self.train_loss.result().numpy()
         if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-            if self.parallel_training_and_test and self.test_flag.value:
-                self.save_checkpoint()
-            elif not self.parallel_training_and_test:
-                self.save_checkpoint()
+            self.save_checkpoint()
         if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
             batch_logs = {'loss': loss.numpy()}
         else:
@@ -1746,10 +1741,7 @@ class RL:
                             if self.PPO and self.batch_counter%self.update_batches==0:
                                 break
                         if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                            if self.parallel_training_and_test and self.test_flag.value:
-                                self.save_checkpoint()
-                            elif not self.parallel_training_and_test:
-                                self.save_checkpoint()
+                            self.save_checkpoint()
                 elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                     with self.strategy.scope():
                         multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -1863,10 +1855,7 @@ class RL:
                             if self.PPO and self.batch_counter%self.update_batches==0:
                                 break
                     if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                        if self.parallel_training_and_test and self.test_flag.value:
-                            self.save_checkpoint()
-                        elif not self.parallel_training_and_test:
-                            self.save_checkpoint()
+                        self.save_checkpoint()
         if self.update_steps!=None:
             if self.step_counter%self.update_steps==0:
                 self.update_param()

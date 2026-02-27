@@ -123,6 +123,7 @@ class Model:
                 self.info['test_loss']=self.test_loss
                 self.info['test_accuracy']=self.test_accuracy
                 self.info['parallel_training_and_test']=self.parallel_training_and_test
+                self.info['parallel_training_and_save']=self.parallel_training_and_save
                 self.info['test_freq']=self.test_freq
                 self.info['PR']=self.PR
                 self.info['alpha']=self.alpha
@@ -154,6 +155,7 @@ class Model:
                 self.info['test_loss']=self.test_loss
                 self.info['test_accuracy']=self.test_accuracy
                 self.info['parallel_training_and_test']=self.parallel_training_and_test
+                self.info['parallel_training_and_save']=self.parallel_training_and_save
                 self.info['test_freq']=self.test_freq
                 self.info['PR']=self.PR
                 self.info['alpha']=self.alpha
@@ -409,6 +411,8 @@ class Model:
     
     
     def parallel_test(self, test_ds, loss_object, test_loss, test_accuracy, jit_compile, p):
+        if self.parallel_training_and_save:
+            self.test_flag_list[p]=False
         for test_data, labels in test_ds:
             if jit_compile==True:
                 self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
@@ -419,6 +423,8 @@ class Model:
             self.shared_test_acc_array[p]=test_accuracy.result()
         else:
             self.shared_test_loss_array[p]=test_loss.result()
+        if self.parallel_training_and_save:
+            self.test_flag_list[p]=True
         return
     
     
@@ -631,26 +637,51 @@ class Model:
     
     def test_p(self, test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile):
         self.test_flag.value=False
-        if test_accuracy!=None:
-            self.test_loss_dict[7], self.test_accuracy_dict[7] = None, None
-        else:
-            self.test_loss_dict[7] = None
-        test_ds=tf.data.Dataset.from_tensor_slices((test_data, test_labels)).batch(self.test_batch_size)
-        if test_loss!=None:
-            test_loss=test_loss()
-        if test_accuracy!=None:
-            test_accuracy=test_accuracy()
-        for test_data, labels in test_ds:
-            if jit_compile==True:
-                self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
+        if not self.parallel_test_:
+            if test_accuracy!=None:
+                self.test_loss_dict[7], self.test_accuracy_dict[7] = None, None
             else:
-                self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
-        
-        if test_accuracy!=None:
-            self.test_loss_dict[7], self.test_accuracy_dict[7] = test_loss.result().numpy(), test_accuracy.result().numpy()
+                self.test_loss_dict[7] = None
+            test_ds=tf.data.Dataset.from_tensor_slices((test_data, test_labels)).batch(self.test_batch_size)
+            if test_loss!=None:
+                test_loss=test_loss()
+            if test_accuracy!=None:
+                test_accuracy=test_accuracy()
+            for test_data, labels in test_ds:
+                if jit_compile==True:
+                    self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
+                else:
+                    self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
+            
+            if test_accuracy!=None:
+                self.test_loss_dict[7], self.test_accuracy_dict[7] = test_loss.result().numpy(), test_accuracy.result().numpy()
+            else:
+                self.test_loss_dict[7] = test_loss.result().numpy()
         else:
-            self.test_loss_dict[7] = test_loss.result().numpy()
-        self.test_flag.value=True
+            test_ds = []
+            for date, labels in zip(test_data, test_labels):
+                test_ds.append(tf.data.Dataset.from_tensor_slices((date, labels)).batch(self.test_batch_size))
+            if not isinstance(self.shared_test_loss_array, multiprocessing.sharedctypes.SynchronizedArray):
+                self.shared_test_loss_array=multiprocessing.Array('f',np.zeros([self.processes],dtype='float32'))
+            if test_accuracy!=None:
+                if not isinstance(self.shared_test_acc_array, multiprocessing.sharedctypes.SynchronizedArray):
+                    self.shared_test_acc_array=multiprocessing.Array('f',np.zeros([self.processes],dtype='float32'))
+
+            process_list=[]
+            for p in range(self.processes):
+                test_loss_=test_loss[p]()
+                if test_accuracy!=None:
+                    test_accuracy_=test_accuracy[p]()
+                process=multiprocessing.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
+                process.start()
+                process_list.append(process)
+
+            if test_accuracy!=None:
+                self.test_loss_dict[7], self.test_accuracy_dict[7] = np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/self.processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/self.processes
+            else:
+                self.test_loss_dict[7] = np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/self.processes
+        if not self.parallel_test_:
+            self.test_flag.value=True
     
     
     def distributed_test_p(self,  test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile):
@@ -965,6 +996,8 @@ class Model:
             self.test_flag=multiprocessing.Value('b',False)
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
+            if parallel_test:
+                self.test_flag_list=manager.list([False for _ in range(processes)])
         if parallel_training_and_save:
             manager=multiprocessing.Manager()
             self.param_save_flag_list=multiprocessing.list()
@@ -1040,7 +1073,9 @@ class Model:
                     num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                     num_updates = int(num_updates)
                 for train_data, labels in train_ds:
-                    if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+                    if parallel_test:
+                        self.test_flag.value=all(self.test_flag_list)
+                    if parallel_training_and_test and self.test_flag.value:
                         if self.test_loss_dict[7] is not None:
                             self.test_loss = self.test_loss_dict[7]
                             self.test_loss_list.append(self.test_loss_dict[7])
@@ -1050,7 +1085,8 @@ class Model:
                                 self.test_acc = self.test_acc_dict[7]
                                 self.test_acc_list.append(self.test_accuracy_dict[7])
                                 self.test_accuracy_dict[7] = None
-                        self.end_test_func()
+                        if hasattr(self, 'end_test_func'):
+                            self.end_test_func()
                         self.end()
                         if self.patience is not None:
                             val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
@@ -1195,7 +1231,9 @@ class Model:
                     num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                     num_updates = int(num_updates)
                 for train_data, labels in train_ds:
-                    if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+                    if parallel_test:
+                        self.test_flag.value=all(self.test_flag_list)
+                    if parallel_training_and_test and self.test_flag.value:
                         if self.test_loss_dict[7] is not None:
                             self.test_loss = self.test_loss_dict[7]
                             self.test_loss_list.append(self.test_loss_dict[7])
@@ -1205,7 +1243,8 @@ class Model:
                                 self.test_acc = self.test_acc_dict[7]
                                 self.test_acc_list.append(self.test_accuracy_dict[7])
                                 self.test_accuracy_dict[7] = None
-                        self.end_test_func()
+                        if hasattr(self, 'end_test_func'):
+                            self.end_test_func()
                         self.end()
                         if self.patience is not None:
                             val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
@@ -1487,7 +1526,7 @@ class Model:
                         num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                         num_updates = int(num_updates)
                     for x in train_dist_dataset:
-                        if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+                        if parallel_training_and_test and self.test_flag.value:
                             if self.test_loss_dict[7] is not None:
                                 self.test_loss = self.test_loss_dict[7]
                                 self.test_loss_list.append(self.test_loss_dict[7])
@@ -1497,7 +1536,8 @@ class Model:
                                     self.test_acc = self.test_acc_dict[7]
                                     self.test_acc_list.append(self.test_accuracy_dict[7])
                                     self.test_accuracy_dict[7] = None
-                            self.end_test_func()
+                            if hasattr(self, 'end_test_func'):
+                                self.end_test_func()
                             self.end()
                             if self.patience is not None:
                                 val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
@@ -1664,7 +1704,7 @@ class Model:
                         num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                         num_updates = int(num_updates)
                     for x in train_dist_dataset:
-                        if parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+                        if parallel_training_and_test and self.test_flag.value:
                             if self.test_loss_dict[7] is not None:
                                 self.test_loss = self.test_loss_dict[7]
                                 self.test_loss_list.append(self.test_loss_dict[7])
@@ -1674,7 +1714,8 @@ class Model:
                                     self.test_acc = self.test_acc_dict[7]
                                     self.test_acc_list.append(self.test_accuracy_dict[7])
                                     self.test_accuracy_dict[7] = None
-                            self.end_test_func()
+                            if hasattr(self, 'end_test_func'):
+                                self.end_test_func()
                             self.end()
                             if self.patience is not None:
                                 val_loss, val_accuracy = self.check_early_stopping(val_loss, val_accuracy)
@@ -2388,7 +2429,7 @@ class Model:
                 return total_loss / num_batches
             if hasattr(self, 'batch_size_fn'):
                 iterator = iter(self.batch_size_fn(multi_worker_dataset))
-            if self.parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+            if self.parallel_training_and_test and self.test_flag.value:
                 if self.test_loss_dict[7] is not None:
                     self.test_loss = self.test_loss_dict[7]
                     self.test_loss_list.append(self.test_loss_dict[7])
@@ -2398,7 +2439,8 @@ class Model:
                         self.test_acc = self.test_acc_dict[7]
                         self.test_acc_list.append(self.test_accuracy_dict[7])
                         self.test_accuracy_dict[7] = None
-                self.end_test_func()
+                if hasattr(self, 'end_test_func'):
+                    self.end_test_func()
                 self.end()
                 if self.patience is not None:
                     self.val_loss_, self.val_accuracy_ = self.check_early_stopping(self.val_loss_, self.val_accuracy_)
@@ -2486,7 +2528,7 @@ class Model:
             if self.PR and self.total_epoch % 2 != 0 and batch_counter % num_updates == 0:
                 coordinator.join()
                 return total_loss.fetch() / num_batches
-            if self.parallel_training_and_test and self.test_flag.value and hasattr(self, 'end_test_func'):
+            if self.parallel_training_and_test and self.test_flag.value:
                 if self.test_loss_dict[7] is not None:
                     self.test_loss = self.test_loss_dict[7]
                     self.test_loss_list.append(self.test_loss_dict[7])
@@ -2496,7 +2538,8 @@ class Model:
                         self.test_acc = self.test_acc_dict[7]
                         self.test_acc_list.append(self.test_accuracy_dict[7])
                         self.test_accuracy_dict[7] = None
-                self.end_test_func()
+                if hasattr(self, 'end_test_func'):
+                    self.end_test_func()
                 self.end()
                 if self.patience is not None:
                     self.val_loss_, self.val_accuracy_ = self.check_early_stopping(self.val_loss_, self.val_accuracy_)
