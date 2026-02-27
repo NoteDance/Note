@@ -1363,12 +1363,24 @@ class Model:
         if parallel_training_and_test or parallel_training_and_save:
             t1=time.time()
             while True:
-                if parallel_training_and_save:
+                if parallel_training_and_test and parallel_training_and_save:
                     if self.save_param_only==False:
                         self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                    else:
+                        self.save_flag.value=all(self.param_save_flag_list)
+                    if parallel_test:
+                        self.test_flag.value=all(self.test_flag_list)
                     condition = (self.stop_training or self.test_flag.value) and self.save_flag.value
-                else:
+                elif parallel_training_and_test:
+                    if parallel_test:
+                        self.test_flag.value=all(self.test_flag_list)
                     condition = self.stop_training or self.test_flag.value
+                elif parallel_training_and_save:
+                    if self.save_param_only==False:
+                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                    else:
+                        self.save_flag.value=all(self.param_save_flag_list)
+                    condition = self.stop_training or self.save_flag.value
                 if condition:
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
@@ -2328,12 +2340,20 @@ class Model:
         if parallel_training_and_test or parallel_training_and_save:
             t1=time.time()
             while True:
-                if parallel_training_and_save:
+                if parallel_training_and_test and parallel_training_and_save:
                     if self.save_param_only==False:
                         self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                    else:
+                        self.save_flag.value=all(self.param_save_flag_list)
                     condition = (self.stop_training or self.test_flag.value) and self.save_flag.value
-                else:
+                elif parallel_training_and_test:
                     condition = self.stop_training or self.test_flag.value
+                elif parallel_training_and_save:
+                    if self.save_param_only==False:
+                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                    else:
+                        self.save_flag.value=all(self.param_save_flag_list)
+                    condition = self.stop_training or self.save_flag.value
                 if condition:
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
