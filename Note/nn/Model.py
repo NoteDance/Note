@@ -508,6 +508,9 @@ class Model:
     
     
     def _test_step(self, inputs, loss_object, test_loss, test_accuracy):
+        if self.parallel_training_and_test and isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+            self.test_flag_list.append(False)
+            index=len(self.test_flag_list)
         data, labels = inputs
     
         predictions = self.__call__(data, training=False)
@@ -516,6 +519,8 @@ class Model:
         test_loss.update_state(t_loss)
         if test_accuracy!=None:
             test_accuracy.update_state(labels, predictions)
+        if self.parallel_training_and_test and isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+            self.test_flag_list[index]=True
         return
     
     
@@ -739,7 +744,6 @@ class Model:
                     coordinator.schedule(self.distributed_test_step, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, self.strategy))
                 else:
                     coordinator.schedule(self.distributed_test_step_, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, self.strategy))
-            coordinator.join()
             self.test_loss_dict[7]=test_loss.result().numpy()
             if test_accuracy!=None:
                 self.test_accuracy_dict[7]=test_accuracy.result().numpy()
@@ -1003,15 +1007,7 @@ class Model:
             self.param_save_flag_list=multiprocessing.list()
             self.state_save_flag_list=multiprocessing.list()
             self.save_flag=multiprocessing.Value('b',False)
-            self.param_=manager.list()
             self.path_list_=manager.list()
-            for i in range(len(self.param)):
-                if type(self.param[i])==list:
-                    self.param_.append(manager.list())
-                    for j in range(len(self.param[i])):
-                        self.param_[-1].append(None)
-                else:
-                    self.param_.append(None)
         self.test_data=test_data
         self.test_labels=test_labels
         self.test_batch_size=test_batch_size
@@ -1384,8 +1380,6 @@ class Model:
                 if condition:
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
-                    del self.param_
-                    del self.state_dict
                     t2=time.time()
                     self.time+=(t2-t1)
                     self._time=self.time-int(self.time)
@@ -1452,20 +1446,14 @@ class Model:
             self.test_flag=multiprocessing.Value('b',False)
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
+            if isinstance(strategy,tf.distribute.ParameterServerStrategy):
+                self.test_flag_list=manager.list()
         if parallel_training_and_save:
             manager=multiprocessing.Manager()
             self.param_save_flag_list=multiprocessing.list()
             self.state_save_flag_list=multiprocessing.list()
             self.save_flag=multiprocessing.Value('b',False)
-            self.param_=manager.list()
             self.path_list_=manager.list()
-            for i in range(len(self.param)):
-                if type(self.param[i])==list:
-                    self.param_.append([])
-                    for j in range(len(self.param[i])):
-                        self.param_[-1].append(None)
-                else:
-                    self.param_.append(None)
         self.test_data=test_data
         self.test_labels=test_labels
         self.test_batch_size=test_batch_size
@@ -2357,8 +2345,6 @@ class Model:
                 if condition:
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
-                    del self.param_
-                    del self.state_dict
                     t2=time.time()
                     self.time+=(t2-t1)
                     self._time=self.time-int(self.time)
@@ -2548,6 +2534,7 @@ class Model:
             if self.PR and self.total_epoch % 2 != 0 and batch_counter % num_updates == 0:
                 coordinator.join()
                 return total_loss.fetch() / num_batches
+            self.test_flag.value=all(self.test_flag_list)
             if self.parallel_training_and_test and self.test_flag.value:
                 if self.test_loss_dict[7] is not None:
                     self.test_loss = self.test_loss_dict[7]
@@ -2563,6 +2550,7 @@ class Model:
                 self.end()
                 if self.patience is not None:
                     self.val_loss_, self.val_accuracy_ = self.check_early_stopping(self.val_loss_, self.val_accuracy_)
+                self.test_flag_list.clear()
             if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                 if self.parallel_training_and_test and self.test_flag.value:
                     self.save_checkpoint()
@@ -2727,26 +2715,27 @@ class Model:
                     if len(self.path_list_)>self.max_save_files:
                         os.remove(self.path_list_[0])
                         del self.path_list_[0]
-        output_file=open(path,'wb')
-        if self.parallel_training_and_save and hasattr(self, 'param_'):
+        if self.parallel_training_and_save:
             if self.parallel_dump==True:
                 counter=0
-                for i in range(len(self.param_)):
-                    if type(self.param_[i])==list:
-                        for j in range(len(self.param_[i])):
+                for i in range(len(self.param)):
+                    if type(self.param[i])==list:
+                        for j in range(len(self.param[i])):
                             counter+=1
-                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, j, path, counter))
+                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(self.param[i][j], i, j, path, counter))
                             process.start()
                     else:
                         counter+=1
-                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, None, path, counter))
+                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(self.param[i], i, None, path, counter))
                         process.start()
             else:
                 output_file=open(path,'wb')
-                pickle.dump(self.param_,output_file)
+                pickle.dump(self.param,output_file)
+                output_file.close()
         else:
+            output_file=open(path,'wb')
             pickle.dump(self.param,output_file)
-        output_file.close()
+            output_file.close()
         if self.parallel_training_and_save:
             self.save_flag.value=True
         return
@@ -2853,8 +2842,6 @@ class Model:
         output_file=open(path,'wb')
         param=self.param
         self.param=None
-        param_=self.param_
-        self.param_=None
         if type(self.optimizer)==list:
             opt_config=[opt.get_config() for opt in self.optimizer]
         else:
@@ -2864,19 +2851,18 @@ class Model:
         self.optimizer=None
         pickle.dump(self,output_file)
         self.param=param
-        self.param_=param_
         self.optimizer=optimizer
         output_file.close()
         return
     
     
-    def parallel_param_dump(self, index1, index2, path, counter):
+    def parallel_param_dump(self, param, index1, index2, path, counter):
         self.param_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
         filename = os.path.join(path, f"param_{counter}.dat")
         output_file=open(filename,'wb')
-        if type(self.param_[index1])==list:
-            pickle.dump(self.param_[index1][index2],output_file)
+        if type(param)==list:
+            pickle.dump(param,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"param_index_{counter}.dat")
@@ -2884,7 +2870,7 @@ class Model:
             pickle.dump((index1, index2),output_file)
             output_file.close()
         else:
-            pickle.dump(self.param_[index1],output_file)
+            pickle.dump(param,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"param_index_{counter}.dat")
@@ -2894,13 +2880,13 @@ class Model:
         self.param_save_flag_list[counter]=True
             
     
-    def parallel_state_dump(self, index1, index2, path, counter):
+    def parallel_state_dump(self, state_dict, index1, index2, path, counter):
         self.state_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
         path = os.path.join(path, f"state_{counter}.dat")
         output_file=open(path,'wb')
         if type(self.optimizer)==list:
-            pickle.dump(self.state_dict[index1][str(index2)],output_file)
+            pickle.dump(state_dict,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"state_index_{counter}.dat")
@@ -2908,7 +2894,7 @@ class Model:
             pickle.dump((index1, str(index2)),output_file)
             output_file.close()
         else:
-            pickle.dump(self.state_dict[str(index1)],output_file)
+            pickle.dump(state_dict,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"state_index_{counter}.dat")
@@ -2964,19 +2950,19 @@ class Model:
         if self.parallel_training_and_save:
             if self.parallel_dump==True:
                 counter=0
-                for i in range(len(self.param_)):
-                    if type(self.param_[i])==list:
-                        for j in range(len(self.param_[i])):
+                for i in range(len(self.param)):
+                    if type(self.param[i])==list:
+                        for j in range(len(self.param[i])):
                             counter+=1
-                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, j, path, counter))
+                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(self.param[i][j], i, j, path, counter))
                             process.start()
                     else:
                         counter+=1
-                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(i, None, path, counter))
+                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(self.param[i], i, None, path, counter))
                         process.start()
             else:
                 output_file=open(path,'wb')
-                pickle.dump(self.param_,output_file)
+                pickle.dump(self.param,output_file)
         else:
             pickle.dump(param,output_file)
             self.param=param
@@ -2988,12 +2974,12 @@ class Model:
                     for i in range(len(self.optimizer)):
                         for j in range(len(self.state_dict[i])):
                             counter+=1
-                            process=multiprocessing.Process(target=self.parallel_state_dump,args=(i, j, path, counter))
+                            process=multiprocessing.Process(target=self.parallel_state_dump,args=(self.state_dict[i][str(j)], i, j, path, counter))
                             process.start()
                 else:
                     for i in range(len(self.state_dict)):
                         counter+=1
-                        process=multiprocessing.Process(target=self.parallel_state_dump,args=(i, None, path, counter))
+                        process=multiprocessing.Process(target=self.parallel_state_dump,args=(self.state_dict[str(i)], i, None, path, counter))
                         process.start()
             else:
                 pickle.dump(self.state_dict,output_file)
@@ -3015,21 +3001,14 @@ class Model:
     
     def save_in_parallel(self, path):
         if self.save_param_only==False:
-            manager=multiprocessing.Manager()
             if type(self.optimizer)==list:
-                self.state_dict=manager.list()
+                self.state_dict=[]
                 for i in range(len(self.optimizer)):
                     self.state_dict.append(dict())
                     self.optimizer[i].save_own_variables(self.state_dict[-1])
             else:
-                self.state_dict=manager.dict()
+                self.state_dict=dict()
                 self.optimizer.save_own_variables(self.state_dict)
-            for i in range(len(self.param)):
-                if type(self.param[i])==list:
-                    for j in range(len(self.param[i])):
-                        self.param_[i][j]=tf.Variable(self.param[i][j])
-                else:
-                    self.param_[i]=tf.Variable(self.param[i])
             if self.parallel_dump:
                 self._save(path+'.dat')
                 process=multiprocessing.Process(target=self.save,args=(path,))
