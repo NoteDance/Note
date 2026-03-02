@@ -2710,7 +2710,7 @@ class RL:
                     dummy_a = np.asarray(dummy_a)
                 self.action_shape = dummy_a.shape if dummy_a.ndim > 0 else (1,)
                 self.next_state_shape = self.state_shape
-            self.max_exp_per_proc = math.ceil(self.pool_size / self.processes)
+            self.max_exp_per_proc = math.ceil(self.pool_size / self.processes * self.buffer_safety_factor)
             self.pool_lengths = manager.list([0 for _ in range(processes)])
             self.write_indices = manager.list([0 for _ in range(processes)])
             self._init_shared_experience_buffers(processes)
