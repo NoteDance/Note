@@ -848,10 +848,10 @@ class RL:
                 if self.PPO:
                     ratio_list.append(self._get_buffer(p, 'ratio')[:self.length_list[p]])
             TD=np.concat(TD_list, axis=0)
-            np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[:len(TD)]
+            np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[:len(TD)]=TD
             if self.PPO:
                 ratio=np.concat(ratio_list, axis=0)
-                np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[:len(ratio)]
+                np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[:len(ratio)]=ratio
             TD_length=len(TD)
             length=min(done_length,TD_length)
             state_pool=state_pool[:length]
@@ -1612,6 +1612,13 @@ class RL:
                         if self.pool_network==True:
                             if self.batch_counter%self.update_batches==0:
                                 self.update_param()
+                                if not hasattr(self,'window_size_func'):
+                                    if self.PPO:
+                                        window_size=self.window_size_ppo
+                                    else:
+                                        window_size=self.window_size_pr
+                                if hasattr(self, 'adjust_func'):
+                                    self._ess = self.compute_ess(None, None)
                                 if self.PPO:
                                     for p in range(self.processes):
                                         if self.parallel_store_and_training:
@@ -1676,6 +1683,13 @@ class RL:
                     if self.pool_network==True:
                         if self.batch_counter%self.update_batches==0:
                             self.update_param()
+                            if not hasattr(self,'window_size_func'):
+                                if self.PPO:
+                                    window_size=self.window_size_ppo
+                                else:
+                                    window_size=self.window_size_pr
+                            if hasattr(self, 'adjust_func'):
+                                self._ess = self.compute_ess(None, None)
                             if self.PPO:
                                 for p in range(self.processes):
                                     if self.parallel_store_and_training:
@@ -1699,7 +1713,7 @@ class RL:
                             window_size=self.window_size_ppo
                         else:
                             window_size=self.window_size_pr
-                    if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                    if hasattr(self, 'adjust_func'):
                         self._ess = self.compute_ess(None, None)
                     if hasattr(self,'window_size_func'):
                         window_size=int(self.window_size_func())
@@ -1730,20 +1744,6 @@ class RL:
                     self.done_pool=None
             if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                 self.adjust_func()
-                if self.step_counter%self.update_steps==0:
-                    if self.num_updates!=None:
-                        if len(self.state_pool)>=self.pool_size_:
-                            idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
-                        else:
-                            idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
-                        state_pool=self.state_pool[idx]
-                        action_pool=self.action_pool[idx]
-                        next_state_pool=self.action_pool[idx]
-                        reward_pool=self.action_pool[idx]
-                        done_pool=self.action_pool[idx]
-                        train_ds=tf.data.Dataset.from_tensor_slices((state_pool,action_pool,next_state_pool,reward_pool,done_pool)).batch(self.batch)
-                    else:
-                        train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
             if self.PPO and self.step_counter%self.update_steps==0:
                 if self.distributed_flag==True:
                     if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
@@ -2366,23 +2366,17 @@ class RL:
                 self.action_shape = dummy_a.shape if dummy_a.ndim > 0 else (1,)
                 self.next_state_shape = self.state_shape
             self.max_exp_per_proc = math.ceil(self.pool_size / self.processes)
-            self.pool_lengths = manager.list([0 for _ in range(processes)])
-            self.write_indices = manager.list([0 for _ in range(processes)])
             self._init_shared_experience_buffers(processes)
-            if save_data and len(self.shared_states)!=0:
-                for p in range(processes):
-                    self.shared_states[p] = np.frombuffer(self.shared_states[p].get_obj(), dtype=np.float32)
-                    self.shared_next_states[p] = np.frombuffer(self.shared_next_states[p].get_obj(), dtype=np.float32)
-                    self.shared_actions[p] = np.frombuffer(self.shared_actions[p].get_obj(), dtype=np.float32)
-                    self.shared_rewards[p] = np.frombuffer(self.shared_rewards[p].get_obj(), dtype=np.float32)
-                    self.shared_dones[p] = np.frombuffer(self.shared_dones[p].get_obj(), dtype=np.float32)
+            if save_data:
                 if self.clearing_freq!=None:
                     self.store_counter=manager.list(self.store_counter)
             else:
+                self.pool_lengths = manager.list([0 for _ in range(processes)])
+                self.write_indices = manager.list([0 for _ in range(processes)])
                 self.inverse_len=manager.list([0 for _ in range(processes)])
                 if self.clearing_freq!=None:
                     self.store_counter=manager.list()
-            if not save_data or len(self.state_pool_list)==0:
+            if not save_data:
                 for _ in range(processes):
                     if self.clearing_freq!=None:
                         self.store_counter.append(0)

@@ -510,7 +510,7 @@ class Model:
     def _test_step(self, inputs, loss_object, test_loss, test_accuracy):
         if self.parallel_training_and_test and isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
             self.test_flag_list.append(False)
-            index=len(self.test_flag_list)
+            index=len(self.test_flag_list)-1
         data, labels = inputs
     
         predictions = self.__call__(data, training=False)
@@ -2333,8 +2333,12 @@ class Model:
                         self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
                     else:
                         self.save_flag.value=all(self.param_save_flag_list)
+                    if isinstance(strategy,tf.distribute.ParameterServerStrategy):
+                        self.test_flag.value=all(self.test_flag_list)
                     condition = (self.stop_training or self.test_flag.value) and self.save_flag.value
                 elif parallel_training_and_test:
+                    if isinstance(strategy,tf.distribute.ParameterServerStrategy):
+                        self.test_flag.value=all(self.test_flag_list)
                     condition = self.stop_training or self.test_flag.value
                 elif parallel_training_and_save:
                     if self.save_param_only==False:
