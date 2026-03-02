@@ -183,6 +183,16 @@ class RL:
             self._get_buffer(p, 'next_state')[pos] = np.asarray(next_s).reshape(self.next_state_shape)
             self._get_buffer(p, 'reward')[pos] = float(r)
             self._get_buffer(p, 'done')[pos] = float(done)
+            if self.PR==True:
+                if self.PPO:
+                    self._get_buffer(p, 'ratio')[pos] = np.max(self._get_buffer(p, 'ratio')[:curr_len]) if curr_len > 0 else self.initial_ratio
+                    self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
+                else:
+                    self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
+            self.write_indices[p] = (pos + 1) % self.max_exp_per_proc
+            self.pool_lengths[p] = min(curr_len + 1, self.max_exp_per_proc)
+            pos = self.write_indices[p]
+            curr_len = self.pool_lengths[p]
             if not self.parallel_store_and_training or (self.parallel_store_and_training and not self.PR):
                 if self.clearing_freq!=None:
                     self.store_counter[p]+=1
@@ -233,8 +243,6 @@ class RL:
                                 self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[1:]
                             else:
                                 self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[1:]
-            self.write_indices[p] = (pos + 1) % self.max_exp_per_proc
-            self.pool_lengths[p] = min(curr_len + 1, self.max_exp_per_proc)
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -1995,12 +2003,6 @@ class RL:
                         reward=0
                 else:
                     self.pool(s,a,next_s,r,done,p)
-                if self.PR==True:
-                    if self.PPO:
-                        self._get_buffer(p, 'ratio')[pos] = np.max(self._get_buffer(p, 'ratio')[:self.pool_lengths[p]]) if self.pool_lengths[p] > 0 else self.initial_ratio
-                        self._get_buffer(p, 'TD')[pos] = self.initial_TD if self.pool_lengths[p] == 0 else np.max(self._get_buffer(p, 'TD')[:self.pool_lengths[p]])
-                    else:
-                        self._get_buffer(p, 'TD')[pos] = self.initial_TD if self.pool_lengths[p] == 0 else np.max(self._get_buffer(p, 'TD')[:self.pool_lengths[p]])
                 if self.parallel_store_and_training:
                     self.lock_list[p].release()
             self.done_length[p]=len(self.done_pool_list[p])
