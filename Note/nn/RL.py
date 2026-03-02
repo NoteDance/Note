@@ -1085,6 +1085,8 @@ class RL:
                             else:
                                 weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                             self.ess_[p] = self.compute_ess_from_weights(weights)
+                        if self.parallel_store_and_training:
+                            self.lock_list[p].release()
                     curr_len = self.pool_lengths[p]
                     if self.PPO:
                         ratio_list = [self._get_buffer(p, 'ratio')[:curr_len] for p in range(self.processes)]
@@ -1216,6 +1218,8 @@ class RL:
                             else:
                                 weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                             self.ess_[p] = self.compute_ess_from_weights(weights)
+                        if self.parallel_store_and_training:
+                            self.lock_list[p].release()
                     curr_len = self.pool_lengths[p]
                     if self.PPO:
                         ratio_list = [self._get_buffer(p, 'ratio')[:curr_len] for p in range(self.processes)]
@@ -1406,6 +1410,8 @@ class RL:
                                 else:
                                     weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                                 self.ess_[p] = self.compute_ess_from_weights(weights)
+                            if self.parallel_store_and_training:
+                                self.lock_list[p].release()
                         curr_len = self.pool_lengths[p]
                         if self.PPO:
                             ratio_list = [self._get_buffer(p, 'ratio')[:curr_len] for p in range(self.processes)]
@@ -1477,7 +1483,8 @@ class RL:
                         self._ess = self.compute_ess(None, None)
                     for p in range(self.processes):
                         if self.parallel_store_and_training:
-                            self.lock_list[p].acquire()
+                            if self.parallel_store_and_training:
+                                self.lock_list[p].acquire()
                             curr_len = self.pool_lengths[p]
                             if hasattr(self,'window_size_func'):
                                 window_size=int(self.window_size_func(p))
@@ -1505,6 +1512,8 @@ class RL:
                                 else:
                                     weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                                 self.ess_[p] = self.compute_ess_from_weights(weights)
+                            if self.parallel_store_and_training:
+                                self.lock_list[p].release()
                         curr_len = self.pool_lengths[p]
                         if self.PPO:
                             ratio_list = [self._get_buffer(p, 'ratio')[:curr_len] for p in range(self.processes)]
