@@ -1898,24 +1898,24 @@ class RL:
             for p in range(self.processes):
                 if self.prioritized_replay.ratio is not None:
                     if p==0:
-                        self._get_buffer(p, 'ratio')=self.prioritized_replay.ratio[0:len(self._get_buffer(p, 'ratio'))]
+                        self._get_buffer(p, 'ratio')[:self.pool_lengths[p]]=self.prioritized_replay.ratio[:self.pool_lengths[p]]
                     else:
                         index1=0
                         index2=0
                         for i in range(p):
-                            index1+=len(self._get_buffer(i, 'ratio'))
-                        index2=index1+len(self._get_buffer(p, 'ratio'))
-                        self._get_buffer(p, 'ratio')=self.prioritized_replay.ratio[index1-1:index2]
+                            index1+=self.pool_lengths[i]
+                        index2=index1+self.pool_lengths[p]
+                        self._get_buffer(p, 'ratio')[:self.pool_lengths[p]]=self.prioritized_replay.ratio[index1-1:index2]
                 if self.prioritized_replay.TD is not None:
                     if p==0:
-                        self._get_buffer(p, 'TD')=self.prioritized_replay.TD[0:len(self._get_buffer(p, 'TD'))]
+                        self._get_buffer(p, 'TD')[:self.pool_lengths[p]]=self.prioritized_replay.TD[:self.pool_lengths[p]]
                     else:
                         index1=0
                         index2=0
                         for i in range(p):
-                            index1+=len(self._get_buffer(i, 'TD'))
-                        index2=index1+len(self._get_buffer(p, 'TD'))
-                        self._get_buffer(p, 'TD')=self.prioritized_replay.TD[index1-1:index2]
+                            index1+=self.pool_lengths[i]
+                        index2=index1+self.pool_lengths[p]
+                        self._get_buffer(p, 'TD')[:self.pool_lengths[p]]=self.prioritized_replay.TD[index1-1:index2]
         return
     
     
@@ -1924,14 +1924,14 @@ class RL:
             for p in range(self.processes):
                 if self.prioritized_replay.TD is not None:
                     if p==0:
-                        self._get_buffer(p, 'TD')=self.prioritized_replay.TD[0:len(self._get_buffer(p, 'TD'))]
+                        self._get_buffer(p, 'TD')[:self.pool_lengths[p]]=self.prioritized_replay.TD[:self.pool_lengths[p]]
                     else:
                         index1=0
                         index2=0
                         for i in range(p):
-                            index1+=len(self._get_buffer(i, 'TD'))
-                        index2=index1+len(self._get_buffer(p, 'TD'))
-                        self._get_buffer(p, 'TD')=self.prioritized_replay.TD[index1-1:index2]
+                            index1+=self.pool_lengths[i]
+                        index2=index1+self.pool_lengths[p]
+                        self._get_buffer(p, 'TD')[:self.pool_lengths[p]]=self.prioritized_replay.TD[index1-1:index2]
         return
     
     
