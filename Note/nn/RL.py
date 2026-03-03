@@ -190,7 +190,7 @@ class RL:
                     self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                 else:
                     self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
-            self.write_indices[p] = (pos + 1) % self.max_exp_per_proc
+            self.write_indices[p] = pos + 1
             self.pool_lengths[p] = min(curr_len + 1, self.max_exp_per_proc)
             pos = self.write_indices[p]
             curr_len = self.pool_lengths[p]
