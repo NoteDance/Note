@@ -3,7 +3,6 @@ from Note import nn
 from Note.DL.dl.prioritized_replay import pr
 import multiprocessing
 import numpy as np
-import numpy.ctypeslib as npc
 import math
 import matplotlib.pyplot as plt
 import pickle
@@ -134,7 +133,6 @@ class Model:
                 self.info['max_num_updates']=self.max_num_updates
                 self.info['test_batch_size']=self.test_batch_size
                 self.info['processes']=self.processes
-                self.info['parallel_test']=self.parallel_test_
                 self.info['jit_compile']=self.jit_compile
                 self.info['p']=self.p
                 if type(self.optimizer)==list:
@@ -410,24 +408,6 @@ class Model:
         return data,labels
     
     
-    def parallel_test(self, test_ds, loss_object, test_loss, test_accuracy, jit_compile, p):
-        if self.parallel_training_and_save:
-            self.test_flag_list[p]=False
-        for test_data, labels in test_ds:
-            if jit_compile==True:
-                self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
-            else:
-                self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
-        if test_accuracy!=None:
-            self.shared_test_loss_array[p]=test_loss.result()
-            self.shared_test_acc_array[p]=test_accuracy.result()
-        else:
-            self.shared_test_loss_array[p]=test_loss.result()
-        if self.parallel_training_and_save:
-            self.test_flag_list[p]=True
-        return
-    
-    
     @tf.function(jit_compile=True)
     def train_step(self, train_data, labels, loss_object, train_loss, train_accuracy, optimizer):
         with tf.GradientTape(persistent=True) as tape:
@@ -548,145 +528,64 @@ class Model:
         return strategy.run(self._test_step, args=(dataset_inputs, loss_object, test_loss, test_accuracy))
     
     
-    def test(self, test_ds, loss_object, test_loss, test_accuracy=None, processes=None, mp=None, jit_compile=True):
-        if mp==None:
-            self.training()
-            for test_data, labels in test_ds:
-                if jit_compile==True:
-                    self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
-                else:
-                    self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
-            self.training(True)
-            
-            test_loss=test_loss.result().numpy()
-            if test_accuracy!=None:
-                test_acc=test_accuracy.result().numpy()
-                return test_loss,test_acc
+    def test(self, test_ds, loss_object, test_loss, test_accuracy=None, processes=None, jit_compile=True):
+        self.training()
+        for test_data, labels in test_ds:
+            if jit_compile==True:
+                self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
             else:
-                return test_loss
+                self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
+        self.training(True)
+        
+        test_loss=test_loss.result().numpy()
+        if test_accuracy!=None:
+            test_acc=test_accuracy.result().numpy()
+            return test_loss,test_acc
         else:
-            self.training()
-            self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
-            if test_accuracy!=None:
-                self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
-            
-            process_list=[]
-            for p in range(processes):
-                test_loss_=test_loss[p]
-                if test_accuracy!=None:
-                    test_accuracy_=test_accuracy[p]
-                process=mp.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
-                process.start()
-                process_list.append(process)
-            for process in process_list:
-                test_loss[p].reset_states()
-                if test_accuracy!=None:
-                    test_accuracy[p].reset_states()
-                process.join()
-            self.training(True)
-                
-            if test_accuracy!=None:
-                test_loss,test_acc=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
-                return test_loss,test_acc
-            else:
-                test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
-                return test_loss
+            return test_loss
     
     
     def test_(self, test_ds, loss_object, test_loss, test_accuracy, processes, jit_compile):
-        if not self.parallel_test_:
-            self.training()
-            if test_loss!=None:
-                test_loss.reset_states()
-            if test_accuracy!=None:
-                test_accuracy.reset_states()
-            for test_data, labels in test_ds:
-                if jit_compile==True:
-                    self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
-                else:
-                    self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
-                
-            self.test_loss=test_loss.result().numpy()
-            if test_accuracy!=None:
-                self.test_acc=test_accuracy.result().numpy()
-            self.training(True)
-        else:
-            self.training()
-            if not isinstance(self.shared_test_loss_array, multiprocessing.sharedctypes.SynchronizedArray):
-                self.shared_test_loss_array=multiprocessing.Array('f',np.zeros([processes],dtype='float32'))
-            if test_accuracy!=None:
-                if not isinstance(self.shared_test_acc_array, multiprocessing.sharedctypes.SynchronizedArray):
-                    self.shared_test_acc_array=multiprocessing.Array('f',np.zeros([processes],dtype='float32'))
-            
-            process_list=[]
-            for p in range(processes):
-                test_loss_=test_loss[p]
-                if test_accuracy!=None:
-                    test_accuracy_=test_accuracy[p]
-                process=multiprocessing.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
-                process.start()
-                process_list.append(process)
-            for process in process_list:
-                test_loss[p].reset_states()
-                if test_accuracy!=None:
-                    test_accuracy[p].reset_states()
-                process.join()
-                
-            if test_accuracy!=None:
-                self.test_loss,self.test_acc=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
+        self.training()
+        if test_loss!=None:
+            test_loss.reset_states()
+        if test_accuracy!=None:
+            test_accuracy.reset_states()
+        for test_data, labels in test_ds:
+            if jit_compile==True:
+                self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
             else:
-                self.test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
-            self.training(True)
+                self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
+            
+        self.test_loss=test_loss.result().numpy()
+        if test_accuracy!=None:
+            self.test_acc=test_accuracy.result().numpy()
+        self.training(True)
         return
     
     
     def test_p(self, test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile):
         self.test_flag.value=False
-        if not self.parallel_test_:
-            if test_accuracy!=None:
-                self.test_loss_dict[7], self.test_accuracy_dict[7] = None, None
-            else:
-                self.test_loss_dict[7] = None
-            test_ds=tf.data.Dataset.from_tensor_slices((test_data, test_labels)).batch(self.test_batch_size)
-            if test_loss!=None:
-                test_loss=test_loss()
-            if test_accuracy!=None:
-                test_accuracy=test_accuracy()
-            for test_data, labels in test_ds:
-                if jit_compile==True:
-                    self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
-                else:
-                    self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
-            
-            if test_accuracy!=None:
-                self.test_loss_dict[7], self.test_accuracy_dict[7] = test_loss.result().numpy(), test_accuracy.result().numpy()
-            else:
-                self.test_loss_dict[7] = test_loss.result().numpy()
+        if test_accuracy!=None:
+            self.test_loss_dict[7], self.test_accuracy_dict[7] = None, None
         else:
-            test_ds = []
-            for date, labels in zip(test_data, test_labels):
-                test_ds.append(tf.data.Dataset.from_tensor_slices((date, labels)).batch(self.test_batch_size))
-            if not isinstance(self.shared_test_loss_array, multiprocessing.sharedctypes.SynchronizedArray):
-                self.shared_test_loss_array=multiprocessing.Array('f',np.zeros([self.processes],dtype='float32'))
-            if test_accuracy!=None:
-                if not isinstance(self.shared_test_acc_array, multiprocessing.sharedctypes.SynchronizedArray):
-                    self.shared_test_acc_array=multiprocessing.Array('f',np.zeros([self.processes],dtype='float32'))
-
-            process_list=[]
-            for p in range(self.processes):
-                test_loss_=test_loss[p]()
-                if test_accuracy!=None:
-                    test_accuracy_=test_accuracy[p]()
-                process=multiprocessing.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
-                process.start()
-                process_list.append(process)
-
-            if test_accuracy!=None:
-                self.test_loss_dict[7], self.test_accuracy_dict[7] = np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/self.processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/self.processes
+            self.test_loss_dict[7] = None
+        test_ds=tf.data.Dataset.from_tensor_slices((test_data, test_labels)).batch(self.test_batch_size)
+        if test_loss!=None:
+            test_loss=test_loss()
+        if test_accuracy!=None:
+            test_accuracy=test_accuracy()
+        for test_data, labels in test_ds:
+            if jit_compile==True:
+                self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
             else:
-                self.test_loss_dict[7] = np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/self.processes
-        if not self.parallel_test_:
-            self.test_flag.value=True
+                self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
+        
+        if test_accuracy!=None:
+            self.test_loss_dict[7], self.test_accuracy_dict[7] = test_loss.result().numpy(), test_accuracy.result().numpy()
+        else:
+            self.test_loss_dict[7] = test_loss.result().numpy()
+        self.test_flag.value=True
     
     
     def distributed_test_p(self,  test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile):
@@ -967,7 +866,7 @@ class Model:
         return float(ess)
     
     
-    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, parallel_dump=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=1.0, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
+    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, parallel_dump=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=1.0, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, jit_compile=True, callbacks=None, p=None):
         if p!=0:
             if p==None:
                 p_=9
@@ -1000,8 +899,6 @@ class Model:
             self.test_flag=multiprocessing.Value('b',False)
             self.test_loss_dict=manager.dict()
             self.test_accuracy_dict=manager.dict()
-            if parallel_test:
-                self.test_flag_list=manager.list([False for _ in range(processes)])
         if parallel_training_and_save:
             manager=multiprocessing.Manager()
             self.param_save_flag_list=multiprocessing.list()
@@ -1028,7 +925,6 @@ class Model:
         if test_ds!=None:
             self.test_batch_size=test_ds._batch_size.numpy()
         self.processes=processes
-        self.parallel_test_=parallel_test
         self.jit_compile=jit_compile
         self.p=p
         self.info_flag=0
@@ -1069,8 +965,6 @@ class Model:
                     num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                     num_updates = int(num_updates)
                 for train_data, labels in train_ds:
-                    if parallel_test:
-                        self.test_flag.value=all(self.test_flag_list)
                     if parallel_training_and_test and self.test_flag.value:
                         if self.test_loss_dict[7] is not None:
                             self.test_loss = self.test_loss_dict[7]
@@ -1227,8 +1121,6 @@ class Model:
                     num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                     num_updates = int(num_updates)
                 for train_data, labels in train_ds:
-                    if parallel_test:
-                        self.test_flag.value=all(self.test_flag_list)
                     if parallel_training_and_test and self.test_flag.value:
                         if self.test_loss_dict[7] is not None:
                             self.test_loss = self.test_loss_dict[7]
@@ -1364,12 +1256,8 @@ class Model:
                         self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
                     else:
                         self.save_flag.value=all(self.param_save_flag_list)
-                    if parallel_test:
-                        self.test_flag.value=all(self.test_flag_list)
                     condition = (self.stop_training or self.test_flag.value) and self.save_flag.value
                 elif parallel_training_and_test:
-                    if parallel_test:
-                        self.test_flag.value=all(self.test_flag_list)
                     condition = self.stop_training or self.test_flag.value
                 elif parallel_training_and_save:
                     if self.save_param_only==False:

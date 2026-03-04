@@ -91,8 +91,6 @@ class RL:
                 self.info['parallel_training_and_save']=self.parallel_training_and_save
                 self.info['processes']=self.processes
                 self.info['num_store']=self.num_store
-                self.info['processes_her']=self.processes_her
-                self.info['processes_pr']=self.processes_pr
                 self.info['window_size']=self.window_size
                 self.info['clearing_freq']=self.clearing_freq
                 self.info['window_size_']=self.window_size_
@@ -119,8 +117,6 @@ class RL:
                 self.info['parallel_training_and_save']=self.parallel_training_and_save
                 self.info['processes']=self.processes
                 self.info['num_store']=self.num_store
-                self.info['processes_her']=self.processes_her
-                self.info['processes_pr']=self.processes_pr
                 self.info['window_size']=self.window_size
                 self.info['clearing_freq']=self.clearing_freq
                 self.info['window_size_']=self.window_size_
@@ -461,10 +457,7 @@ class RL:
     def adjust_batch(self, batch_params, ema):
         if not hasattr(self, 'original_batch'):
             self.original_batch = self.batch
-        if self.processes_her==None and self.processes_pr==None:
-            buf_len = len(self.state_pool)
-        else:
-            buf_len = len(self.state_pool[7])
+        buf_len = len(self.state_pool)
         if batch_params['min'] is None:
             cur_batch = self.batch
             batch_params['min'] = max(1, cur_batch // 2)
@@ -734,18 +727,11 @@ class RL:
     
         for _ in range(num_samples):
             idx = np.random.choice(self.state_pool.shape[0], size=batch_size, replace=False)
-            if self.processes_her==None and self.processes_pr==None:
-                s=self.state_pool[idx]
-                a=self.action_pool[idx]
-                next_s=self.next_state_pool[idx]
-                r=self.reward_pool[idx]
-                d=self.done_pool[idx]
-            else:
-                s=self.state_pool[7][idx]
-                a=self.action_pool[7][idx]
-                next_s=self.next_state_pool[7][idx]
-                r=self.reward_pool[7][idx]
-                d=self.done_pool[7][idx]
+            s=self.state_pool[idx]
+            a=self.action_pool[idx]
+            next_s=self.next_state_pool[idx]
+            r=self.reward_pool[idx]
+            d=self.done_pool[idx]
             if jit_compile==True:
                 gradients = self.backward(s, a, next_s, r, d)
             else:
@@ -873,61 +859,33 @@ class RL:
                 self.prioritized_replay.ratio=np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[:length]
             self.length_list[-1]=self.length_list[-1]-(len(TD)-len(self.prioritized_replay.TD))
         if self.PR:
-            if self.processes_pr!=None:
-                process_list=[]
-                for p in range(self.processes_pr):
-                    process=mp.Process(target=self.get_batch_in_parallel,args=(p,))
-                    process.start()
-                    process_list.append(process)
-                for process in process_list:
-                    process.join()
-                s = np.array(self.state_list)
-                a = np.array(self.action_list)
-                next_s = np.array(self.next_state_list)
-                r = np.array(self.reward_list)
-                d = np.array(self.done_list)
-            else:
-                s,a,next_s,r,d=self.prioritized_replay.sample(state_pool,action_pool,next_state_pool,reward_pool,done_pool,self.lambda_,self.alpha,self.batch)
+            s,a,next_s,r,d=self.prioritized_replay.sample(state_pool,action_pool,next_state_pool,reward_pool,done_pool,self.lambda_,self.alpha,self.batch)
         elif self.HER:
-            if self.processes_her!=None:
-                process_list=[]
-                for p in range(self.processes_her):
-                    process=mp.Process(target=self.get_batch_in_parallel,args=(p,))
-                    process.start()
-                    process_list.append(process)
-                for process in process_list:
-                    process.join()
-                s = np.array(self.state_list)
-                a = np.array(self.action_list)
-                next_s = np.array(self.next_state_list)
-                r = np.array(self.reward_list)
-                d = np.array(self.done_list)
-            else:
-                s = []
-                a = []
-                next_s = []
-                r = []
-                d = []
-                for _ in range(self.batch):
-                    step_state = np.random.randint(0, len(state_pool)-1)
-                    step_goal = np.random.randint(step_state+1, step_state+np.argmax(done_pool[step_state+1:])+2)
-                    state = state_pool[step_state]
-                    next_state = next_state_pool[step_state]
-                    action = action_pool[step_state]
-                    goal = state_pool[step_goal]
-                    reward, done = self.reward_done_func(next_state, goal)
-                    state = np.hstack((state, goal))
-                    next_state = np.hstack((next_state, goal))
-                    s.append(state)
-                    a.append(action)
-                    next_s.append(next_state)
-                    r.append(reward)
-                    d.append(done)
-                s = np.array(s)
-                a = np.array(a)
-                next_s = np.array(next_s)
-                r = np.array(r)
-                d = np.array(d)
+            s = []
+            a = []
+            next_s = []
+            r = []
+            d = []
+            for _ in range(self.batch):
+                step_state = np.random.randint(0, len(state_pool)-1)
+                step_goal = np.random.randint(step_state+1, step_state+np.argmax(done_pool[step_state+1:])+2)
+                state = state_pool[step_state]
+                next_state = next_state_pool[step_state]
+                action = action_pool[step_state]
+                goal = state_pool[step_goal]
+                reward, done = self.reward_done_func(next_state, goal)
+                state = np.hstack((state, goal))
+                next_state = np.hstack((next_state, goal))
+                s.append(state)
+                a.append(action)
+                next_s.append(next_state)
+                r.append(reward)
+                d.append(done)
+            s = np.array(s)
+            a = np.array(a)
+            next_s = np.array(next_s)
+            r = np.array(r)
+            d = np.array(d)
         elif self.TRL:
             s_i_list = []
             s_k_list = []
@@ -1883,49 +1841,6 @@ class RL:
                 s=next_s_
     
     
-    def get_batch_in_parallel(self,p):
-        s = []
-        a = []
-        next_s = []
-        r = []
-        d = []
-        if self.HER==True:
-            for _ in range(int(self.batch/self.processes_her)):
-                step_state = np.random.randint(0, len(self.state_pool[7])-1)
-                step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[7][step_state+1:])+2)
-                state = self.state_pool[7][step_state]
-                next_state = self.next_state_pool[7][step_state]
-                action = self.action_pool[7][step_state]
-                goal = self.state_pool[7][step_goal]
-                reward, done = self.reward_done_func(next_state, goal)
-                state = np.hstack((state, goal))
-                next_state = np.hstack((next_state, goal))
-                s.append(state)
-                a.append(action)
-                next_s.append(next_state)
-                r.append(reward)
-                d.append(done)
-        elif self.PR==True:
-            for _ in range(int(self.batch/self.processes_pr)):
-                state,action,next_state,reward,done=self.prioritized_replay.sample(self.state_pool[7],self.action_pool[7],self.next_state_pool[7],self.reward_pool[7],self.done_pool[7],self.lambda_,self.alpha,int(self.batch/self.processes_pr))
-                s.append(state)
-                a.append(action)
-                next_s.append(next_state)
-                r.append(reward)
-                d.append(done)
-        s = np.array(s)
-        a = np.array(a)
-        next_s = np.array(next_s)
-        r = np.array(r)
-        d = np.array(d)
-        self.state_list[p]=s
-        self.action_list[p]=a
-        self.next_state_list[p]=next_s
-        self.reward_list[p]=r
-        self.done_list[p]=d
-        return
-    
-    
     def modify_ratio_TD(self):
         if self.PR==True:
             for p in range(self.processes):
@@ -2081,72 +1996,49 @@ class RL:
             if not self.parallel_store_and_training:
                 if self.state_pool is not None and len(self.state_pool)>=self.batch and counter<num_store:
                         continue
-                if self.processes_her==None and self.processes_pr==None:
-                    state_pools = [self._get_buffer(p, 'state')[:self.pool_lengths[p]] for p in range(self.processes)]
-                    self.state_pool = np.concatenate(state_pools, axis=0)
-                    action_pools = [self._get_buffer(p, 'action')[:self.pool_lengths[p]] for p in range(self.processes)]
-                    self.action_pool = np.concatenate(action_pools, axis=0)
-                    next_state_pools = [self._get_buffer(p, 'next_state')[:self.pool_lengths[p]] for p in range(self.processes)]
-                    self.next_state_pool = np.concatenate(next_state_pools, axis=0)
-                    reward_pools = [self._get_buffer(p, 'reward')[:self.pool_lengths[p]] for p in range(self.processes)]
-                    self.reward_pool = np.concatenate(reward_pools, axis=0)
-                    done_pools = [self._get_buffer(p, 'done')[:self.pool_lengths[p]] for p in range(self.processes)]
-                    self.done_pool = np.concatenate(done_pools, axis=0)
-                    if counter<num_store and len(self.state_pool)<self.batch:
-                        continue
-                    if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy) and not self.PR and self.num_updates!=None:
+                state_pools = [self._get_buffer(p, 'state')[:self.pool_lengths[p]] for p in range(self.processes)]
+                self.state_pool = np.concatenate(state_pools, axis=0)
+                action_pools = [self._get_buffer(p, 'action')[:self.pool_lengths[p]] for p in range(self.processes)]
+                self.action_pool = np.concatenate(action_pools, axis=0)
+                next_state_pools = [self._get_buffer(p, 'next_state')[:self.pool_lengths[p]] for p in range(self.processes)]
+                self.next_state_pool = np.concatenate(next_state_pools, axis=0)
+                reward_pools = [self._get_buffer(p, 'reward')[:self.pool_lengths[p]] for p in range(self.processes)]
+                self.reward_pool = np.concatenate(reward_pools, axis=0)
+                done_pools = [self._get_buffer(p, 'done')[:self.pool_lengths[p]] for p in range(self.processes)]
+                self.done_pool = np.concatenate(done_pools, axis=0)
+                if counter<num_store and len(self.state_pool)<self.batch:
+                    continue
+                if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy) and not self.PR and self.num_updates!=None:
+                    if len(self.state_pool)>=self.pool_size_:
+                        idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
+                    else:
+                        idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
+                    self.state_pool=self.state_pool[idx]
+                    self.action_pool=self.action_pool[idx]
+                    self.next_state_pool=self.next_state_pool[idx]
+                    self.reward_pool=self.reward_pool[idx]
+                    self.done_pool=self.done_pool[idx]
+                elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                    if self.num_updates!=None:
                         if len(self.state_pool)>=self.pool_size_:
                             idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
                         else:
                             idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
-                        self.state_pool=self.state_pool[idx]
-                        self.action_pool=self.action_pool[idx]
-                        self.next_state_pool=self.next_state_pool[idx]
-                        self.reward_pool=self.reward_pool[idx]
-                        self.done_pool=self.done_pool[idx]
-                    elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
-                        if self.num_updates!=None:
-                            if len(self.state_pool)>=self.pool_size_:
-                                idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
-                            else:
-                                idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
-                            self.state_pool_[:len(idx)].assign(self.state_pool[idx])
-                            self.action_pool_[:len(idx)].assign(self.action_pool[idx])
-                            self.next_state_pool_[:len(idx)].assign(self.next_state_pool[idx])
-                            self.reward_pool_[:len(idx)].assign(self.reward_pool[idx])
-                            self.done_pool_[:len(idx)].assign(self.done_pool[idx])
-                            self.batch_.assign(self.batch)
-                        else:
-                            self.state_pool_[:len(self.state_pool)].assign(self.state_pool)
-                            self.action_pool_[:len(self.state_pool)].assign(self.action_pool)
-                            self.next_state_pool_[:len(self.state_pool)].assign(self.next_state_pool)
-                            self.reward_pool_[:len(self.state_pool)].assign(self.reward_pool)
-                            self.done_pool_[:len(self.state_pool)].assign(self.done_pool)
-                            self.batch_.assign(self.batch)
-                else:
-                    self.state_pool[7]=np.concatenate(self.state_pool_list)
-                    self.action_pool[7]=np.concatenate(self.action_pool_list)
-                    self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
-                    self.reward_pool[7]=np.concatenate(self.reward_pool_list)
-                    self.done_pool[7]=np.concatenate(self.done_pool_list)
-                    if counter<num_store and len(self.state_pool[7])<self.batch:
-                        continue
-                    if not self.PR and self.num_updates!=None:
-                        if len(self.state_pool)>=self.pool_size_:
-                            idx=np.random.choice(self.state_pool[7].shape[0], size=self.pool_size_, replace=False)
-                        else:
-                            idx=np.random.choice(self.state_pool[7].shape[0], size=self.state_pool[7].shape[0], replace=False)
-                        self.state_pool[7]=self.state_pool[7][idx]
-                        self.action_pool[7]=self.action_pool[7][idx]
-                        self.next_state_pool[7]=self.next_state_pool[7][idx]
-                        self.reward_pool[7]=self.reward_pool[7][idx]
-                        self.done_pool[7]=self.done_pool[7][idx]
-                if self.processes_her==None and self.processes_pr==None:
-                    if len(self.state_pool)>=self.batch:
-                        break
-                else:
-                    if len(self.state_pool[7])>=self.batch:
-                        break
+                        self.state_pool_[:len(idx)].assign(self.state_pool[idx])
+                        self.action_pool_[:len(idx)].assign(self.action_pool[idx])
+                        self.next_state_pool_[:len(idx)].assign(self.next_state_pool[idx])
+                        self.reward_pool_[:len(idx)].assign(self.reward_pool[idx])
+                        self.done_pool_[:len(idx)].assign(self.done_pool[idx])
+                        self.batch_.assign(self.batch)
+                    else:
+                        self.state_pool_[:len(self.state_pool)].assign(self.state_pool)
+                        self.action_pool_[:len(self.state_pool)].assign(self.action_pool)
+                        self.next_state_pool_[:len(self.state_pool)].assign(self.next_state_pool)
+                        self.reward_pool_[:len(self.state_pool)].assign(self.reward_pool)
+                        self.done_pool_[:len(self.state_pool)].assign(self.done_pool)
+                        self.batch_.assign(self.batch)
+                if len(self.state_pool)>=self.batch:
+                    break
         if not self.parallel_store_and_training:
             if hasattr(self,'window_size_func'):
                 for p in range(self.processes):
@@ -2181,63 +2073,46 @@ class RL:
                 for p in range(self.processes):
                     self.end_flag_list[p]=False
                     self.done_length[p]=0
-            if self.processes_her==None and self.processes_pr==None:
-                curr_len = self.pool_lengths[p]
-                state_pools = [self._get_buffer(p, 'state')[:curr_len] for p in range(self.processes)]
-                state_pool = np.concatenate(state_pools, axis=0)
-                action_pools = [self._get_buffer(p, 'action')[:curr_len] for p in range(self.processes)]
-                action_pool = np.concatenate(action_pools, axis=0)
-                next_state_pools = [self._get_buffer(p, 'next_state')[:curr_len] for p in range(self.processes)]
-                next_state_pool = np.concatenate(next_state_pools, axis=0)
-                reward_pools = [self._get_buffer(p, 'reward')[:curr_len] for p in range(self.processes)]
-                reward_pool = np.concatenate(reward_pools, axis=0)
-                done_pools = [self._get_buffer(p, 'done')[:curr_len] for p in range(self.processes)]
-                done_pool = np.concatenate(done_pools, axis=0)
-                if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy) and not self.PR and self.num_updates!=None:
+            curr_len = self.pool_lengths[p]
+            state_pools = [self._get_buffer(p, 'state')[:curr_len] for p in range(self.processes)]
+            state_pool = np.concatenate(state_pools, axis=0)
+            action_pools = [self._get_buffer(p, 'action')[:curr_len] for p in range(self.processes)]
+            action_pool = np.concatenate(action_pools, axis=0)
+            next_state_pools = [self._get_buffer(p, 'next_state')[:curr_len] for p in range(self.processes)]
+            next_state_pool = np.concatenate(next_state_pools, axis=0)
+            reward_pools = [self._get_buffer(p, 'reward')[:curr_len] for p in range(self.processes)]
+            reward_pool = np.concatenate(reward_pools, axis=0)
+            done_pools = [self._get_buffer(p, 'done')[:curr_len] for p in range(self.processes)]
+            done_pool = np.concatenate(done_pools, axis=0)
+            if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy) and not self.PR and self.num_updates!=None:
+                if curr_len>=self.pool_size_:
+                    idx=np.random.choice(done_pool.shape[0], size=self.pool_size_, replace=False)
+                else:
+                    idx=np.random.choice(done_pool.shape[0], size=done_pool.shape[0], replace=False)
+                state_pool=state_pool[idx]
+                action_pool=action_pool[idx]
+                next_state_pool=next_state_pool[idx]
+                reward_pool=reward_pool[idx]
+                done_pool=done_pool[idx]
+            elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                if self.num_updates!=None:
                     if curr_len>=self.pool_size_:
                         idx=np.random.choice(done_pool.shape[0], size=self.pool_size_, replace=False)
                     else:
                         idx=np.random.choice(done_pool.shape[0], size=done_pool.shape[0], replace=False)
-                    state_pool=state_pool[idx]
-                    action_pool=action_pool[idx]
-                    next_state_pool=next_state_pool[idx]
-                    reward_pool=reward_pool[idx]
-                    done_pool=done_pool[idx]
-                elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
-                    if self.num_updates!=None:
-                        if curr_len>=self.pool_size_:
-                            idx=np.random.choice(done_pool.shape[0], size=self.pool_size_, replace=False)
-                        else:
-                            idx=np.random.choice(done_pool.shape[0], size=done_pool.shape[0], replace=False)
-                        self.state_pool_[:len(idx)].assign(state_pool[idx])
-                        self.action_pool_[:len(idx)].assign(action_pool[idx])
-                        self.next_state_pool_[:len(idx)].assign(next_state_pool[idx])
-                        self.reward_pool_[:len(idx)].assign(reward_pool[idx])
-                        self.done_pool_[:len(idx)].assign(done_pool[idx])
-                        self.batch_.assign(self.batch)
-                    else:
-                        self.state_pool_[:len(done_pool)].assign(state_pool)
-                        self.action_pool_[:len(done_pool)].assign(action_pool)
-                        self.next_state_pool_[:len(done_pool)].assign(next_state_pool)
-                        self.reward_pool_[:len(done_pool)].assign(reward_pool)
-                        self.done_pool_[:len(done_pool)].assign(done_pool)
-                        self.batch_.assign(self.batch)
-            else:
-                self.state_pool[7]=np.concatenate(self.state_pool_list)
-                self.action_pool[7]=np.concatenate(self.action_pool_list)
-                self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
-                self.reward_pool[7]=np.concatenate(self.reward_pool_list)
-                self.done_pool[7]=np.concatenate(self.done_pool_list)
-                if not self.PR and self.num_updates!=None:
-                    if curr_len>=self.pool_size_:
-                        idx=np.random.choice(self.state_pool[7].shape[0], size=self.pool_size_, replace=False)
-                    else:
-                        idx=np.random.choice(self.state_pool[7].shape[0], size=self.state_pool[7].shape[0], replace=False)
-                    self.state_pool[7]=self.state_pool[7][idx]
-                    self.action_pool[7]=self.action_pool[7][idx]
-                    self.next_state_pool[7]=self.next_state_pool[7][idx]
-                    self.reward_pool[7]=self.reward_pool[7][idx]
-                    self.done_pool[7]=self.done_pool[7][idx]
+                    self.state_pool_[:len(idx)].assign(state_pool[idx])
+                    self.action_pool_[:len(idx)].assign(action_pool[idx])
+                    self.next_state_pool_[:len(idx)].assign(next_state_pool[idx])
+                    self.reward_pool_[:len(idx)].assign(reward_pool[idx])
+                    self.done_pool_[:len(idx)].assign(done_pool[idx])
+                    self.batch_.assign(self.batch)
+                else:
+                    self.state_pool_[:len(done_pool)].assign(state_pool)
+                    self.action_pool_[:len(done_pool)].assign(action_pool)
+                    self.next_state_pool_[:len(done_pool)].assign(next_state_pool)
+                    self.reward_pool_[:len(done_pool)].assign(reward_pool)
+                    self.done_pool_[:len(done_pool)].assign(done_pool)
+                    self.batch_.assign(self.batch)
         if self.end_flag:
             if hasattr(self,'window_size_func'):
                 for p in range(self.processes):
@@ -2253,9 +2128,8 @@ class RL:
             if self.PR==True:
                 if hasattr(self, 'adjust_func') and curr_len>=self.pool_size_:
                     self.ess.value=self.compute_ess(None,None)
-        if self.processes_her==None and self.processes_pr==None:
-            if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy) and not self.PR and self.num_updates!=None:
-                return state_pool, action_pool, next_state_pool, reward_pool, done_pool
+        if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy) and not self.PR and self.num_updates!=None:
+            return state_pool, action_pool, next_state_pool, reward_pool, done_pool
         else:
             return None, None, None, None, None
     
@@ -2305,7 +2179,7 @@ class RL:
             return np.frombuffer(self.shared_ratios[p].get_obj(), dtype=np.float32)
     
     
-    def train(self, train_loss, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, parallel_dump=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
+    def train(self, train_loss, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, parallel_dump=False, processes=None, num_store=1, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
         self.avg_reward=None
         if p!=0:
             if p==None:
@@ -2353,8 +2227,6 @@ class RL:
             self.path_list_=manager.list()
         self.processes=processes
         self.num_store=num_store
-        self.processes_her=processes_her
-        self.processes_pr=processes_pr
         self.window_size=window_size
         self.clearing_freq=clearing_freq
         self.window_size_=window_size_
@@ -2417,31 +2289,6 @@ class RL:
                     self.prioritized_replay.TD=None
                 else:
                     self.prioritized_replay.TD=None
-            if processes_her!=None or processes_pr!=None:
-                self.state_pool=manager.dict()
-                self.action_pool=manager.dict()
-                self.next_state_pool=manager.dict()
-                self.reward_pool=manager.dict()
-                self.done_pool=manager.dict()
-                self.state_list=manager.list()
-                self.action_list=manager.list()
-                self.next_state_list=manager.list()
-                self.reward_list=manager.list()
-                self.done_list=manager.list()
-                if processes_her!=None:
-                    for _ in range(processes_her):
-                        self.state_list.append(None)
-                        self.action_list.append(None)
-                        self.next_state_list.append(None)
-                        self.reward_list.append(None)
-                        self.done_list.append(None)
-                else:
-                    for _ in range(processes_pr):
-                        self.state_list.append(None)
-                        self.action_list.append(None)
-                        self.next_state_list.append(None)
-                        self.reward_list.append(None)
-                        self.done_list.append(None)
         self.distributed_flag=False
         for callback in self.callbacks:
             if hasattr(callback, 'on_train_begin'):
@@ -2617,7 +2464,7 @@ class RL:
         return
     
     
-    def distributed_training(self, optimizer=None, strategy=None, episodes=None, num_episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, parallel_dump=False, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
+    def distributed_training(self, optimizer=None, strategy=None, episodes=None, num_episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, parallel_dump=False, processes=None, num_store=1, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
         self.avg_reward=None
         if num_episodes!=None:
             episodes=num_episodes
@@ -2670,8 +2517,6 @@ class RL:
             self.path_list_=manager.list()
         self.processes=processes
         self.num_store=num_store
-        self.processes_her=processes_her
-        self.processes_pr=processes_pr
         self.window_size=window_size
         self.clearing_freq=clearing_freq
         self.window_size_=window_size_
@@ -2740,31 +2585,6 @@ class RL:
                     self.prioritized_replay.TD=None
                 else:
                     self.prioritized_replay.TD=None
-            if processes_her!=None or processes_pr!=None:
-                self.state_pool=manager.dict()
-                self.action_pool=manager.dict()
-                self.next_state_pool=manager.dict()
-                self.reward_pool=manager.dict()
-                self.done_pool=manager.dict()
-                self.state_list=manager.list()
-                self.action_list=manager.list()
-                self.next_state_list=manager.list()
-                self.reward_list=manager.list()
-                self.done_list=manager.list()
-                if processes_her!=None:
-                    for _ in range(processes_her):
-                        self.state_list.append(None)
-                        self.action_list.append(None)
-                        self.next_state_list.append(None)
-                        self.reward_list.append(None)
-                        self.done_list.append(None)
-                else:
-                    for _ in range(processes_pr):
-                        self.state_list.append(None)
-                        self.action_list.append(None)
-                        self.next_state_list.append(None)
-                        self.reward_list.append(None)
-                        self.done_list.append(None)
         self.distributed_flag=True
         with strategy.scope():
             def compute_loss(self, per_example_loss):
@@ -3416,18 +3236,11 @@ class RL:
             next_state_pool_list=[]
             reward_pool_list=[]
             done_pool_list=[]
-            if self.processes_her==None and self.processes_pr==None:
-                self.state_pool=None
-                self.action_pool=None
-                self.next_state_pool=None
-                self.reward_pool=None
-                self.done_pool=None
-            else:
-                self.state_pool[7]=None
-                self.action_pool[7]=None
-                self.next_state_pool[7]=None
-                self.reward_pool[7]=None
-                self.done_pool[7]=None
+            self.state_pool=None
+            self.action_pool=None
+            self.next_state_pool=None
+            self.reward_pool=None
+            self.done_pool=None
             for i in range(self.processes):
                 state_pool_list.append(self.state_pool_list[i])
                 action_pool_list.append(self.action_pool_list[i])
@@ -3560,18 +3373,11 @@ class RL:
             next_state_pool_list=[]
             reward_pool_list=[]
             done_pool_list=[]
-            if self.processes_her==None and self.processes_pr==None:
-                self.state_pool=None
-                self.action_pool=None
-                self.next_state_pool=None
-                self.reward_pool=None
-                self.done_pool=None
-            else:
-                self.state_pool[7]=None
-                self.action_pool[7]=None
-                self.next_state_pool[7]=None
-                self.reward_pool[7]=None
-                self.done_pool[7]=None
+            self.state_pool=None
+            self.action_pool=None
+            self.next_state_pool=None
+            self.reward_pool=None
+            self.done_pool=None
             for i in range(self.processes):
                 state_pool_list.append(self.state_pool_list[i])
                 action_pool_list.append(self.action_pool_list[i])
