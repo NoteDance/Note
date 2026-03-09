@@ -1984,6 +1984,20 @@ class RL:
     
     
     def prepare(self, p=None):
+        if hasattr(self, 'build'):
+            if hasattr(self, 'strategy'):
+                with self.strategy.scope():
+                    self.build()
+            else:
+                self.build()
+            shared_params = []
+            active_shms = []
+            for name, shape, dtype in self.shm_metadata:
+                shm = shared_memory.SharedMemory(name=name)
+                active_shms.append(shm)
+                param_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+                shared_params.append(param_array)
+            nn.assign_param(self.param, shared_params)
         process_list=[]
         if not self.parallel_store_and_training and self.PPO:
             self.modify_ratio_TD()
@@ -2088,6 +2102,9 @@ class RL:
                     self.ess=self.compute_ess(None,None)
         else:
             self.end_flag_list[p]=True
+        if hasattr(self, 'build'):
+            for shm in active_shms:
+                shm.close()
     
     
     def update_pool(self, state_pool, action_pool, next_state_pool, reward_pool, done_pool):
@@ -2335,6 +2352,16 @@ class RL:
                 train_loss.reset_states()
                 if pool_network==True:
                     if parallel_store_and_training:
+                        if hasattr(self, 'build'):
+                            self.shm_metadata = []
+                            active_shms = []
+                            for param in self.param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                active_shms.append(shm)
                         process_list=[]
                         for p in range(processes):
                             process=mp.Process(target=self.prepare,args=(p,))
@@ -2346,6 +2373,10 @@ class RL:
                         self.train1()
                         for process in process_list:
                             process.join()
+                        if hasattr(self, 'build'):
+                            for shm in shm_list:
+                                shm.close()
+                                shm.unlink()
                     else:
                         self.prepare()
                         loss=self.train1()
@@ -2402,6 +2433,16 @@ class RL:
                 train_loss.reset_states()
                 if pool_network==True:
                     if parallel_store_and_training:
+                        if hasattr(self, 'build'):
+                            self.shm_metadata = []
+                            active_shms = []
+                            for param in self.param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                active_shms.append(shm)
                         process_list=[]
                         for p in range(processes):
                             process=mp.Process(target=self.prepare,args=(p,))
@@ -2413,6 +2454,10 @@ class RL:
                         self.train1()
                         for process in process_list:
                             process.join()
+                        if hasattr(self, 'build'):
+                            for shm in shm_list:
+                                shm.close()
+                                shm.unlink()
                     else:
                         self.prepare()
                         loss=self.train1()
@@ -2634,6 +2679,16 @@ class RL:
                             callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         if parallel_store_and_training:
+                            if hasattr(self, 'build'):
+                                self.shm_metadata = []
+                                active_shms = []
+                                for param in self.param:
+                                    param=param.numpy()
+                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                    shared_array[:] = param[:]
+                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                    active_shms.append(shm)
                             process_list=[]
                             for p in range(processes):
                                 process=mp.Process(target=self.prepare,args=(p,))
@@ -2645,6 +2700,10 @@ class RL:
                             self.train1()
                             for process in process_list:
                                 process.join()
+                            if hasattr(self, 'build'):
+                                for shm in shm_list:
+                                    shm.close()
+                                    shm.unlink()
                         else:
                             self.prepare()
                             loss=self.train1()
@@ -2700,6 +2759,16 @@ class RL:
                             callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         if parallel_store_and_training:
+                            if hasattr(self, 'build'):
+                                self.shm_metadata = []
+                                active_shms = []
+                                for param in self.param:
+                                    param=param.numpy()
+                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                    shared_array[:] = param[:]
+                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                    active_shms.append(shm)
                             process_list=[]
                             for p in range(processes):
                                 process=mp.Process(target=self.prepare,args=(p,))
@@ -2711,6 +2780,10 @@ class RL:
                             self.train1()
                             for process in process_list:
                                 process.join()
+                            if hasattr(self, 'build'):
+                                for shm in shm_list:
+                                    shm.close()
+                                    shm.unlink()
                         else:
                             self.prepare()
                             loss=self.train1()
@@ -2769,6 +2842,16 @@ class RL:
                             callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         if parallel_store_and_training:
+                            if hasattr(self, 'build'):
+                                self.shm_metadata = []
+                                active_shms = []
+                                for param in self.param:
+                                    param=param.numpy()
+                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                    shared_array[:] = param[:]
+                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                    active_shms.append(shm)
                             process_list=[]
                             for p in range(processes):
                                 process=mp.Process(target=self.prepare,args=(p,))
@@ -2780,6 +2863,10 @@ class RL:
                             self.train1()
                             for process in process_list:
                                 process.join()
+                            if hasattr(self, 'build'):
+                                for shm in shm_list:
+                                    shm.close()
+                                    shm.unlink()
                         else:
                             self.prepare()
                             loss=self.train1()
@@ -2843,6 +2930,16 @@ class RL:
                             callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         if parallel_store_and_training:
+                            if hasattr(self, 'build'):
+                                self.shm_metadata = []
+                                active_shms = []
+                                for param in self.param:
+                                    param=param.numpy()
+                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                    shared_array[:] = param[:]
+                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                    active_shms.append(shm)
                             process_list=[]
                             for p in range(processes):
                                 process=mp.Process(target=self.prepare,args=(p,))
@@ -2854,6 +2951,10 @@ class RL:
                             self.train1()
                             for process in process_list:
                                 process.join()
+                            if hasattr(self, 'build'):
+                                for shm in shm_list:
+                                    shm.close()
+                                    shm.unlink()
                         else:
                             self.prepare()
                             loss=self.train1()
@@ -2915,6 +3016,16 @@ class RL:
                             callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         if parallel_store_and_training:
+                            if hasattr(self, 'build'):
+                                self.shm_metadata = []
+                                active_shms = []
+                                for param in self.param:
+                                    param=param.numpy()
+                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                    shared_array[:] = param[:]
+                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                    active_shms.append(shm)
                             process_list=[]
                             for p in range(processes):
                                 process=mp.Process(target=self.prepare,args=(p,))
@@ -2926,6 +3037,10 @@ class RL:
                             self.train1()
                             for process in process_list:
                                 process.join()
+                            if hasattr(self, 'build'):
+                                for shm in shm_list:
+                                    shm.close()
+                                    shm.unlink()
                         else:
                             self.prepare()
                             loss=self.train1()
@@ -3348,13 +3463,16 @@ class RL:
         return
     
     
-    def parallel_param_dump(self, param, index1, index2, path, counter):
+    def parallel_param_dump(self, shm_metadata, index1, index2, path, counter):
         self.param_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
         filename = os.path.join(path, f"param_{counter}.dat")
         output_file=open(filename,'wb')
-        if type(param)==list:
-            pickle.dump(param,output_file)
+        if shm_metadata[-1]:
+            name, shape, dtype, _ = shm_metadata
+            shm = shared_memory.SharedMemory(name=name)
+            weight_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+            pickle.dump(weight_array,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"param_index_{counter}.dat")
@@ -3362,23 +3480,30 @@ class RL:
             pickle.dump((index1, index2),output_file)
             output_file.close()
         else:
-            pickle.dump(param,output_file)
+            name, shape, dtype, _ = shm_metadata
+            shm = shared_memory.SharedMemory(name=name)
+            weight_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+            pickle.dump(weight_array,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"param_index_{counter}.dat")
             output_file=open(path,'wb')
             pickle.dump((index1, index2),output_file)
             output_file.close()
+        shm.close()
         self.param_save_flag_list[counter]=True
             
     
-    def parallel_state_dump(self, state_dict, index1, index2, path, counter):
+    def parallel_state_dump(self, shm_metadata, index1, index2, path, counter):
         self.state_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
         path = os.path.join(path, f"state_{counter}.dat")
         output_file=open(path,'wb')
-        if type(self.optimizer)==list:
-            pickle.dump(state_dict,output_file)
+        if shm_metadata[-1]:
+            name, shape, dtype, _ = shm_metadata
+            shm = shared_memory.SharedMemory(name=name)
+            state_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+            pickle.dump(state_array,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"state_index_{counter}.dat")
@@ -3386,14 +3511,18 @@ class RL:
             pickle.dump((index1, str(index2)),output_file)
             output_file.close()
         else:
-            pickle.dump(state_dict,output_file)
+            name, shape, dtype, _ = shm_metadata
+            shm = shared_memory.SharedMemory(name=name)
+            state_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+            pickle.dump(state_array,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"state_index_{counter}.dat")
             output_file=open(path,'wb')
             pickle.dump(str(index2),output_file)
             output_file.close()
-        self.state_save_flag_list=True
+        shm.close()
+        self.state_save_flag_list[counter]=True
     
     
     def save(self,path):
@@ -3464,13 +3593,25 @@ class RL:
                 counter=0
                 for i in range(len(self.param)):
                     if type(self.param[i])==list:
-                        for j in range(len(self.param_[i])):
+                        for j in range(len(self.param[i])):
                             counter+=1
-                            process=mp.Process(target=self.parallel_param_dump,args=(self.param[i][j], i, j, path, counter))
+                            param = self.param[i][j].numpy()
+                            shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                            self.active_shms.append(shm)
+                            shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                            shared_array[:] = param[:]
+                            shm_metadata = (shm.name, param.shape, param.dtype, True)
+                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(shm_metadata, i, j, path, counter))
                             process.start()
                     else:
                         counter+=1
-                        process=mp.Process(target=self.parallel_param_dump,args=(self.param[i], i, None, path, counter))
+                        param = self.param[i].numpy()
+                        shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                        self.active_shms.append(shm)
+                        shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                        shared_array[:] = param[:]
+                        shm_metadata = (shm.name, param.shape, param.dtype, False)
+                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(shm_metadata, i, None, path, counter))
                         process.start()
             else:
                 output_file=open(path,'wb')
@@ -3486,12 +3627,24 @@ class RL:
                     for i in range(len(self.optimizer)):
                         for j in range(len(self.state_dict[i])):
                             counter+=1
-                            process=mp.Process(target=self.parallel_state_dump,args=(self.state_dict[i][str(j)], i, j, path, counter))
+                            state = self.state_dict[i][str(j)].numpy()
+                            shm = shared_memory.SharedMemory(create=True, size=state.nbytes)
+                            self.active_shms.append(shm)
+                            shared_array = np.ndarray(state.shape, dtype=state.dtype, buffer=shm.buf)
+                            shared_array[:] = state[:]
+                            shm_metadata = (shm.name, state.shape, state.dtype, True)
+                            process=multiprocessing.Process(target=self.parallel_state_dump,args=(shm_metadata, i, j, path, counter))
                             process.start()
                 else:
                     for i in range(len(self.state_dict)):
                         counter+=1
-                        process=mp.Process(target=self.parallel_state_dump,args=(self.state_dict[str(i)], i, None, path, counter))
+                        state = self.state_dict[str(i)].numpy()
+                        shm = shared_memory.SharedMemory(create=True, size=state.nbytes)
+                        self.active_shms.append(shm)
+                        shared_array = np.ndarray(state.shape, dtype=state.dtype, buffer=shm.buf)
+                        shared_array[:] = state[:]
+                        shm_metadata = (shm.name, state.shape, state.dtype, False)
+                        process=multiprocessing.Process(target=self.parallel_state_dump,args=(shm_metadata, i, None, path, counter))
                         process.start()
             else:
                 pickle.dump(self.state_dict,output_file)

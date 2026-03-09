@@ -2,6 +2,7 @@ import tensorflow as tf
 from Note import nn
 from Note.DL.dl.prioritized_replay import pr
 import multiprocessing
+from multiprocessing import shared_memory
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -73,8 +74,6 @@ class Model:
         self.train_acc_list=[]
         self.test_loss=None
         self.test_acc=None
-        self.shared_test_loss_array=None
-        self.shared_test_acc_array=None
         self.test_loss_list=[]
         self.test_acc_list=[]
         self.end_loss=None
@@ -565,6 +564,16 @@ class Model:
     
     
     def test_p(self, test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile):
+        if hasattr(self, 'build'):
+            self.build()
+            shared_params = []
+            active_shms = []
+            for name, shape, dtype in self.shm_metadata:
+                shm = shared_memory.SharedMemory(name=name)
+                active_shms.append(shm)
+                param_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+                shared_params.append(param_array)
+            nn.assign_param(self.param, shared_params)
         self.test_flag.value=False
         if test_accuracy!=None:
             self.test_loss_dict[7], self.test_accuracy_dict[7] = None, None
@@ -585,10 +594,25 @@ class Model:
             self.test_loss_dict[7], self.test_accuracy_dict[7] = test_loss.result().numpy(), test_accuracy.result().numpy()
         else:
             self.test_loss_dict[7] = test_loss.result().numpy()
+        if hasattr(self, 'build'):
+            for shm in active_shms:
+                shm.close()
         self.test_flag.value=True
     
     
     def distributed_test_p(self,  test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile):
+        if hasattr(self, 'build'):
+            if hasattr(self, 'strategy'):
+                with self.strategy.scope():
+                    self.build()
+            shared_params = []
+            active_shms = []
+            for name, shape, dtype in self.shm_metadata:
+                shm = shared_memory.SharedMemory(name=name)
+                active_shms.append(shm)
+                param_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+                shared_params.append(param_array)
+            nn.assign_param(self.param, shared_params)
         if isinstance(self.strategy,tf.distribute.MirroredStrategy):
             self.test_flag.value=False
             test_dataset=tf.data.Dataset.from_tensor_slices((test_data, test_labels)).batch(self.test_batch_size)
@@ -646,6 +670,9 @@ class Model:
             self.test_loss_dict[7]=test_loss.result().numpy()
             if test_accuracy!=None:
                 self.test_accuracy_dict[7]=test_accuracy.result().numpy()
+            if hasattr(self, 'build'):
+                for shm in active_shms:
+                    shm.close()
             self.test_flag.value=True
     
     
@@ -893,7 +920,7 @@ class Model:
         self.test_accuracy=test_accuracy
         self.parallel_training_and_test=parallel_training_and_test
         self.parallel_training_and_save=parallel_training_and_save
-        self.parallel_pickle=parallel_dump
+        self.parallel_dump=parallel_dump
         if parallel_training_and_test:
             manager=multiprocessing.Manager()
             self.test_flag=multiprocessing.Value('b',False)
@@ -966,6 +993,9 @@ class Model:
                     num_updates = int(num_updates)
                 for train_data, labels in train_ds:
                     if parallel_training_and_test and self.test_flag.value:
+                        if hasattr(self, 'build'):
+                            for shm in self.test_active_shms:
+                                shm.unlink()
                         if self.test_loss_dict[7] is not None:
                             self.test_loss = self.test_loss_dict[7]
                             self.test_loss_list.append(self.test_loss_dict[7])
@@ -1014,9 +1044,20 @@ class Model:
                     if hasattr(self, 'batch_size_fn'):
                         train_ds = self.batch_size_fn(train_ds)
                     if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                        if self.parallel_training_and_test and self.test_flag.value:
+                        if self.parallel_dump:
+                            if self.save_param_only==False:
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            else:
+                                self.save_flag.value=all(self.param_save_flag_list)
+                        if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
                             self.save_checkpoint()
-                        elif not self.parallel_training_and_test:
+                        elif not self.parallel_training_and_test and self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
                             self.save_checkpoint()
                 if test_ds!=None and epoch % test_freq == 0:
                     for callback in self.callbacks:
@@ -1029,8 +1070,21 @@ class Model:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_begin'):
                             callback.on_test_begin(epoch, logs={})
+                    if hasattr(self, 'build'):
+                        self.shm_metadata = []
+                        self.test_active_shms = []
+                        for param in self.param:
+                            param=param.numpy()
+                            shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                            shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                            shared_array[:] = param[:]
+                            self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                            self.test_active_shms.append(shm)
                     process=multiprocessing.Process(target=self.test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, processes, jit_compile))
                     process.start()
+                    if hasattr(self, 'build'):
+                        for shm in self.test_active_shms:
+                            shm.close()
                 if not parallel_training_and_test:
                     self.test_loss_list.append(self.test_loss)
                 if test_accuracy!=None:
@@ -1086,7 +1140,16 @@ class Model:
                                 print()
                 if self.save_freq_==None:
                     if epoch%self.save_freq==0:
-                        self.save_checkpoint()
+                        if self.parallel_dump:
+                            if self.save_param_only==False:
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            else:
+                                self.save_flag.value=all(self.param_save_flag_list)
+                        if self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
+                            self.save_checkpoint()
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -1122,6 +1185,9 @@ class Model:
                     num_updates = int(num_updates)
                 for train_data, labels in train_ds:
                     if parallel_training_and_test and self.test_flag.value:
+                        if hasattr(self, 'build'):
+                            for shm in self.test_active_shms:
+                                shm.unlink()
                         if self.test_loss_dict[7] is not None:
                             self.test_loss = self.test_loss_dict[7]
                             self.test_loss_list.append(self.test_loss_dict[7])
@@ -1170,9 +1236,20 @@ class Model:
                     if hasattr(self, 'batch_size_fn'):
                         train_ds = self.batch_size_fn(train_ds)
                     if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                        if self.parallel_training_and_test and self.test_flag.value:
+                        if self.parallel_dump:
+                            if self.save_param_only==False:
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            else:
+                                self.save_flag.value=all(self.param_save_flag_list)
+                        if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
                             self.save_checkpoint()
-                        elif not self.parallel_training_and_test:
+                        elif not self.parallel_training_and_test and self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
                             self.save_checkpoint()
                 if test_ds!=None and i % test_freq == 0:
                     for callback in self.callbacks:
@@ -1185,8 +1262,21 @@ class Model:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_begin'):
                             callback.on_test_begin(epoch, logs={})
+                    if hasattr(self, 'build'):
+                        self.shm_metadata = []
+                        self.test_active_shms = []
+                        for param in self.param:
+                            param=param.numpy()
+                            shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                            shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                            shared_array[:] = param[:]
+                            self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                            self.test_active_shms.append(shm)
                     process=multiprocessing.Process(target=self.test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, processes, jit_compile))
                     process.start()
+                    if hasattr(self, 'build'):
+                        for shm in self.test_active_shms:
+                            shm.close()
                 if not parallel_training_and_test:
                     self.test_loss_list.append(self.test_loss)
                 if test_accuracy!=None:
@@ -1243,29 +1333,44 @@ class Model:
                                 print()
                 if self.save_freq_==None:
                     if epoch%self.save_freq==0:
-                        self.save_checkpoint()
+                        if self.parallel_dump:
+                            if self.save_param_only==False:
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            else:
+                                self.save_flag.value=all(self.param_save_flag_list)
+                        if self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
+                            self.save_checkpoint()
                 t2=time.time()
                 self.time+=(t2-t1)
-        self.shared_test_loss_array=None
-        self.shared_test_acc_array=None
         if parallel_training_and_test or parallel_training_and_save:
             t1=time.time()
             while True:
                 if parallel_training_and_test and parallel_training_and_save:
-                    if self.save_param_only==False:
-                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
-                    else:
-                        self.save_flag.value=all(self.param_save_flag_list)
+                    if self.parallel_dump:
+                        if self.save_param_only==False:
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                        else:
+                            self.save_flag.value=all(self.param_save_flag_list)
                     condition = (self.stop_training or self.test_flag.value) and self.save_flag.value
                 elif parallel_training_and_test:
                     condition = self.stop_training or self.test_flag.value
                 elif parallel_training_and_save:
-                    if self.save_param_only==False:
-                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
-                    else:
-                        self.save_flag.value=all(self.param_save_flag_list)
+                    if self.parallel_dump:
+                        if self.save_param_only==False:
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                        else:
+                            self.save_flag.value=all(self.param_save_flag_list)
                     condition = self.stop_training or self.save_flag.value
                 if condition:
+                    if self.parallel_dump:
+                        if hasattr(self, 'build'):
+                            for shm in self.test_active_shms:
+                                shm.unlink()
+                        for shm in self.active_shms:
+                            shm.unlink()
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
                     t2=time.time()
@@ -1415,6 +1520,9 @@ class Model:
                         num_updates = int(num_updates)
                     for x in train_dist_dataset:
                         if parallel_training_and_test and self.test_flag.value:
+                            if hasattr(self, 'build'):
+                                for shm in self.test_active_shms:
+                                    shm.unlink()
                             if self.test_loss_dict[7] is not None:
                                 self.test_loss = self.test_loss_dict[7]
                                 self.test_loss_list.append(self.test_loss_dict[7])
@@ -1469,9 +1577,20 @@ class Model:
                         if hasattr(self, 'batch_size_fn'):
                             train_dist_dataset = self.batch_size_fn(train_dist_dataset)
                         if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                            if self.parallel_training_and_test and self.test_flag.value:
+                            if self.parallel_dump:
+                                if self.save_param_only==False:
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                else:
+                                    self.save_flag.value=all(self.param_save_flag_list)
+                            if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
                                 self.save_checkpoint()
-                            elif not self.parallel_training_and_test:
+                            elif not self.parallel_training_and_test and self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
                                 self.save_checkpoint()
                                 
                     if test_loss!=None:
@@ -1500,8 +1619,21 @@ class Model:
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_test_begin'):
                                 callback.on_test_begin(epoch, logs={})
+                        if hasattr(self, 'build'):
+                            self.shm_metadata = []
+                            self.test_active_shms = []
+                            for param in self.param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                self.test_active_shms.append(shm)
                         process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                         process.start()
+                        if hasattr(self, 'build'):
+                            for shm in self.test_active_shms:
+                                shm.close()
                     
                     if self.PR and epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
@@ -1552,7 +1684,16 @@ class Model:
                                     print()
                     if self.save_freq_==None:
                         if epoch%self.save_freq==0:
-                            self.save_checkpoint()
+                            if self.parallel_dump:
+                                if self.save_param_only==False:
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                else:
+                                    self.save_flag.value=all(self.param_save_flag_list)
+                            if self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
+                                self.save_checkpoint()
                     t2=time.time()
                     self.time+=(t2-t1)
             else:
@@ -1593,6 +1734,9 @@ class Model:
                         num_updates = int(num_updates)
                     for x in train_dist_dataset:
                         if parallel_training_and_test and self.test_flag.value:
+                            if hasattr(self, 'build'):
+                                for shm in self.test_active_shms:
+                                    shm.unlink()
                             if self.test_loss_dict[7] is not None:
                                 self.test_loss = self.test_loss_dict[7]
                                 self.test_loss_list.append(self.test_loss_dict[7])
@@ -1647,9 +1791,20 @@ class Model:
                         if hasattr(self, 'batch_size_fn'):
                             train_dist_dataset = self.batch_size_fn(train_dist_dataset)
                         if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                            if self.parallel_training_and_test and self.test_flag.value:
+                            if self.parallel_dump:
+                                if self.save_param_only==False:
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                else:
+                                    self.save_flag.value=all(self.param_save_flag_list)
+                            if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
                                 self.save_checkpoint()
-                            elif not self.parallel_training_and_test:
+                            elif not self.parallel_training_and_test and self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
                                 self.save_checkpoint()
                                 
                     if test_loss!=None:
@@ -1679,8 +1834,21 @@ class Model:
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_test_begin'):
                                 callback.on_test_begin(i, logs={})
+                        if hasattr(self, 'build'):
+                            self.shm_metadata = []
+                            self.test_active_shms = []
+                            for param in self.param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                self.test_active_shms.append(shm)
                         process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                         process.start()
+                        if hasattr(self, 'build'):
+                            for shm in self.test_active_shms:
+                                shm.close()
                 
                     if self.PR and i % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
@@ -1732,7 +1900,16 @@ class Model:
                                     print()
                     if self.save_freq_==None:
                         if epoch%self.save_freq==0:
-                            self.save_checkpoint()
+                            if self.parallel_dump:
+                                if self.save_param_only==False:
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                else:
+                                    self.save_flag.value=all(self.param_save_flag_list)
+                            if self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
+                                self.save_checkpoint()
                     t2=time.time()
                     self.time+=(t2-t1)
         elif isinstance(strategy,tf.distribute.MultiWorkerMirroredStrategy):
@@ -1794,8 +1971,21 @@ class Model:
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_test_begin'):
                                 callback.on_test_begin(i, logs={})
+                        if hasattr(self, 'build'):
+                            self.shm_metadata = []
+                            self.test_active_shms = []
+                            for param in self.param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                self.test_active_shms.append(shm)
                         process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                         process.start()
+                        if hasattr(self, 'build'):
+                            for shm in self.test_active_shms:
+                                shm.close()
                     
                     if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
@@ -1845,7 +2035,16 @@ class Model:
                                     print()
                     if self.save_freq_==None:
                         if epoch%self.save_freq==0:
-                            self.save_checkpoint()
+                            if self.parallel_dump:
+                                if self.save_param_only==False:
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                else:
+                                    self.save_flag.value=all(self.param_save_flag_list)
+                            if self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
+                                self.save_checkpoint()
                     
                     if train_accuracy!=None:
                         train_accuracy.reset_states()
@@ -1915,8 +2114,21 @@ class Model:
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_test_begin'):
                                 callback.on_test_begin(epoch, logs={})
+                        if hasattr(self, 'build'):
+                            self.shm_metadata = []
+                            self.test_active_shms = []
+                            for param in self.param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                self.test_active_shms.append(shm)
                         process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                         process.start()
+                        if hasattr(self, 'build'):
+                            for shm in self.test_active_shms:
+                                shm.close()
                     
                     if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
@@ -1966,7 +2178,16 @@ class Model:
                                     print()
                     if self.save_freq_==None:
                         if epoch%self.save_freq==0:
-                            self.save_checkpoint()
+                            if self.parallel_dump:
+                                if self.save_param_only==False:
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                else:
+                                    self.save_flag.value=all(self.param_save_flag_list)
+                            if self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
+                                self.save_checkpoint()
                     
                     if train_accuracy!=None:
                         train_accuracy.reset_states()
@@ -2033,8 +2254,21 @@ class Model:
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_test_begin'):
                                 callback.on_test_begin(i, logs={})
+                        if hasattr(self, 'build'):
+                            self.shm_metadata = []
+                            self.test_active_shms = []
+                            for param in self.param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                self.test_active_shms.append(shm)
                         process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                         process.start()
+                        if hasattr(self, 'build'):
+                            for shm in self.test_active_shms:
+                                shm.close()
                     
                     if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
@@ -2084,7 +2318,16 @@ class Model:
                                     print()
                     if self.save_freq_==None:
                         if epoch%self.save_freq==0:
-                            self.save_checkpoint()
+                            if self.parallel_dump:
+                                if self.save_param_only==False:
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                else:
+                                    self.save_flag.value=all(self.param_save_flag_list)
+                            if self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
+                                self.save_checkpoint()
                     
                     if train_accuracy!=None:
                         train_accuracy.reset_states()
@@ -2149,8 +2392,21 @@ class Model:
                             for callback in self.callbacks:
                                 if hasattr(callback, 'on_test_begin'):
                                     callback.on_test_begin(i, logs={})
+                            if hasattr(self, 'build'):
+                                self.shm_metadata = []
+                                self.test_active_shms = []
+                                for param in self.param:
+                                    param=param.numpy()
+                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                    shared_array[:] = param[:]
+                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                    self.test_active_shms.append(shm)
                             process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                             process.start()
+                            if hasattr(self, 'build'):
+                                for shm in self.test_active_shms:
+                                    shm.close()
                         
                         if self.PR and self.total_epoch % 2 != 0:
                             self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
@@ -2200,7 +2456,16 @@ class Model:
                                         print()
                     if self.save_freq_==None:
                         if epoch%self.save_freq==0:
-                            self.save_checkpoint()
+                            if self.parallel_dump:
+                                if self.save_param_only==False:
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                else:
+                                    self.save_flag.value=all(self.param_save_flag_list)
+                            if self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
+                                self.save_checkpoint()
                         
                         if train_accuracy!=None:
                             train_accuracy.reset_states()
@@ -2217,10 +2482,11 @@ class Model:
             t1=time.time()
             while True:
                 if parallel_training_and_test and parallel_training_and_save:
-                    if self.save_param_only==False:
-                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
-                    else:
-                        self.save_flag.value=all(self.param_save_flag_list)
+                    if self.parallel_dump:
+                        if self.save_param_only==False:
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                        else:
+                            self.save_flag.value=all(self.param_save_flag_list)
                     if isinstance(strategy,tf.distribute.ParameterServerStrategy):
                         self.test_flag.value=all(self.test_flag_list)
                     condition = (self.stop_training or self.test_flag.value) and self.save_flag.value
@@ -2229,12 +2495,19 @@ class Model:
                         self.test_flag.value=all(self.test_flag_list)
                     condition = self.stop_training or self.test_flag.value
                 elif parallel_training_and_save:
-                    if self.save_param_only==False:
-                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
-                    else:
-                        self.save_flag.value=all(self.param_save_flag_list)
+                    if self.parallel_dump:
+                        if self.save_param_only==False:
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                        else:
+                            self.save_flag.value=all(self.param_save_flag_list)
                     condition = self.stop_training or self.save_flag.value
                 if condition:
+                    if hasattr(self, 'build'):
+                        for shm in self.test_active_shms:
+                            shm.unlink()
+                    if self.parallel_dump:
+                        for shm in self.active_shms:
+                            shm.unlink()
                     if hasattr(self, 'end_test_func'):
                         self.end_test_func()
                     t2=time.time()
@@ -2328,6 +2601,9 @@ class Model:
             if hasattr(self, 'batch_size_fn'):
                 iterator = iter(self.batch_size_fn(multi_worker_dataset))
             if self.parallel_training_and_test and self.test_flag.value:
+                if hasattr(self, 'build'):
+                    for shm in self.test_active_shms:
+                        shm.unlink()
                 if self.test_loss_dict[7] is not None:
                     self.test_loss = self.test_loss_dict[7]
                     self.test_loss_list.append(self.test_loss_dict[7])
@@ -2343,9 +2619,20 @@ class Model:
                 if self.patience is not None:
                     self.val_loss_, self.val_accuracy_ = self.check_early_stopping(self.val_loss_, self.val_accuracy_)
             if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                if self.parallel_training_and_test and self.test_flag.value:
+                if self.parallel_dump:
+                    if self.save_param_only==False:
+                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                    else:
+                        self.save_flag.value=all(self.param_save_flag_list)
+                if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                    if self.parallel_dump:
+                        for shm in self.active_shms:
+                            shm.unlink()
                     self.save_checkpoint()
-                elif not self.parallel_training_and_test:
+                elif not self.parallel_training_and_test and self.save_flag.value:
+                    if self.parallel_dump:
+                        for shm in self.active_shms:
+                            shm.unlink()
                     self.save_checkpoint()
             if self.stop_training==True:
                 return total_loss / num_batches
@@ -2428,6 +2715,9 @@ class Model:
                 return total_loss.fetch() / num_batches
             self.test_flag.value=all(self.test_flag_list)
             if self.parallel_training_and_test and self.test_flag.value:
+                if hasattr(self, 'build'):
+                    for shm in self.test_active_shms:
+                        shm.unlink()
                 if self.test_loss_dict[7] is not None:
                     self.test_loss = self.test_loss_dict[7]
                     self.test_loss_list.append(self.test_loss_dict[7])
@@ -2444,9 +2734,20 @@ class Model:
                     self.val_loss_, self.val_accuracy_ = self.check_early_stopping(self.val_loss_, self.val_accuracy_)
                 self.test_flag_list.clear()
             if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                if self.parallel_training_and_test and self.test_flag.value:
+                if self.parallel_dump:
+                    if self.save_param_only==False:
+                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                    else:
+                        self.save_flag.value=all(self.param_save_flag_list)
+                if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                    if self.parallel_dump:
+                        for shm in self.active_shms:
+                            shm.unlink()
                     self.save_checkpoint()
-                elif not self.parallel_training_and_test:
+                elif not self.parallel_training_and_test and self.save_flag.value:
+                    if self.parallel_dump:
+                        for shm in self.active_shms:
+                            shm.unlink()
                     self.save_checkpoint()
             if self.stop_training==True:
                 coordinator.join()
@@ -2628,8 +2929,6 @@ class Model:
             output_file=open(path,'wb')
             pickle.dump(self.param,output_file)
             output_file.close()
-        if self.parallel_training_and_save:
-            self.save_flag.value=True
         return
     
     
@@ -2748,13 +3047,16 @@ class Model:
         return
     
     
-    def parallel_param_dump(self, param, index1, index2, path, counter):
+    def parallel_param_dump(self, shm_metadata, index1, index2, path, counter):
         self.param_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
         filename = os.path.join(path, f"param_{counter}.dat")
         output_file=open(filename,'wb')
-        if type(param)==list:
-            pickle.dump(param,output_file)
+        if shm_metadata[-1]:
+            name, shape, dtype, _ = shm_metadata
+            shm = shared_memory.SharedMemory(name=name)
+            weight_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+            pickle.dump(weight_array,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"param_index_{counter}.dat")
@@ -2762,23 +3064,30 @@ class Model:
             pickle.dump((index1, index2),output_file)
             output_file.close()
         else:
-            pickle.dump(param,output_file)
+            name, shape, dtype, _ = shm_metadata
+            shm = shared_memory.SharedMemory(name=name)
+            weight_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+            pickle.dump(weight_array,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"param_index_{counter}.dat")
             output_file=open(path,'wb')
             pickle.dump((index1, index2),output_file)
             output_file.close()
+        shm.close()
         self.param_save_flag_list[counter]=True
             
     
-    def parallel_state_dump(self, state_dict, index1, index2, path, counter):
+    def parallel_state_dump(self, shm_metadata, index1, index2, path, counter):
         self.state_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
         path = os.path.join(path, f"state_{counter}.dat")
         output_file=open(path,'wb')
-        if type(self.optimizer)==list:
-            pickle.dump(state_dict,output_file)
+        if shm_metadata[-1]:
+            name, shape, dtype, _ = shm_metadata
+            shm = shared_memory.SharedMemory(name=name)
+            state_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+            pickle.dump(state_array,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"state_index_{counter}.dat")
@@ -2786,14 +3095,18 @@ class Model:
             pickle.dump((index1, str(index2)),output_file)
             output_file.close()
         else:
-            pickle.dump(state_dict,output_file)
+            name, shape, dtype, _ = shm_metadata
+            shm = shared_memory.SharedMemory(name=name)
+            state_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+            pickle.dump(state_array,output_file)
             output_file.close()
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"state_index_{counter}.dat")
             output_file=open(path,'wb')
             pickle.dump(str(index2),output_file)
             output_file.close()
-        self.state_save_flag_list=True
+        shm.close()
+        self.state_save_flag_list[counter]=True
     
     
     def save(self,path):
@@ -2840,17 +3153,30 @@ class Model:
             self.optimizer=None
             pickle.dump(self,output_file)
         if self.parallel_training_and_save:
+            self.active_shms = []
             if self.parallel_dump==True:
                 counter=0
                 for i in range(len(self.param)):
                     if type(self.param[i])==list:
                         for j in range(len(self.param[i])):
                             counter+=1
-                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(self.param[i][j], i, j, path, counter))
+                            param = self.param[i][j].numpy()
+                            shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                            self.active_shms.append(shm)
+                            shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                            shared_array[:] = param[:]
+                            shm_metadata = (shm.name, param.shape, param.dtype, True)
+                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(shm_metadata, i, j, path, counter))
                             process.start()
                     else:
                         counter+=1
-                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(self.param[i], i, None, path, counter))
+                        param = self.param[i].numpy()
+                        shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                        self.active_shms.append(shm)
+                        shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                        shared_array[:] = param[:]
+                        shm_metadata = (shm.name, param.shape, param.dtype, False)
+                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(shm_metadata, i, None, path, counter))
                         process.start()
             else:
                 output_file=open(path,'wb')
@@ -2866,12 +3192,24 @@ class Model:
                     for i in range(len(self.optimizer)):
                         for j in range(len(self.state_dict[i])):
                             counter+=1
-                            process=multiprocessing.Process(target=self.parallel_state_dump,args=(self.state_dict[i][str(j)], i, j, path, counter))
+                            state = self.state_dict[i][str(j)].numpy()
+                            shm = shared_memory.SharedMemory(create=True, size=state.nbytes)
+                            self.active_shms.append(shm)
+                            shared_array = np.ndarray(state.shape, dtype=state.dtype, buffer=shm.buf)
+                            shared_array[:] = state[:]
+                            shm_metadata = (shm.name, state.shape, state.dtype, True)
+                            process=multiprocessing.Process(target=self.parallel_state_dump,args=(shm_metadata, i, j, path, counter))
                             process.start()
                 else:
                     for i in range(len(self.state_dict)):
                         counter+=1
-                        process=multiprocessing.Process(target=self.parallel_state_dump,args=(self.state_dict[str(i)], i, None, path, counter))
+                        state = self.state_dict[str(i)].numpy()
+                        shm = shared_memory.SharedMemory(create=True, size=state.nbytes)
+                        self.active_shms.append(shm)
+                        shared_array = np.ndarray(state.shape, dtype=state.dtype, buffer=shm.buf)
+                        shared_array[:] = state[:]
+                        shm_metadata = (shm.name, state.shape, state.dtype, False)
+                        process=multiprocessing.Process(target=self.parallel_state_dump,args=(shm_metadata, i, None, path, counter))
                         process.start()
             else:
                 pickle.dump(self.state_dict,output_file)
@@ -2888,6 +3226,8 @@ class Model:
                 self.optimizer.save_own_variables(state_dict)
                 pickle.dump(state_dict,output_file)
             output_file.close()
+        for shm in self.active_shms:
+            shm.close()
         return
     
     
