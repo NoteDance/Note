@@ -1365,10 +1365,10 @@ class Model:
                             self.save_flag.value=all(self.param_save_flag_list)
                     condition = self.stop_training or self.save_flag.value
                 if condition:
+                    if hasattr(self, 'build'):
+                        for shm in self.test_active_shms:
+                            shm.unlink()
                     if self.parallel_dump:
-                        if hasattr(self, 'build'):
-                            for shm in self.test_active_shms:
-                                shm.unlink()
                         for shm in self.active_shms:
                             shm.unlink()
                     if hasattr(self, 'end_test_func'):
