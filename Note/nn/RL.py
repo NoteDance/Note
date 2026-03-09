@@ -1113,7 +1113,21 @@ class RL:
                 if self.stop_training==True:
                     return total_loss,num_batches
                 if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                    self.save_checkpoint()
+                    if self.parallel_dump:
+                        if self.save_param_only==False:
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                        else:
+                            self.save_flag.value=all(self.param_save_flag_list)
+                    if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                        if self.parallel_dump:
+                            for shm in self.active_shms:
+                                shm.unlink()
+                        self.save_checkpoint()
+                    elif not self.parallel_training_and_test and self.save_flag.value:
+                        if self.parallel_dump:
+                            for shm in self.active_shms:
+                                shm.unlink()
+                        self.save_checkpoint()
             return total_loss,num_batches
         
         
@@ -1251,7 +1265,21 @@ class RL:
                     coordinator.join()
                     return total_loss,num_batches
                 if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                    self.save_checkpoint()
+                    if self.parallel_dump:
+                        if self.save_param_only==False:
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                        else:
+                            self.save_flag.value=all(self.param_save_flag_list)
+                    if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                        if self.parallel_dump:
+                            for shm in self.active_shms:
+                                shm.unlink()
+                        self.save_checkpoint()
+                    elif not self.parallel_training_and_test and self.save_flag.value:
+                        if self.parallel_dump:
+                            for shm in self.active_shms:
+                                shm.unlink()
+                        self.save_checkpoint()
             coordinator.join()
             return total_loss,num_batches
     
@@ -1521,7 +1549,21 @@ class RL:
                 if self.PPO and self.batch_counter%self.update_batches==0:
                     return self.train_loss.result().numpy()
         if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-            self.save_checkpoint()
+            if self.parallel_dump:
+                if self.save_param_only==False:
+                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                else:
+                    self.save_flag.value=all(self.param_save_flag_list)
+            if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                if self.parallel_dump:
+                    for shm in self.active_shms:
+                        shm.unlink()
+                self.save_checkpoint()
+            elif not self.parallel_training_and_test and self.save_flag.value:
+                if self.parallel_dump:
+                    for shm in self.active_shms:
+                        shm.unlink()
+                self.save_checkpoint()
         if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
             batch_logs = {'loss': loss.numpy()}
         else:
@@ -1647,7 +1689,21 @@ class RL:
                             if self.PPO and self.batch_counter%self.update_batches==0:
                                 break
                         if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                            self.save_checkpoint()
+                            if self.parallel_dump:
+                                if self.save_param_only==False:
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                else:
+                                    self.save_flag.value=all(self.param_save_flag_list)
+                            if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
+                                self.save_checkpoint()
+                            elif not self.parallel_training_and_test and self.save_flag.value:
+                                if self.parallel_dump:
+                                    for shm in self.active_shms:
+                                        shm.unlink()
+                                self.save_checkpoint()
                 elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                     with self.strategy.scope():
                         multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -1718,7 +1774,21 @@ class RL:
                         if self.PPO and self.batch_counter%self.update_batches==0:
                             break
                     if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
-                        self.save_checkpoint()
+                        if self.parallel_dump:
+                            if self.save_param_only==False:
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            else:
+                                self.save_flag.value=all(self.param_save_flag_list)
+                        if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
+                            self.save_checkpoint()
+                        elif not self.parallel_training_and_test and self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
+                            self.save_checkpoint()
         if self.update_steps!=None:
             if self.step_counter%self.update_steps==0:
                 self.update_param()
@@ -2391,7 +2461,16 @@ class RL:
                 self.loss_list.append(loss)
                 self.total_episode+=1
                 if self.save_freq_==None and i%self.save_freq==0:
-                    self.save_checkpoint()
+                    if self.parallel_dump:
+                        if self.save_param_only==False:
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                        else:
+                            self.save_flag.value=all(self.param_save_flag_list)
+                    if self.save_flag.value:
+                        if self.parallel_dump:
+                            for shm in self.active_shms:
+                                shm.unlink()
+                        self.save_checkpoint()
                 if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
@@ -2473,7 +2552,16 @@ class RL:
                 i+=1
                 self.total_episode+=1
                 if self.save_freq_==None and i%self.save_freq==0:
-                    self.save_checkpoint()
+                    if self.parallel_dump:
+                        if self.save_param_only==False:
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                        else:
+                            self.save_flag.value=all(self.param_save_flag_list)
+                    if self.save_flag.value:
+                        if self.parallel_dump:
+                            for shm in self.active_shms:
+                                shm.unlink()
+                        self.save_checkpoint()
                 if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
@@ -2722,7 +2810,16 @@ class RL:
                     self.loss_list.append(loss)
                     self.total_episode+=1
                     if self.save_freq_==None and i%self.save_freq==0:
-                        self.save_checkpoint()
+                        if self.parallel_dump:
+                            if self.save_param_only==False:
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            else:
+                                self.save_flag.value=all(self.param_save_flag_list)
+                        if self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
+                            self.save_checkpoint()
                     if self.trial_count!=None:
                         if len(self.reward_list)>=self.trial_count:
                             self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
@@ -2803,7 +2900,16 @@ class RL:
                     i+=1
                     self.total_episode+=1
                     if self.save_freq_==None and i%self.save_freq==0:
-                        self.save_checkpoint()
+                        if self.parallel_dump:
+                            if self.save_param_only==False:
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            else:
+                                self.save_flag.value=all(self.param_save_flag_list)
+                        if self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
+                            self.save_checkpoint()
                     if self.trial_count!=None:
                         if len(self.reward_list)>=self.trial_count:
                             self.avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
@@ -2878,7 +2984,16 @@ class RL:
                         loss=self.train2()
                         
                     if self.save_freq_==None and episode%self.save_freq==0:
-                        self.save_checkpoint()
+                        if self.parallel_dump:
+                            if self.save_param_only==False:
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            else:
+                                self.save_flag.value=all(self.param_save_flag_list)
+                        if self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
+                            self.save_checkpoint()
                   
                     episode += 1
                     self.step_in_episode = 0
@@ -2966,7 +3081,16 @@ class RL:
                         loss=self.train2()
                         
                     if self.save_freq_==None and episode%self.save_freq==0:
-                        self.save_checkpoint()
+                        if self.parallel_dump:
+                            if self.save_param_only==False:
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            else:
+                                self.save_flag.value=all(self.param_save_flag_list)
+                        if self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
+                            self.save_checkpoint()
                   
                     episode += 1
                     self.step_in_episode = 0
@@ -3052,7 +3176,16 @@ class RL:
                         loss=self.train2()
                         
                     if self.save_freq_==None and episode%self.save_freq==0:
-                        self.save_checkpoint()
+                        if self.parallel_dump:
+                            if self.save_param_only==False:
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            else:
+                                self.save_flag.value=all(self.param_save_flag_list)
+                        if self.save_flag.value:
+                            if self.parallel_dump:
+                                for shm in self.active_shms:
+                                    shm.unlink()
+                            self.save_checkpoint()
                   
                     episode += 1
                     self.step_in_episode = 0
