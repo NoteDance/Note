@@ -2,6 +2,7 @@ import tensorflow as tf
 from Note import nn
 from tensorflow.python.util import nest
 import multiprocessing as mp
+from multiprocessing import shared_memory
 from Note.RL import rl
 from Note.RL.rl.prioritized_replay import pr
 import numpy as np
