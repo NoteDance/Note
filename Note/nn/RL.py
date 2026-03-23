@@ -223,24 +223,25 @@ class RL:
                         self.pool_lengths[p] = curr_len-window_size
                         if self.PR:
                             if self.PPO:
-                                self._get_buffer(p, 'ratio')=self._get_buffer(p, 'ratio')[window_size:]
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[window_size:]
+                                self._get_buffer(p, 'ratio')[:curr_len-window_size]=self._get_buffer(p, 'ratio')[window_size:]
+                                self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                             else:
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[window_size:]
+                                self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                     else:
-                        self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
-                        self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
-                        self._get_buffer(p, 'next_state')[:curr_len-1]=self._get_buffer(p, 'next_state')[1:]
-                        self._get_buffer(p, 'reward')[:curr_len-1]=self._get_buffer(p, 'reward')[1:]
-                        self._get_buffer(p, 'done')[:curr_len-1]=self._get_buffer(p, 'done')[1:]
-                        self.write_indices[p] = curr_len-1
-                        self.pool_lengths[p] = curr_len-1
+                        size = curr_len - math.ceil(self.pool_size/self.processes)
+                        self._get_buffer(p, 'state')[:curr_len-size]=self._get_buffer(p, 'state')[size:]
+                        self._get_buffer(p, 'action')[:curr_len-size]=self._get_buffer(p, 'action')[size:]
+                        self._get_buffer(p, 'next_state')[:curr_len-size]=self._get_buffer(p, 'next_state')[size:]
+                        self._get_buffer(p, 'reward')[:curr_len-size]=self._get_buffer(p, 'reward')[size:]
+                        self._get_buffer(p, 'done')[:curr_len-size]=self._get_buffer(p, 'done')[size:]
+                        self.write_indices[p] = curr_len-size
+                        self.pool_lengths[p] = curr_len-size
                         if self.PR:
                             if self.PPO:
-                                self._get_buffer(p, 'ratio')=self._get_buffer(p, 'ratio')[1:]
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[1:]
+                                self._get_buffer(p, 'ratio')[:curr_len-size]=self._get_buffer(p, 'ratio')[size:]
+                                self._get_buffer(p, 'TD')[:curr_len-size]=self._get_buffer(p, 'TD')[size:]
                             else:
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[1:]
+                                self._get_buffer(p, 'TD')[:curr_len-size]=self._get_buffer(p, 'TD')[size:]
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -1116,7 +1117,7 @@ class RL:
                 if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                     if self.parallel_dump:
                         if self.save_param_only==False:
-                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                         else:
                             self.save_flag.value=all(self.param_save_flag_list)
                     if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
@@ -1268,7 +1269,7 @@ class RL:
                 if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                     if self.parallel_dump:
                         if self.save_param_only==False:
-                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                         else:
                             self.save_flag.value=all(self.param_save_flag_list)
                     if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
@@ -1552,7 +1553,7 @@ class RL:
         if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
             if self.parallel_dump:
                 if self.save_param_only==False:
-                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                 else:
                     self.save_flag.value=all(self.param_save_flag_list)
             if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
@@ -1692,7 +1693,7 @@ class RL:
                         if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                             if self.parallel_dump:
                                 if self.save_param_only==False:
-                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                                 else:
                                     self.save_flag.value=all(self.param_save_flag_list)
                             if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
@@ -1777,7 +1778,7 @@ class RL:
                     if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
@@ -1994,7 +1995,7 @@ class RL:
                     total_inverse=tf.reduce_sum(inverse_len)
                     prob=inverse_len/total_inverse
                     p=np.random.choice(self.processes,p=prob.numpy(),replace=False)
-                    self.inverse_len[p]=1/(len(self.state_pool_list[p])+1)
+                    self.inverse_len[p]=1/self.pool_lengths[p]
             else:
                 p=p
             s=np.expand_dims(s,axis=0)
@@ -2040,7 +2041,7 @@ class RL:
                     self.pool(s,a,next_s,r,done,p)
                 if self.parallel_store_and_training:
                     self.lock_list[p].release()
-            self.done_length[p]=len(self.done_pool_list[p])
+            self.done_length[p]=self.pool_lengths[p]
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward[p]=r+self.reward[p]
@@ -2255,6 +2256,26 @@ class RL:
     def _init_shared_experience_buffers(self, processes):
         s_elements = int(np.prod(self.state_shape))
         a_elements = int(np.prod(self.action_shape))
+        
+        shared_states = []
+        shared_actions = []
+        shared_next_states = []
+        shared_rewards = []
+        shared_dones = []
+        shared_TDs = []
+        shared_ratios = []
+        
+        if self.save_data and hasattr(self,'shared_states'):
+            for p in range(processes):
+                shared_states.append(self.shared_states[p])
+                shared_actions.append(self.shared_actions[p])
+                shared_next_states.append(self.shared_next_states[p])
+                shared_rewards.append(self.shared_rewards[p])
+                shared_dones.append(self.shared_dones[p])
+                if self.PR:
+                    shared_TDs.append(self.shared_TDs[p])
+                    if self.PPO:
+                        shared_ratios.append(self.shared_ratios[p])
 
         self.shared_states = []
         self.shared_actions = []
@@ -2266,8 +2287,8 @@ class RL:
 
         for _ in range(processes):
             self.shared_states.append(mp.Array('f', self.max_exp_per_proc * s_elements))
-            self.shared_next_states.append(mp.Array('f', self.max_exp_per_proc * s_elements))
             self.shared_actions.append(mp.Array('f', self.max_exp_per_proc * a_elements))
+            self.shared_next_states.append(mp.Array('f', self.max_exp_per_proc * s_elements))
             self.shared_rewards.append(mp.Array('f', self.max_exp_per_proc))
             self.shared_dones.append(mp.Array('f', self.max_exp_per_proc))
 
@@ -2275,6 +2296,18 @@ class RL:
                 self.shared_TDs.append(mp.Array('f', self.max_exp_per_proc))
                 if self.PPO:
                     self.shared_ratios.append(mp.Array('f', self.max_exp_per_proc))
+        
+        if self.save_data and len(shared_states) != 0:
+            for _ in range(processes):
+                self._get_buffer(p, 'state') = shared_states[p]
+                self._get_buffer(p, 'action') = shared_actions[p]
+                self._get_buffer(p, 'next_state') = shared_next_states[p]
+                self._get_buffer(p, 'reward') = shared_rewards[p]
+                self._get_buffer(p, 'done') = shared_dones[p]
+                if self.PR:
+                    self._get_buffer(p, 'TD') = shared_TDs[p]
+                    if self.PPO:
+                        self._get_buffer(p, 'ratio') = shared_ratios[p]
     
     
     def _get_buffer(self, p, field):
@@ -2327,10 +2360,10 @@ class RL:
             self.state_index_list=manager.list()
         if parallel_store_and_training:
             if self.PR and self.PPO:
-                self.share_TD=mp.Array('f', self.pool_size)
-                self.share_ratio=mp.Array('f', self.pool_size)
+                self.shared_TD=mp.Array('f', self.pool_size)
+                self.shared_ratio=mp.Array('f', self.pool_size)
             elif self.PR:
-                self.share_TD=mp.Array('f', self.pool_size)
+                self.shared_TD=mp.Array('f', self.pool_size)
             self.done_length=manager.list([0 for _ in range(processes)])
             self.ess=mp.Value('f',0)
             self.original_num_store=self.num_store
@@ -2386,6 +2419,9 @@ class RL:
             self.max_exp_per_proc = math.ceil(self.pool_size / self.processes * self.buffer_safety_factor)
             self._init_shared_experience_buffers(processes)
             if save_data:
+                self.pool_lengths = manager.list(self.pool_lengths)
+                self.write_indices = manager.list(self.write_indices)
+                self.inverse_len=manager.list([0 for _ in range(processes)])
                 if self.clearing_freq!=None:
                     self.store_counter=manager.list(self.store_counter)
             else:
@@ -2393,11 +2429,7 @@ class RL:
                 self.write_indices = manager.list([0 for _ in range(processes)])
                 self.inverse_len=manager.list([0 for _ in range(processes)])
                 if self.clearing_freq!=None:
-                    self.store_counter=manager.list()
-            if not save_data:
-                for _ in range(processes):
-                    if self.clearing_freq!=None:
-                        self.store_counter.append(0)
+                    self.store_counter=manager.list([0 for _ in range(processes)])
             self.reward=manager.list([0 for _ in range(processes)])
             if parallel_store_and_training or self.HER!=True or self.TRL!=True:
                 self.lock_list=manager.list([manager.Lock() for _ in range(processes)])
@@ -2464,7 +2496,7 @@ class RL:
                 if self.save_freq_==None and i%self.save_freq==0:
                     if self.parallel_dump:
                         if self.save_param_only==False:
-                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                         else:
                             self.save_flag.value=all(self.param_save_flag_list)
                     if self.save_flag.value:
@@ -2555,7 +2587,7 @@ class RL:
                 if self.save_freq_==None and i%self.save_freq==0:
                     if self.parallel_dump:
                         if self.save_param_only==False:
-                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                         else:
                             self.save_flag.value=all(self.param_save_flag_list)
                     if self.save_flag.value:
@@ -2596,7 +2628,7 @@ class RL:
             while True:
                 if self.parallel_dump:
                     if self.save_param_only==False:
-                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                     else:
                         self.save_flag.value=all(self.param_save_flag_list)
                 if self.save_flag.value:
@@ -2667,10 +2699,10 @@ class RL:
             self.state_index_list=manager.list()
         if parallel_store_and_training:
             if self.PR and self.PPO:
-                self.share_TD=mp.Array('f', self.pool_size)
-                self.share_ratio=mp.Array('f', self.pool_size)
+                self.shared_TD=mp.Array('f', self.pool_size)
+                self.shared_ratio=mp.Array('f', self.pool_size)
             elif self.PR:
-                self.share_TD=mp.Array('f', self.pool_size)
+                self.shared_TD=mp.Array('f', self.pool_size)
             self.done_length=manager.list([0 for _ in range(processes)])
             self.ess=mp.Value('f',0)
             self.original_num_store=self.num_store
@@ -2727,23 +2759,17 @@ class RL:
             self.pool_lengths = manager.list([0 for _ in range(processes)])
             self.write_indices = manager.list([0 for _ in range(processes)])
             self._init_shared_experience_buffers(processes)
-            if save_data and len(self.shared_states)!=0:
-                for p in range(processes):
-                    self.shared_states[p] = np.frombuffer(self.shared_states[p].get_obj(), dtype=np.float32)
-                    self.shared_next_states[p] = np.frombuffer(self.shared_next_states[p].get_obj(), dtype=np.float32)
-                    self.shared_actions[p] = np.frombuffer(self.shared_actions[p].get_obj(), dtype=np.float32)
-                    self.shared_rewards[p] = np.frombuffer(self.shared_rewards[p].get_obj(), dtype=np.float32)
-                    self.shared_dones[p] = np.frombuffer(self.shared_dones[p].get_obj(), dtype=np.float32)
+            if save_data:
+                self.pool_lengths = manager.list(self.pool_lengths)
+                self.write_indices = manager.list(self.write_indices)
                 if self.clearing_freq!=None:
                     self.store_counter=manager.list(self.store_counter)
             else:
+                self.pool_lengths = manager.list([0 for _ in range(processes)])
+                self.write_indices = manager.list([0 for _ in range(processes)])
                 self.inverse_len=manager.list([0 for _ in range(processes)])
                 if self.clearing_freq!=None:
-                    self.store_counter=manager.list()
-            if not save_data or len(self.state_pool_list)==0:
-                for _ in range(processes):
-                    if self.clearing_freq!=None:
-                        self.store_counter.append(0)
+                    self.store_counter=manager.list([0 for _ in range(processes)])
             self.reward=manager.list([0 for _ in range(processes)])
             if parallel_store_and_training or self.HER!=True or self.TRL!=True:
                 self.lock_list=[manager.Lock() for _ in range(processes)]
@@ -2813,7 +2839,7 @@ class RL:
                     if self.save_freq_==None and i%self.save_freq==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.save_flag.value:
@@ -2903,7 +2929,7 @@ class RL:
                     if self.save_freq_==None and i%self.save_freq==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.save_flag.value:
@@ -2987,7 +3013,7 @@ class RL:
                     if self.save_freq_==None and episode%self.save_freq==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.save_flag.value:
@@ -3084,7 +3110,7 @@ class RL:
                     if self.save_freq_==None and episode%self.save_freq==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.save_flag.value:
@@ -3179,7 +3205,7 @@ class RL:
                     if self.save_freq_==None and episode%self.save_freq==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.save_flag.value:
@@ -3232,7 +3258,7 @@ class RL:
             while True:
                 if self.parallel_dump:
                     if self.save_param_only==False:
-                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list)
+                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
                     else:
                         self.save_flag.value=all(self.param_save_flag_list)
                 if self.save_flag.value:
@@ -3517,28 +3543,6 @@ class RL:
     
     
     def save_(self,path):
-        if self.pool_network and not self.save_data:
-            state_pool_list=[]
-            action_pool_list=[]
-            next_state_pool_list=[]
-            reward_pool_list=[]
-            done_pool_list=[]
-            self.state_pool=None
-            self.action_pool=None
-            self.next_state_pool=None
-            self.reward_pool=None
-            self.done_pool=None
-            for i in range(self.processes):
-                state_pool_list.append(self.state_pool_list[i])
-                action_pool_list.append(self.action_pool_list[i])
-                next_state_pool_list.append(self.next_state_pool_list[i])
-                reward_pool_list.append(self.reward_pool_list[i])
-                done_pool_list.append(self.done_pool_list[i])
-                self.state_pool_list[i]=None
-                self.action_pool_list[i]=None
-                self.next_state_pool_list[i]=None
-                self.reward_pool_list[i]=None
-                self.done_pool_list[i]=None
         if self.save_top_k is None:
             if self.max_save_files==1:
                 path=path
@@ -3565,13 +3569,6 @@ class RL:
         if self.save_last:
             path=self.path+'-last.dat'
             self.save(path)
-        if self.pool_network and not self.save_data:
-            for i in range(self.processes):
-                self.state_pool_list[i]=state_pool_list[i]
-                self.action_pool_list[i]=action_pool_list[i]
-                self.next_state_pool_list[i]=next_state_pool_list[i]
-                self.reward_pool_list[i]=reward_pool_list[i]
-                self.done_pool_list[i]=done_pool_list[i]
         return
     
     
@@ -3667,29 +3664,25 @@ class RL:
         self.state_save_flag_list[counter]=True
     
     
+    def parallel_data_dump(self, path, p):
+        self.data_save_flag_list.append(False)
+        os.makedirs(path, exist_ok=True)
+        path = os.path.join(path, f"data_{p}.dat")
+        output_file=open(path,'wb')
+        pickle.dump(self._get_buffer(p, 'state'),output_file)
+        pickle.dump(self._get_buffer(p, 'action'),output_file)
+        pickle.dump(self._get_buffer(p, 'next_state'),output_file)
+        pickle.dump(self._get_buffer(p, 'reward'),output_file)
+        pickle.dump(self._get_buffer(p, 'done'),output_file)
+        if self.PR:
+            pickle.dump(self._get_buffer(p, 'TD'),output_file)
+            if self.PPO:
+                pickle.dump(self._get_buffer(p, 'ratio'),output_file)
+        output_file.close()
+        self.data_save_flag_list[p]=True
+    
+    
     def save(self,path):
-        if self.pool_network and not self.save_data:
-            state_pool_list=[]
-            action_pool_list=[]
-            next_state_pool_list=[]
-            reward_pool_list=[]
-            done_pool_list=[]
-            self.state_pool=None
-            self.action_pool=None
-            self.next_state_pool=None
-            self.reward_pool=None
-            self.done_pool=None
-            for i in range(self.processes):
-                state_pool_list.append(self.state_pool_list[i])
-                action_pool_list.append(self.action_pool_list[i])
-                next_state_pool_list.append(self.next_state_pool_list[i])
-                reward_pool_list.append(self.reward_pool_list[i])
-                done_pool_list.append(self.done_pool_list[i])
-                self.state_pool_list[i]=None
-                self.action_pool_list[i]=None
-                self.next_state_pool_list[i]=None
-                self.reward_pool_list[i]=None
-                self.done_pool_list[i]=None
         if self.parallel_training_and_save:
             self.save_flag.value=False
             if self.save_top_k is not None:
@@ -3803,13 +3796,35 @@ class RL:
                 self.optimizer.save_own_variables(state_dict)
                 pickle.dump(state_dict,output_file)
             output_file.close()
-        if self.pool_network and not self.save_data:
-            for i in range(self.processes):
-                self.state_pool_list[i]=state_pool_list[i]
-                self.action_pool_list[i]=action_pool_list[i]
-                self.next_state_pool_list[i]=next_state_pool_list[i]
-                self.reward_pool_list[i]=reward_pool_list[i]
-                self.done_pool_list[i]=done_pool_list[i]
+        if self.parallel_training_and_save:
+            if self.parallel_dump==True:
+                for p in range(self.processes):
+                    process=multiprocessing.Process(target=self.parallel_data_dump,args=(path, p))
+                    process.start()
+            else:
+                for p in range(self.processes):
+                    pickle.dump(self._get_buffer(p, 'state'),output_file)
+                    pickle.dump(self._get_buffer(p, 'action'),output_file)
+                    pickle.dump(self._get_buffer(p, 'next_state'),output_file)
+                    pickle.dump(self._get_buffer(p, 'reward'),output_file)
+                    pickle.dump(self._get_buffer(p, 'done'),output_file)
+                    if self.PR:
+                        pickle.dump(self._get_buffer(p, 'TD'),output_file)
+                        if self.PPO:
+                            pickle.dump(self._get_buffer(p, 'ratio'),output_file)
+                output_file.close()
+        else:
+            for p in range(self.processes):
+                pickle.dump(self._get_buffer(p, 'state'),output_file)
+                pickle.dump(self._get_buffer(p, 'action'),output_file)
+                pickle.dump(self._get_buffer(p, 'next_state'),output_file)
+                pickle.dump(self._get_buffer(p, 'reward'),output_file)
+                pickle.dump(self._get_buffer(p, 'done'),output_file)
+                if self.PR:
+                    pickle.dump(self._get_buffer(p, 'TD'),output_file)
+                    if self.PPO:
+                        pickle.dump(self._get_buffer(p, 'ratio'),output_file)
+            output_file.close()
         return
     
     
@@ -3909,6 +3924,17 @@ class RL:
             self.optimizer.built=False
             self.optimizer.build(self.optimizer._trainable_variables)
             self.optimizer.load_own_variables(state_dict)
+        self._init_shared_experience_buffers(self.processes)
+        for p in range(self.processes):
+            self._get_buffer(p, 'state') = pickle.load(input_file2)
+            self._get_buffer(p, 'action') = pickle.load(input_file2)
+            self._get_buffer(p, 'next_state') = pickle.load(input_file2)
+            self._get_buffer(p, 'reward') = pickle.load(input_file2)
+            self._get_buffer(p, 'done') = pickle.load(input_file2)
+            if self.PR:
+                self._get_buffer(p, 'TD') = pickle.load(input_file2)
+                if self.PPO:
+                    self._get_buffer(p, 'ratio') = pickle.load(input_file2)
         input_file.close()
         return
     
@@ -3931,6 +3957,20 @@ class RL:
         else:
             state_dict[state_index]=pickle.load(input_file2)
             input_file2.close()
+    
+    
+    def parallel_data_load(self, path, p):
+        input_file2=open(os.path.join(path,f"data_{p}.dat"),'rb')
+        self._get_buffer(p, 'state') = pickle.load(input_file2)
+        self._get_buffer(p, 'action') = pickle.load(input_file2)
+        self._get_buffer(p, 'next_state') = pickle.load(input_file2)
+        self._get_buffer(p, 'reward') = pickle.load(input_file2)
+        self._get_buffer(p, 'done') = pickle.load(input_file2)
+        if self.PR:
+            self._get_buffer(p, 'TD') = pickle.load(input_file2)
+            if self.PPO:
+                self._get_buffer(p, 'ratio') = pickle.load(input_file2)
+        input_file2.close()
     
     
     def restore_p(self,path1,path2):
@@ -4011,6 +4051,23 @@ class RL:
                 self.optimizer.built=False
                 self.optimizer.build(self.optimizer._trainable_variables)
                 self.optimizer.load_own_variables(state_dict)
+        self._init_shared_experience_buffers(self.processes)
+        if self.parallel_dump==True:
+            for p in range(self.processes):
+                process=mp.Process(target=self.parallel_data_load,args=(path2, p))
+                process.start()
+                process_list.append(process)
+        else:
+            for p in range(self.processes):
+                self._get_buffer(p, 'state') = pickle.load(input_file2)
+                self._get_buffer(p, 'action') = pickle.load(input_file2)
+                self._get_buffer(p, 'next_state') = pickle.load(input_file2)
+                self._get_buffer(p, 'reward') = pickle.load(input_file2)
+                self._get_buffer(p, 'done') = pickle.load(input_file2)
+                if self.PR:
+                    self._get_buffer(p, 'TD') = pickle.load(input_file2)
+                    if self.PPO:
+                        self._get_buffer(p, 'ratio') = pickle.load(input_file2)
         input_file1.close()
         if not self.parallel_dump:
             input_file2.close()

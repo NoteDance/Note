@@ -123,24 +123,25 @@ class RL_pytorch:
                         self.pool_lengths[p] = curr_len-window_size
                         if self.PR:
                             if self.PPO:
-                                self._get_buffer(p, 'ratio')=self._get_buffer(p, 'ratio')[window_size:]
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[window_size:]
+                                self._get_buffer(p, 'ratio')[:curr_len-window_size]=self._get_buffer(p, 'ratio')[window_size:]
+                                self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                             else:
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[window_size:]
+                                self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                     else:
-                        self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
-                        self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
-                        self._get_buffer(p, 'next_state')[:curr_len-1]=self._get_buffer(p, 'next_state')[1:]
-                        self._get_buffer(p, 'reward')[:curr_len-1]=self._get_buffer(p, 'reward')[1:]
-                        self._get_buffer(p, 'done')[:curr_len-1]=self._get_buffer(p, 'done')[1:]
-                        self.write_indices[p] = curr_len-1
-                        self.pool_lengths[p] = curr_len-1
+                        size = curr_len - math.ceil(self.pool_size/self.processes)
+                        self._get_buffer(p, 'state')[:curr_len-size]=self._get_buffer(p, 'state')[size:]
+                        self._get_buffer(p, 'action')[:curr_len-size]=self._get_buffer(p, 'action')[size:]
+                        self._get_buffer(p, 'next_state')[:curr_len-size]=self._get_buffer(p, 'next_state')[size:]
+                        self._get_buffer(p, 'reward')[:curr_len-size]=self._get_buffer(p, 'reward')[size:]
+                        self._get_buffer(p, 'done')[:curr_len-size]=self._get_buffer(p, 'done')[size:]
+                        self.write_indices[p] = curr_len-size
+                        self.pool_lengths[p] = curr_len-size
                         if self.PR:
                             if self.PPO:
-                                self._get_buffer(p, 'ratio')=self._get_buffer(p, 'ratio')[1:]
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[1:]
+                                self._get_buffer(p, 'ratio')[:curr_len-size]=self._get_buffer(p, 'ratio')[size:]
+                                self._get_buffer(p, 'TD')[:curr_len-size]=self._get_buffer(p, 'TD')[size:]
                             else:
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[1:]
+                                self._get_buffer(p, 'TD')[:curr_len-size]=self._get_buffer(p, 'TD')[size:]
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -1196,7 +1197,7 @@ class RL_pytorch:
                     total_inverse=tf.reduce_sum(inverse_len)
                     prob=inverse_len/total_inverse
                     p=np.random.choice(self.processes,p=prob.numpy(),replace=False)
-                    self.inverse_len[p]=1/(len(self.state_pool_list[p])+1)
+                    self.inverse_len[p]=1/self.pool_lengths[p]
             else:
                 p=p
             s=np.expand_dims(s,axis=0)
@@ -1242,7 +1243,7 @@ class RL_pytorch:
                     self.pool(s,a,next_s,r,done,p)
                 if self.parallel_store_and_training:
                     self.lock_list[p].release()
-            self.done_length[p]=len(self.done_pool_list[p])
+            self.done_length[p]=self.pool_lengths[p]
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward[p]=r+self.reward[p]
@@ -1461,10 +1462,10 @@ class RL_pytorch:
         self.parallel_store_and_training=parallel_store_and_training
         if parallel_store_and_training:
             if self.PR and self.PPO:
-                self.share_TD=mp.Array('f', self.pool_size)
-                self.share_ratio=mp.Array('f', self.pool_size)
+                self.shared_TD=mp.Array('f', self.pool_size)
+                self.shared_ratio=mp.Array('f', self.pool_size)
             elif self.PR:
-                self.share_TD=mp.Array('f', self.pool_size)
+                self.shared_TD=mp.Array('f', self.pool_size)
             self.done_length=manager.list([0 for _ in range(processes)])
             self.ess=mp.Value('f',0)
             self.original_num_store=self.num_store
@@ -1511,6 +1512,9 @@ class RL_pytorch:
             self.max_exp_per_proc = math.ceil(self.pool_size / self.processes * self.buffer_safety_factor)
             self._init_shared_experience_buffers(processes)
             if save_data:
+                self.pool_lengths = manager.list(self.pool_lengths)
+                self.write_indices = manager.list(self.write_indices)
+                self.inverse_len=manager.list([0 for _ in range(processes)])
                 if self.clearing_freq!=None:
                     self.store_counter=manager.list(self.store_counter)
             else:
@@ -1518,11 +1522,7 @@ class RL_pytorch:
                 self.write_indices = manager.list([0 for _ in range(processes)])
                 self.inverse_len=manager.list([0 for _ in range(processes)])
                 if self.clearing_freq!=None:
-                    self.store_counter=manager.list()
-            if not save_data:
-                for _ in range(processes):
-                    if self.clearing_freq!=None:
-                        self.store_counter.append(0)
+                    self.store_counter=manager.list([0 for _ in range(processes)])
             self.reward=manager.list([0 for _ in range(processes)])
             if parallel_store_and_training or self.HER!=True or self.TRL!=True:
                 self.lock_list=[manager.Lock() for _ in range(processes)]
@@ -1782,35 +1782,6 @@ class RL_pytorch:
     
     
     def save_(self,path):
-        if self.pool_network and not self.save_data:
-            state_pool_list=[]
-            action_pool_list=[]
-            next_state_pool_list=[]
-            reward_pool_list=[]
-            done_pool_list=[]
-            if self.processes_her==None and self.processes_pr==None:
-                self.state_pool=None
-                self.action_pool=None
-                self.next_state_pool=None
-                self.reward_pool=None
-                self.done_pool=None
-            else:
-                self.state_pool[7]=None
-                self.action_pool[7]=None
-                self.next_state_pool[7]=None
-                self.reward_pool[7]=None
-                self.done_pool[7]=None
-            for i in range(self.processes):
-                state_pool_list.append(self.state_pool_list[i])
-                action_pool_list.append(self.action_pool_list[i])
-                next_state_pool_list.append(self.next_state_pool_list[i])
-                reward_pool_list.append(self.reward_pool_list[i])
-                done_pool_list.append(self.done_pool_list[i])
-                self.state_pool_list[i]=None
-                self.action_pool_list[i]=None
-                self.next_state_pool_list[i]=None
-                self.reward_pool_list[i]=None
-                self.done_pool_list[i]=None
         if self.save_best_only==False:
             if self.max_save_files==None or self.max_save_files==1:
                 output_file=open(path,'wb')
@@ -1833,49 +1804,13 @@ class RL_pytorch:
                     if self.self.avg_reward==None or self.avg_reward>self.self.avg_reward:
                         self.save(path)
                         self.self.avg_reward=self.avg_reward
-        if self.pool_network and not self.save_data:
-            for i in range(self.processes):
-                self.state_pool_list[i]=state_pool_list[i]
-                self.action_pool_list[i]=action_pool_list[i]
-                self.next_state_pool_list[i]=next_state_pool_list[i]
-                self.reward_pool_list[i]=reward_pool_list[i]
-                self.done_pool_list[i]=done_pool_list[i]
         return
     
     
     def save(self,path):
-        if self.pool_network and not self.save_data:
-            state_pool_list=[]
-            action_pool_list=[]
-            next_state_pool_list=[]
-            reward_pool_list=[]
-            done_pool_list=[]
-            self.state_pool=None
-            self.action_pool=None
-            self.next_state_pool=None
-            self.reward_pool=None
-            self.done_pool=None
-            for i in range(self.processes):
-                state_pool_list.append(self.state_pool_list[i])
-                action_pool_list.append(self.action_pool_list[i])
-                next_state_pool_list.append(self.next_state_pool_list[i])
-                reward_pool_list.append(self.reward_pool_list[i])
-                done_pool_list.append(self.done_pool_list[i])
-                self.state_pool_list[i]=None
-                self.action_pool_list[i]=None
-                self.next_state_pool_list[i]=None
-                self.reward_pool_list[i]=None
-                self.done_pool_list[i]=None
         output_file=open(path,'wb')
         pickle.dump(self,output_file)
         output_file.close()
-        if self.pool_network and not self.save_data:
-            for i in range(self.processes):
-                self.state_pool_list[i]=state_pool_list[i]
-                self.action_pool_list[i]=action_pool_list[i]
-                self.next_state_pool_list[i]=next_state_pool_list[i]
-                self.reward_pool_list[i]=reward_pool_list[i]
-                self.done_pool_list[i]=done_pool_list[i]
         return
     
     
