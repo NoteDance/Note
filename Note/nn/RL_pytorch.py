@@ -122,7 +122,7 @@ class RL_pytorch:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
                             if hasattr(self.prioritized_replay, 'sum_tree'):
                                 self.prioritized_replay.rebuild()
-                if curr_len>math.ceil(self.pool_size/self.processes):
+                if curr_len==math.ceil(self.pool_size/self.processes):
                     if type(self.window_size)!=int:
                         window_size=int(self.window_size(p))
                     else:
@@ -841,7 +841,7 @@ class RL_pytorch:
                     self._get_buffer(p, 'ratio')[:self.length_list[p]]=self.prioritized_replay.ratio[index1-1:index2]
         for p in range(self.processes):
             curr_len = self.pool_lengths[p]
-            if curr_len>math.ceil(self.pool_size/self.processes):
+            if curr_len==math.ceil(self.pool_size/self.processes):
                 self.lock_list[p].acquire()
                 if self.clearing_freq!=None:
                     self.store_counter[p]+=1
