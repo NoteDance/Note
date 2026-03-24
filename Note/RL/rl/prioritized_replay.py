@@ -1,6 +1,7 @@
 import tensorflow as tf
 import torch
 import numpy as np
+import multiprocessing as mp
 
 
 class pr:
@@ -79,21 +80,36 @@ class pr:
 
 
 class SumTree:
-    def __init__(self, capacity: int):
+    def __init__(self, capacity: int, pool_network: bool):
         self.capacity = capacity
-        self.tree = np.zeros(2 * capacity - 1, dtype=np.float32)
+        self.pool_network = pool_network
+        if pool_network:
+            self.tree = mp.Array('f', 2 * capacity - 1)
+        else:
+            self.tree = np.zeros(2 * capacity - 1, dtype=np.float32)
         self.data_pointer = 0
         self.full = False
+    
+    def _get_buffer(self):
+        return np.frombuffer(self.tree.get_obj(), dtype=np.float32)
 
     def _propagate(self, idx: int, change: float):
+        if self.pool_network:
+            tree = self._get_buffer()
+        else:
+            tree = self.tree
         parent = (idx - 1) // 2
         while parent >= 0:
-            self.tree[parent] += change
+            tree[parent] += change
             parent = (parent - 1) // 2
 
     def update(self, idx: int, priority: float):
+        if self.pool_network:
+            tree = self._get_buffer()
+        else:
+            tree = self.tree
         change = priority - self.tree[idx]
-        self.tree[idx] = priority
+        tree[idx] = priority
         self._propagate(idx, change)
 
     def add(self, priority: float):
@@ -104,33 +120,42 @@ class SumTree:
             self.full = True
 
     def get_leaf(self, value: float):
+        if self.pool_network:
+            tree = self._get_buffer()
+        else:
+            tree = self.tree
         parent_idx = 0
         while True:
             left = 2 * parent_idx + 1
             right = left + 1
-            if left >= len(self.tree):
+            if left >= len(tree):
                 leaf_idx = parent_idx
                 break
-            if value <= self.tree[left]:
+            if value <= tree[left]:
                 parent_idx = left
             else:
-                value -= self.tree[left]
+                value -= tree[left]
                 parent_idx = right
         data_idx = leaf_idx - self.capacity + 1
-        return leaf_idx, self.tree[leaf_idx], data_idx
+        return leaf_idx, tree[leaf_idx], data_idx
 
     def total(self):
-        return self.tree[0]
+        if self.pool_network:
+            tree = self._get_buffer()
+        else:
+            tree = self.tree
+        return tree[0]
 
 
 class PR(pr):
     def __init__(self):
         self.sum_tree = None
+        self.pool_network = True
 
     def build(self, capacity: int, alpha: float = 0.7):
         self.capacity = capacity
         self.alpha = alpha
-        self.sum_tree = SumTree(capacity)
+        self.sum_tree = SumTree(capacity, self.pool_network)
         
     @tf.function(jit_compile=True)
     def compute_prios(self, td_errors, alpha):
@@ -159,8 +184,11 @@ class PR(pr):
                     prios=self.compute_prios_(self.TD, self.alpha)
             except Exception:
                 prios=(self.TD+1e-7)**self.alpha
-
-        self.sum_tree.tree.fill(0.0)
+                
+        if self.pool_network:
+            self.sum_tree.self._get_buffer().fill(0.0)
+        else:
+            self.sum_tree.tree.fill(0.0)
         for i in range(len(prios)):
             self.sum_tree.update(self.capacity - 1 + i, prios[i])
 
@@ -187,12 +215,20 @@ class PR(pr):
                 done_pool[indices])
 
     def update(self):
-        if self.PPO:
-            score = (self.lambda_ * tf.abs(self.TD_[:self.batch]) +
-                     (1.0 - self.lambda_) * tf.abs(self.ratio_[:self.batch] - 1.0))
-            td_errors = score.numpy()
-        else:
-            td_errors = tf.abs(self.TD_[:self.batch]).numpy()
+        try:
+            if self.PPO:
+                score = (self.lambda_ * tf.abs(self.TD_[:self.batch]) +
+                         (1.0 - self.lambda_) * tf.abs(self.ratio_[:self.batch] - 1.0))
+                td_errors = score.numpy()
+            else:
+                td_errors = tf.abs(self.TD_[:self.batch]).numpy()
+        except Exception:
+            if self.PPO:
+                score = (self.lambda_ * torch.abs(self.TD_[:self.batch]) +
+                         (1.0 - self.lambda_) * torch.abs(self.ratio_[:self.batch] - 1.0))
+                td_errors = score.numpy()
+            else:
+                td_errors = torch.abs(self.TD_[:self.batch]).numpy()
         for i, td in enumerate(td_errors):
             data_idx = self.index[i]
             prio = (abs(td) + 1e-7) ** self.alpha
