@@ -181,7 +181,13 @@ class PR(pr):
                 next_state_pool[indices], reward_pool[indices],
                 done_pool[indices])
 
-    def update(self, td_errors):
+    def update(self):
+        if self.PPO:
+            score = (self.lambda_ * tf.abs(self.TD_[:self.batch]) +
+                     (1.0 - self.lambda_) * tf.abs(self.ratio_[:self.batch] - 1.0))
+            td_errors = score.numpy()
+        else:
+            td_errors = tf.abs(self.TD_[:self.batch]).numpy()
         for i, td in enumerate(td_errors):
             data_idx = self.index[i]
             prio = (abs(td) + 1e-7) ** self.alpha
