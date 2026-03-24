@@ -901,10 +901,12 @@ class RL_pytorch:
             self.update_pool()
         state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
         loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],self.optimizer)
-        if self.parallel_store_and_training and not hasattr(self.prioritized_replay, 'sum_tree'):
-            self.prioritized_replay.TD[self.prioritized_replay.index]=torch.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
+        if self.parallel_store_and_training:
+            np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=torch.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
             if self.PPO:
-                self.prioritized_replay.ration[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
+                np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
+            if hasattr(self.prioritized_replay, 'sum_tree'):
+                self.prioritized_replay.update()
             self.clear_pool()
         else:
             self.prioritized_replay.update()

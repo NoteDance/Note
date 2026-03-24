@@ -1019,10 +1019,12 @@ class RL:
                 total_loss = self.distributed_train_step(next(iterator), self.optimizer)
             else:
                 total_loss = self.distributed_train_step_(next(iterator), self.optimizer)
-            if self.parallel_store_and_training and not hasattr(self.prioritized_replay, 'sum_tree'):
+            if self.parallel_store_and_training:
                 np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                 if self.PPO:
                     np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
+                if hasattr(self.prioritized_replay, 'sum_tree'):
+                    self.prioritized_replay.update()
                 self.clear_pool()
             else:
                 self.prioritized_replay.update()
@@ -1178,10 +1180,12 @@ class RL:
                 total_loss = coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer))
             else:
                 total_loss = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer))
-            if self.parallel_store_and_training and not hasattr(self.prioritized_replay, 'sum_tree'):
+            if self.parallel_store_and_training:
                 np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                 if self.PPO:
                     np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
+                if hasattr(self.prioritized_replay, 'sum_tree'):
+                    self.prioritized_replay.update()
                 self.clear_pool()
             else:
                 self.prioritized_replay.update()
@@ -1409,10 +1413,12 @@ class RL:
                     loss=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],self.optimizer,self.strategy)
                 else:
                     loss=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],self.optimizer,self.strategy)
-                if self.parallel_store_and_training and not hasattr(self.prioritized_replay, 'sum_tree'):
+                if self.parallel_store_and_training:
                     np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                     if self.PPO:
                         np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
+                    if hasattr(self.prioritized_replay, 'sum_tree'):
+                        self.prioritized_replay.update()
                     self.clear_pool()
                 else:
                     self.prioritized_replay.update()
@@ -1518,10 +1524,12 @@ class RL:
                 loss=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],self.train_loss,self.optimizer)
             else:
                 loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],self.train_loss,self.optimizer)
-            if self.parallel_store_and_training and not hasattr(self.prioritized_replay, 'sum_tree'):
+            if self.parallel_store_and_training:
                 np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                 if self.PPO:
                     np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
+                if hasattr(self.prioritized_replay, 'sum_tree'):
+                    self.prioritized_replay.update()
                 self.clear_pool()
             else:
                 self.prioritized_replay.update()
