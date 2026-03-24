@@ -4,7 +4,7 @@ from tensorflow.python.util import nest
 import multiprocessing as mp
 from multiprocessing import shared_memory
 from Note.RL import rl
-from Note.RL.rl.prioritized_replay import pr
+from Note.RL.rl.prioritized_replay import PR
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -27,8 +27,8 @@ class RL:
         self.reward_list=[]
         self.step_counter=0
         self.store_counter=0
-        self.prioritized_replay=pr()
-        self.buffer_safety_factor=1.5
+        self.prioritized_replay=PR()
+        self.buffer_safety_factor=1
         self.seed=7
         self.path=None
         self.save_freq=1
@@ -156,6 +156,8 @@ class RL:
         self.initial_ratio=np.array(initial_ratio).astype('float32')
         self.initial_TD=np.array(initial_TD).astype('float32')
         if PR:
+            if hasattr(self.prioritized_replay, 'sum_tree'):
+                self.prioritized_replay.build(pool_size, alpha)
             if PPO:
                 self.prioritized_replay.PPO=PPO
                 self.prioritized_replay.ratio=self.initial_ratio
@@ -187,6 +189,16 @@ class RL:
                     self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                 else:
                     self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
+                if hasattr(self.prioritized_replay, 'sum_tree'):
+                    if self.PPO:
+                        new_td = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
+                        new_ratio = self.initial_ratio if curr_len == 0 else np.max(self._get_buffer(p, 'ratio')[:curr_len])
+                        score = self.lambda_ * new_td + (1.0 - self.lambda_) * np.abs(new_ratio - 1.0)
+                        new_prio = (score + 1e-7) ** self.alpha
+                    else:
+                        new_td = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
+                        new_prio = (new_td + 1e-7) ** self.alpha
+                    self.prioritized_replay.sum_tree.add(new_prio)
             self.write_indices[p] = pos + 1
             self.pool_lengths[p] = min(curr_len + 1, self.max_exp_per_proc)
             pos = self.write_indices[p]
@@ -204,10 +216,12 @@ class RL:
                         self.pool_lengths[p] = curr_len-self.window_size_
                         if self.PR:
                             if self.PPO:
-                                self._get_buffer(p, 'ratio')=self._get_buffer(p, 'ratio')[self.window_size_:]
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[self.window_size_:]
+                                self._get_buffer(p, 'ratio')[:curr_len-self.window_size_]=self._get_buffer(p, 'ratio')[self.window_size_:]
+                                self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
                             else:
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[self.window_size_:]
+                                self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
+                            if hasattr(self.prioritized_replay, 'sum_tree'):
+                                self.prioritized_replay.rebuild()
                 if curr_len>math.ceil(self.pool_size/self.processes):
                     if type(self.window_size)!=int:
                         window_size=int(self.window_size(p))
@@ -227,21 +241,24 @@ class RL:
                                 self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
+                            if hasattr(self.prioritized_replay, 'sum_tree'):
+                                self.prioritized_replay.rebuild()
                     else:
-                        size = curr_len - math.ceil(self.pool_size/self.processes)
-                        self._get_buffer(p, 'state')[:curr_len-size]=self._get_buffer(p, 'state')[size:]
-                        self._get_buffer(p, 'action')[:curr_len-size]=self._get_buffer(p, 'action')[size:]
-                        self._get_buffer(p, 'next_state')[:curr_len-size]=self._get_buffer(p, 'next_state')[size:]
-                        self._get_buffer(p, 'reward')[:curr_len-size]=self._get_buffer(p, 'reward')[size:]
-                        self._get_buffer(p, 'done')[:curr_len-size]=self._get_buffer(p, 'done')[size:]
-                        self.write_indices[p] = curr_len-size
-                        self.pool_lengths[p] = curr_len-size
+                        self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
+                        self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
+                        self._get_buffer(p, 'next_state')[:curr_len-1]=self._get_buffer(p, 'next_state')[1:]
+                        self._get_buffer(p, 'reward')[:curr_len-1]=self._get_buffer(p, 'reward')[1:]
+                        self._get_buffer(p, 'done')[:curr_len-1]=self._get_buffer(p, 'done')[1:]
+                        self.write_indices[p] = curr_len-1
+                        self.pool_lengths[p] = curr_len-1
                         if self.PR:
                             if self.PPO:
-                                self._get_buffer(p, 'ratio')[:curr_len-size]=self._get_buffer(p, 'ratio')[size:]
-                                self._get_buffer(p, 'TD')[:curr_len-size]=self._get_buffer(p, 'TD')[size:]
+                                self._get_buffer(p, 'ratio')[:curr_len-1]=self._get_buffer(p, 'ratio')[1:]
+                                self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
                             else:
-                                self._get_buffer(p, 'TD')[:curr_len-size]=self._get_buffer(p, 'TD')[size:]
+                                self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
+                            if hasattr(self.prioritized_replay, 'sum_tree'):
+                                self.prioritized_replay.rebuild()
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -836,15 +853,14 @@ class RL:
     def data_func(self, state_pool, action_pool, next_state_pool, reward_pool, done_pool):
         if self.parallel_store_and_training:
             done_length=len(done_pool)
-            curr_len = self.pool_lengths[p]
             TD_list=[]
             ratio_list=[]
             self.length_list=[]
             for p in range(self.processes):
-                TD_list.append(self._get_buffer(p, 'TD')[:curr_len])
-                self.length_list.append(curr_len)
+                TD_list.append(self._get_buffer(p, 'TD'))
+                self.length_list.append(len(TD_list[p]))
                 if self.PPO:
-                    ratio_list.append(self._get_buffer(p, 'ratio')[:curr_len])
+                    ratio_list.append(self._get_buffer(p, 'ratio')[:self.length_list[p]])
             TD=np.concat(TD_list, axis=0)
             np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[:len(TD)]=TD
             if self.PPO:
@@ -1117,7 +1133,7 @@ class RL:
                 if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                     if self.parallel_dump:
                         if self.save_param_only==False:
-                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                         else:
                             self.save_flag.value=all(self.param_save_flag_list)
                     if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
@@ -1269,7 +1285,7 @@ class RL:
                 if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                     if self.parallel_dump:
                         if self.save_param_only==False:
-                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                         else:
                             self.save_flag.value=all(self.param_save_flag_list)
                     if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
@@ -1311,6 +1327,24 @@ class RL:
             curr_len = self.pool_lengths[p]
             if curr_len>math.ceil(self.pool_size/self.processes):
                 self.lock_list[p].acquire()
+                if self.clearing_freq!=None:
+                    self.store_counter[p]+=1
+                    if self.store_counter[p]%self.clearing_freq==0:
+                        self._get_buffer(p, 'state')[:curr_len-self.window_size_]=self._get_buffer(p, 'state')[self.window_size_:]
+                        self._get_buffer(p, 'action')[:curr_len-self.window_size_]=self._get_buffer(p, 'action')[self.window_size_:]
+                        self._get_buffer(p, 'next_state')[:curr_len-self.window_size_]=self._get_buffer(p, 'next_state')[self.window_size_:]
+                        self._get_buffer(p, 'reward')[:curr_len-self.window_size_]=self._get_buffer(p, 'reward')[self.window_size_:]
+                        self._get_buffer(p, 'done')[:curr_len-self.window_size_]=self._get_buffer(p, 'done')[self.window_size_:]
+                        self.write_indices[p] = curr_len-self.window_size_
+                        self.pool_lengths[p] = curr_len-self.window_size_
+                        if self.PR:
+                            if self.PPO:
+                                self._get_buffer(p, 'ratio')[:curr_len-self.window_size_]=self._get_buffer(p, 'ratio')[self.window_size_:]
+                                self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
+                            else:
+                                self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
+                            if hasattr(self.prioritized_replay, 'sum_tree'):
+                                self.prioritized_replay.rebuild()
                 if type(self.window_size)!=int:
                     window_size=int(self.window_size(p))
                 else:
@@ -1324,22 +1358,25 @@ class RL:
                     self.write_indices[p] = curr_len-window_size
                     self.pool_lengths[p] = curr_len-window_size
                     if self.PR:
-                        self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[window_size:]
+                        self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                         if self.PPO:
-                            self._get_buffer(p, 'ratio')=self._get_buffer(p, 'ratio')[window_size:]
+                            self._get_buffer(p, 'ratio')[:curr_len-window_size]=self._get_buffer(p, 'ratio')[window_size:]
+                        if hasattr(self.prioritized_replay, 'sum_tree'):
+                            self.prioritized_replay.rebuild()
                 else:
-                    window_size = len(self._get_buffer(p, 'state'))-math.ceil(self.pool_size/self.processes)
-                    self._get_buffer(p, 'state')[:curr_len-window_size]=self._get_buffer(p, 'state')[window_size:]
-                    self._get_buffer(p, 'action')[:curr_len-window_size]=self._get_buffer(p, 'action')[window_size:]
-                    self._get_buffer(p, 'next_state')[:curr_len-window_size]=self._get_buffer(p, 'next_state')[window_size:]
-                    self._get_buffer(p, 'reward')[:curr_len-window_size]=self._get_buffer(p, 'reward')[window_size:]
-                    self._get_buffer(p, 'done')[:curr_len-window_size]=self._get_buffer(p, 'done')[window_size:]
-                    self.write_indices[p] = curr_len-window_size
-                    self.pool_lengths[p] = curr_len-window_size
+                    self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
+                    self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
+                    self._get_buffer(p, 'next_state')[:curr_len-1]=self._get_buffer(p, 'next_state')[1:]
+                    self._get_buffer(p, 'reward')[:curr_len-1]=self._get_buffer(p, 'reward')[1:]
+                    self._get_buffer(p, 'done')[:curr_len-1]=self._get_buffer(p, 'done')[1:]
+                    self.write_indices[p] = curr_len-1
+                    self.pool_lengths[p] = curr_len-1
                     if self.PR:
-                        self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[len(self._get_buffer(p, 'TD'))-math.ceil(self.pool_size/self.processes):]
+                        self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
                         if self.PPO:
-                            self._get_buffer(p, 'ratio')=self._get_buffer(p, 'ratio')[len(self._get_buffer(p, 'ratio'))-math.ceil(self.pool_size/self.processes):]
+                            self._get_buffer(p, 'ratio')[:curr_len-1]=self._get_buffer(p, 'ratio')[1:]
+                        if hasattr(self.prioritized_replay, 'sum_tree'):
+                            self.prioritized_replay.rebuild()
                 self.lock_list[p].release()
     
     
@@ -1553,7 +1590,7 @@ class RL:
         if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
             if self.parallel_dump:
                 if self.save_param_only==False:
-                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                 else:
                     self.save_flag.value=all(self.param_save_flag_list)
             if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
@@ -1693,7 +1730,7 @@ class RL:
                         if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                             if self.parallel_dump:
                                 if self.save_param_only==False:
-                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                                    self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                                 else:
                                     self.save_flag.value=all(self.param_save_flag_list)
                             if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
@@ -1778,7 +1815,7 @@ class RL:
                     if self.save_freq_!=None and self.batch_counter%self.save_freq_==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.parallel_training_and_test and self.test_flag.value and self.save_flag.value:
@@ -2496,7 +2533,7 @@ class RL:
                 if self.save_freq_==None and i%self.save_freq==0:
                     if self.parallel_dump:
                         if self.save_param_only==False:
-                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                         else:
                             self.save_flag.value=all(self.param_save_flag_list)
                     if self.save_flag.value:
@@ -2587,7 +2624,7 @@ class RL:
                 if self.save_freq_==None and i%self.save_freq==0:
                     if self.parallel_dump:
                         if self.save_param_only==False:
-                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                            self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                         else:
                             self.save_flag.value=all(self.param_save_flag_list)
                     if self.save_flag.value:
@@ -2628,7 +2665,7 @@ class RL:
             while True:
                 if self.parallel_dump:
                     if self.save_param_only==False:
-                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                     else:
                         self.save_flag.value=all(self.param_save_flag_list)
                 if self.save_flag.value:
@@ -2839,7 +2876,7 @@ class RL:
                     if self.save_freq_==None and i%self.save_freq==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.save_flag.value:
@@ -2929,7 +2966,7 @@ class RL:
                     if self.save_freq_==None and i%self.save_freq==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.save_flag.value:
@@ -3013,7 +3050,7 @@ class RL:
                     if self.save_freq_==None and episode%self.save_freq==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.save_flag.value:
@@ -3110,7 +3147,7 @@ class RL:
                     if self.save_freq_==None and episode%self.save_freq==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.save_flag.value:
@@ -3205,7 +3242,7 @@ class RL:
                     if self.save_freq_==None and episode%self.save_freq==0:
                         if self.parallel_dump:
                             if self.save_param_only==False:
-                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                                self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                             else:
                                 self.save_flag.value=all(self.param_save_flag_list)
                         if self.save_flag.value:
@@ -3258,7 +3295,7 @@ class RL:
             while True:
                 if self.parallel_dump:
                     if self.save_param_only==False:
-                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and all(self.data_save_flag_list)
+                        self.save_flag.value=all(self.param_save_flag_list) and all(self.state_save_flag_list) and (self.save_data and all(self.data_save_flag_list))
                     else:
                         self.save_flag.value=all(self.param_save_flag_list)
                 if self.save_flag.value:
@@ -3796,11 +3833,24 @@ class RL:
                 self.optimizer.save_own_variables(state_dict)
                 pickle.dump(state_dict,output_file)
             output_file.close()
-        if self.parallel_training_and_save:
-            if self.parallel_dump==True:
-                for p in range(self.processes):
-                    process=multiprocessing.Process(target=self.parallel_data_dump,args=(path, p))
-                    process.start()
+        if self.save_data:
+            if self.parallel_training_and_save:
+                if self.parallel_dump==True:
+                    for p in range(self.processes):
+                        process=multiprocessing.Process(target=self.parallel_data_dump,args=(path, p))
+                        process.start()
+                else:
+                    for p in range(self.processes):
+                        pickle.dump(self._get_buffer(p, 'state'),output_file)
+                        pickle.dump(self._get_buffer(p, 'action'),output_file)
+                        pickle.dump(self._get_buffer(p, 'next_state'),output_file)
+                        pickle.dump(self._get_buffer(p, 'reward'),output_file)
+                        pickle.dump(self._get_buffer(p, 'done'),output_file)
+                        if self.PR:
+                            pickle.dump(self._get_buffer(p, 'TD'),output_file)
+                            if self.PPO:
+                                pickle.dump(self._get_buffer(p, 'ratio'),output_file)
+                    output_file.close()
             else:
                 for p in range(self.processes):
                     pickle.dump(self._get_buffer(p, 'state'),output_file)
@@ -3812,18 +3862,6 @@ class RL:
                         pickle.dump(self._get_buffer(p, 'TD'),output_file)
                         if self.PPO:
                             pickle.dump(self._get_buffer(p, 'ratio'),output_file)
-                output_file.close()
-        else:
-            for p in range(self.processes):
-                pickle.dump(self._get_buffer(p, 'state'),output_file)
-                pickle.dump(self._get_buffer(p, 'action'),output_file)
-                pickle.dump(self._get_buffer(p, 'next_state'),output_file)
-                pickle.dump(self._get_buffer(p, 'reward'),output_file)
-                pickle.dump(self._get_buffer(p, 'done'),output_file)
-                if self.PR:
-                    pickle.dump(self._get_buffer(p, 'TD'),output_file)
-                    if self.PPO:
-                        pickle.dump(self._get_buffer(p, 'ratio'),output_file)
             output_file.close()
         return
     
@@ -4051,23 +4089,24 @@ class RL:
                 self.optimizer.built=False
                 self.optimizer.build(self.optimizer._trainable_variables)
                 self.optimizer.load_own_variables(state_dict)
-        self._init_shared_experience_buffers(self.processes)
-        if self.parallel_dump==True:
-            for p in range(self.processes):
-                process=mp.Process(target=self.parallel_data_load,args=(path2, p))
-                process.start()
-                process_list.append(process)
-        else:
-            for p in range(self.processes):
-                self._get_buffer(p, 'state') = pickle.load(input_file2)
-                self._get_buffer(p, 'action') = pickle.load(input_file2)
-                self._get_buffer(p, 'next_state') = pickle.load(input_file2)
-                self._get_buffer(p, 'reward') = pickle.load(input_file2)
-                self._get_buffer(p, 'done') = pickle.load(input_file2)
-                if self.PR:
-                    self._get_buffer(p, 'TD') = pickle.load(input_file2)
-                    if self.PPO:
-                        self._get_buffer(p, 'ratio') = pickle.load(input_file2)
+        if self.save_data:
+            self._init_shared_experience_buffers(self.processes)
+            if self.parallel_dump==True:
+                for p in range(self.processes):
+                    process=mp.Process(target=self.parallel_data_load,args=(path2, p))
+                    process.start()
+                    process_list.append(process)
+            else:
+                for p in range(self.processes):
+                    self._get_buffer(p, 'state') = pickle.load(input_file2)
+                    self._get_buffer(p, 'action') = pickle.load(input_file2)
+                    self._get_buffer(p, 'next_state') = pickle.load(input_file2)
+                    self._get_buffer(p, 'reward') = pickle.load(input_file2)
+                    self._get_buffer(p, 'done') = pickle.load(input_file2)
+                    if self.PR:
+                        self._get_buffer(p, 'TD') = pickle.load(input_file2)
+                        if self.PPO:
+                            self._get_buffer(p, 'ratio') = pickle.load(input_file2)
         input_file1.close()
         if not self.parallel_dump:
             input_file2.close()

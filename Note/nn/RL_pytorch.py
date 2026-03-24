@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 import multiprocessing as mp
 from Note.RL import rl
-from Note.RL.rl.prioritized_replay import pr
+from Note.RL.rl.prioritized_replay import PR
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -24,8 +24,8 @@ class RL_pytorch:
         self.reward_list=[]
         self.step_counter=0
         self.store_counter=0
-        self.prioritized_replay=pr()
-        self.buffer_safety_factor=1.5
+        self.prioritized_replay=PR()
+        self.buffer_safety_factor=1
         self.seed=7
         self.path=None
         self.save_freq=1
@@ -61,6 +61,8 @@ class RL_pytorch:
         self.initial_ratio=np.array(initial_ratio).astype('float32')
         self.initial_TD=np.array(initial_TD).astype('float32')
         if PR:
+            if hasattr(self.prioritized_replay, 'sum_tree'):
+                self.prioritized_replay.build(pool_size, alpha)
             if PPO:
                 self.prioritized_replay.PPO=PPO
                 self.prioritized_replay.ratio=self.initial_ratio
@@ -87,6 +89,16 @@ class RL_pytorch:
                     self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                 else:
                     self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
+                if hasattr(self.prioritized_replay, 'sum_tree'):
+                    if self.PPO:
+                        new_td = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
+                        new_ratio = self.initial_ratio if curr_len == 0 else np.max(self._get_buffer(p, 'ratio')[:curr_len])
+                        score = self.lambda_ * new_td + (1.0 - self.lambda_) * np.abs(new_ratio - 1.0)
+                        new_prio = (score + 1e-7) ** self.alpha
+                    else:
+                        new_td = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
+                        new_prio = (new_td + 1e-7) ** self.alpha
+                    self.prioritized_replay.sum_tree.add(new_prio)
             self.write_indices[p] = pos + 1
             self.pool_lengths[p] = min(curr_len + 1, self.max_exp_per_proc)
             pos = self.write_indices[p]
@@ -104,10 +116,12 @@ class RL_pytorch:
                         self.pool_lengths[p] = curr_len-self.window_size_
                         if self.PR:
                             if self.PPO:
-                                self._get_buffer(p, 'ratio')=self._get_buffer(p, 'ratio')[self.window_size_:]
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[self.window_size_:]
+                                self._get_buffer(p, 'ratio')[:curr_len-self.window_size_]=self._get_buffer(p, 'ratio')[self.window_size_:]
+                                self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
                             else:
-                                self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[self.window_size_:]
+                                self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
+                            if hasattr(self.prioritized_replay, 'sum_tree'):
+                                self.prioritized_replay.rebuild()
                 if curr_len>math.ceil(self.pool_size/self.processes):
                     if type(self.window_size)!=int:
                         window_size=int(self.window_size(p))
@@ -127,21 +141,24 @@ class RL_pytorch:
                                 self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
+                            if hasattr(self.prioritized_replay, 'sum_tree'):
+                                self.prioritized_replay.rebuild()
                     else:
-                        size = curr_len - math.ceil(self.pool_size/self.processes)
-                        self._get_buffer(p, 'state')[:curr_len-size]=self._get_buffer(p, 'state')[size:]
-                        self._get_buffer(p, 'action')[:curr_len-size]=self._get_buffer(p, 'action')[size:]
-                        self._get_buffer(p, 'next_state')[:curr_len-size]=self._get_buffer(p, 'next_state')[size:]
-                        self._get_buffer(p, 'reward')[:curr_len-size]=self._get_buffer(p, 'reward')[size:]
-                        self._get_buffer(p, 'done')[:curr_len-size]=self._get_buffer(p, 'done')[size:]
-                        self.write_indices[p] = curr_len-size
-                        self.pool_lengths[p] = curr_len-size
+                        self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
+                        self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
+                        self._get_buffer(p, 'next_state')[:curr_len-1]=self._get_buffer(p, 'next_state')[1:]
+                        self._get_buffer(p, 'reward')[:curr_len-1]=self._get_buffer(p, 'reward')[1:]
+                        self._get_buffer(p, 'done')[:curr_len-1]=self._get_buffer(p, 'done')[1:]
+                        self.write_indices[p] = curr_len-1
+                        self.pool_lengths[p] = curr_len-1
                         if self.PR:
                             if self.PPO:
-                                self._get_buffer(p, 'ratio')[:curr_len-size]=self._get_buffer(p, 'ratio')[size:]
-                                self._get_buffer(p, 'TD')[:curr_len-size]=self._get_buffer(p, 'TD')[size:]
+                                self._get_buffer(p, 'ratio')[:curr_len-1]=self._get_buffer(p, 'ratio')[1:]
+                                self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
                             else:
-                                self._get_buffer(p, 'TD')[:curr_len-size]=self._get_buffer(p, 'TD')[size:]
+                                self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
+                            if hasattr(self.prioritized_replay, 'sum_tree'):
+                                self.prioritized_replay.rebuild()
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -695,15 +712,14 @@ class RL_pytorch:
     def data_func(self, state_pool, action_pool, next_state_pool, reward_pool, done_pool):
         if self.parallel_store_and_training:
             done_length=len(done_pool)
-            curr_len = self.pool_lengths[p]
             TD_list=[]
             ratio_list=[]
             self.length_list=[]
             for p in range(self.processes):
-                TD_list.append(self._get_buffer(p, 'TD')[:curr_len])
-                self.length_list.append(curr_len)
+                TD_list.append(self._get_buffer(p, 'TD'))
+                self.length_list.append(len(TD_list[p]))
                 if self.PPO:
-                    ratio_list.append(self._get_buffer(p, 'ratio')[:curr_len])
+                    ratio_list.append(self._get_buffer(p, 'ratio')[:self.length_list[p]])
             TD=np.concat(TD_list, axis=0)
             np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[:len(TD)]=TD
             if self.PPO:
@@ -827,6 +843,24 @@ class RL_pytorch:
             curr_len = self.pool_lengths[p]
             if curr_len>math.ceil(self.pool_size/self.processes):
                 self.lock_list[p].acquire()
+                if self.clearing_freq!=None:
+                    self.store_counter[p]+=1
+                    if self.store_counter[p]%self.clearing_freq==0:
+                        self._get_buffer(p, 'state')[:curr_len-self.window_size_]=self._get_buffer(p, 'state')[self.window_size_:]
+                        self._get_buffer(p, 'action')[:curr_len-self.window_size_]=self._get_buffer(p, 'action')[self.window_size_:]
+                        self._get_buffer(p, 'next_state')[:curr_len-self.window_size_]=self._get_buffer(p, 'next_state')[self.window_size_:]
+                        self._get_buffer(p, 'reward')[:curr_len-self.window_size_]=self._get_buffer(p, 'reward')[self.window_size_:]
+                        self._get_buffer(p, 'done')[:curr_len-self.window_size_]=self._get_buffer(p, 'done')[self.window_size_:]
+                        self.write_indices[p] = curr_len-self.window_size_
+                        self.pool_lengths[p] = curr_len-self.window_size_
+                        if self.PR:
+                            if self.PPO:
+                                self._get_buffer(p, 'ratio')[:curr_len-self.window_size_]=self._get_buffer(p, 'ratio')[self.window_size_:]
+                                self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
+                            else:
+                                self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
+                            if hasattr(self.prioritized_replay, 'sum_tree'):
+                                self.prioritized_replay.rebuild()
                 if type(self.window_size)!=int:
                     window_size=int(self.window_size(p))
                 else:
@@ -840,36 +874,37 @@ class RL_pytorch:
                     self.write_indices[p] = curr_len-window_size
                     self.pool_lengths[p] = curr_len-window_size
                     if self.PR:
-                        self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[window_size:]
+                        self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                         if self.PPO:
-                            self._get_buffer(p, 'ratio')=self._get_buffer(p, 'ratio')[window_size:]
+                            self._get_buffer(p, 'ratio')[:curr_len-window_size]=self._get_buffer(p, 'ratio')[window_size:]
+                        if hasattr(self.prioritized_replay, 'sum_tree'):
+                            self.prioritized_replay.rebuild()
                 else:
-                    window_size = len(self._get_buffer(p, 'state'))-math.ceil(self.pool_size/self.processes)
-                    self._get_buffer(p, 'state')[:curr_len-window_size]=self._get_buffer(p, 'state')[window_size:]
-                    self._get_buffer(p, 'action')[:curr_len-window_size]=self._get_buffer(p, 'action')[window_size:]
-                    self._get_buffer(p, 'next_state')[:curr_len-window_size]=self._get_buffer(p, 'next_state')[window_size:]
-                    self._get_buffer(p, 'reward')[:curr_len-window_size]=self._get_buffer(p, 'reward')[window_size:]
-                    self._get_buffer(p, 'done')[:curr_len-window_size]=self._get_buffer(p, 'done')[window_size:]
-                    self.write_indices[p] = curr_len-window_size
-                    self.pool_lengths[p] = curr_len-window_size
+                    self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
+                    self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
+                    self._get_buffer(p, 'next_state')[:curr_len-1]=self._get_buffer(p, 'next_state')[1:]
+                    self._get_buffer(p, 'reward')[:curr_len-1]=self._get_buffer(p, 'reward')[1:]
+                    self._get_buffer(p, 'done')[:curr_len-1]=self._get_buffer(p, 'done')[1:]
+                    self.write_indices[p] = curr_len-1
+                    self.pool_lengths[p] = curr_len-1
                     if self.PR:
-                        self._get_buffer(p, 'TD')=self._get_buffer(p, 'TD')[len(self._get_buffer(p, 'TD'))-math.ceil(self.pool_size/self.processes):]
+                        self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
                         if self.PPO:
-                            self._get_buffer(p, 'ratio')=self._get_buffer(p, 'ratio')[len(self._get_buffer(p, 'ratio'))-math.ceil(self.pool_size/self.processes):]
+                            self._get_buffer(p, 'ratio')[:curr_len-1]=self._get_buffer(p, 'ratio')[1:]
+                        if hasattr(self.prioritized_replay, 'sum_tree'):
+                            self.prioritized_replay.rebuild()
                 self.lock_list[p].release()
                 
                 
     def train1_pr(self, loss, batches):
         if self.parallel_store_and_training:
-            state_pool, action_pool, next_state_pool, reward_pool, done_pool = self.update_pool()
-        else:
-            state_pool, action_pool, next_state_pool, reward_pool, done_pool = self.state_pool, self.action_pool, self.next_state_pool, self.reward_pool, self.done_pool
+            self.update_pool()
         state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
         loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],self.optimizer)
         if self.parallel_store_and_training:
-            np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
+            self.prioritized_replay.TD[self.prioritized_replay.index]=torch.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
             if self.PPO:
-                np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
+                self.prioritized_replay.ration[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
             self.clear_pool()
         else:
             self.prioritized_replay.update()
@@ -887,62 +922,54 @@ class RL_pytorch:
                 for p in range(self.processes):
                     if self.parallel_store_and_training:
                         self.lock_list[p].acquire()
-                    curr_len = self.pool_lengths[p]
                     if hasattr(self,'window_size_func'):
                         window_size=int(self.window_size_func(p))
                         if self.PPO:
-                            scores = self.lambda_ * self._get_buffer(p, 'TD')[:curr_len] + (1.0-self.lambda_) * tf.abs(self._get_buffer(p, 'ratio')[:curr_len] - 1.0)
+                            scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * torch.abs(self.ratio_list[p] - 1.0)
                             weights = scores + 1e-7
                         else:
-                            weights = self._get_buffer(p, 'TD')[:curr_len] + 1e-7
-                        p=weights/tf.reduce_sum(weights)
-                        idx=np.random.choice(np.arange(len(self._get_buffer(p, 'done'))),size=[len(self._get_buffer(p, 'done')[:curr_len])-window_size],p=p.numpy(),replace=False)
-                    if window_size!=None and len(self._get_buffer(p, 'done'))>window_size:
-                        self._get_buffer(p, 'state')[:len(idx)]=self._get_buffer(p, 'state')[idx]
-                        self._get_buffer(p, 'action')[:len(idx)]=self._get_buffer(p, 'action')[idx]
-                        self._get_buffer(p, 'next_state')[:len(idx)]=self._get_buffer(p, 'next_state')[idx]
-                        self._get_buffer(p, 'reward')[:len(idx)]=self._get_buffer(p, 'reward')[idx]
-                        self._get_buffer(p, 'done')[:len(idx)]=self._get_buffer(p, 'done')[idx]
-                        self.write_indices[p] = len(idx)
-                        self.pool_lengths[p] = len(idx)
+                            weights = self.TD_list[p] + 1e-7
+                        p=weights/torch.sum(weights)
+                        idx=np.random.choice(np.arange(len(self.state_pool_list[p])),size=[len(self.state_pool_list[p])-window_size],p=p.numpy(),replace=False)
+                    if window_size!=None and len(self.state_pool_list[p])>window_size:
+                        self.state_pool_list[p]=self.state_pool_list[p][idx]
+                        self.action_pool_list[p]=self.action_pool_list[p][idx]
+                        self.next_state_pool_list[p]=self.action_pool_list[p][idx]
+                        self.reward_pool_list[p]=self.action_pool_list[p][idx]
+                        self.done_pool_list[p]=self.action_pool_list[p][idx]
                         if self.PPO:
-                            self._get_buffer(p, 'ratio')[:len(idx)]=self._get_buffer(p, 'ratio')[idx]
-                        self._get_buffer(p, 'TD')[:len(idx)]=self._get_buffer(p, 'TD')[idx]
-                        if self.PPO:
-                            scores = self.lambda_ * self._get_buffer(p, 'TD')[:len(idx)] + (1.0-self.lambda_) * tf.abs(self._get_buffer(p, 'ratio')[:len(idx)] - 1.0)
-                            weights = scores + 1e-7
-                        else:
-                            weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
-                        self.ess_[p] = self.compute_ess_from_weights(weights)
+                            self.ratio_list[p]=self.ratio_list[p][idx]
+                        self.TD_list[p]=self.TD_list[p][idx]
+                        if not self.PPO:
+                            weights = self.TD_list[p] + 1e-7
+                            self.ess_[p] = self.compute_ess_from_weights(weights)
                     if self.parallel_store_and_training:
                         self.lock_list[p].release()
                 if self.PPO:
-                    ratio_list = []
-                    TD_list = []
-                    for p in range(self.processes):
-                        curr_len = self.pool_lengths[p]
-                        ratio_list.append(self._get_buffer(p, 'ratio')[:curr_len])
-                        TD_list.append(self._get_buffer(p, 'TD')[:curr_len])
-                    self.prioritized_replay.ratio = np.concat(ratio_list, axis=0)
-                    self.prioritized_replay.TD = np.concat(TD_list, axis=0)
+                    self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
+                    self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                 else:
-                    TD_list = []
-                    for p in range(self.processes):
-                        curr_len = self.pool_lengths[p]
-                        TD_list.append(self._get_buffer(p, 'TD')[:curr_len])
-                    self.prioritized_replay.TD = np.concat(TD_list, axis=0)
-                    if not self.parallel_store_and_training:
-                        state_pools = [self._get_buffer(p, 'state')[:curr_len] for p in range(self.processes)]
-                        self.state_pool = np.concatenate(state_pools, axis=0)
-                        action_pools = [self._get_buffer(p, 'action')[:curr_len] for p in range(self.processes)]
-                        self.action_pool = np.concatenate(action_pools, axis=0)
-                        next_state_pools = [self._get_buffer(p, 'next_state')[:curr_len] for p in range(self.processes)]
-                        self.next_state_pool = np.concatenate(next_state_pools, axis=0)
-                        reward_pools = [self._get_buffer(p, 'reward')[:curr_len] for p in range(self.processes)]
-                        self.reward_pool = np.concatenate(reward_pools, axis=0)
-                        done_pools = [self._get_buffer(p, 'done')[:curr_len] for p in range(self.processes)]
-                        self.done_pool = np.concatenate(done_pools, axis=0)
-            if hasattr(self, 'adjust_func') and len(len(self.prioritized_replay.TD))>=self.pool_size_:
+                    self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
+                    if self.processes_her==None and self.processes_pr==None:
+                        if self.parallel_store_and_training:
+                            self.share_state_pool[7]=np.concatenate(self.state_pool_list)
+                            self.share_action_pool[7]=np.concatenate(self.action_pool_list)
+                            self.share_next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                            self.share_reward_pool[7]=np.concatenate(self.reward_pool_list)
+                            self.share_done_pool[7]=np.concatenate(self.done_pool_list)
+                        else:
+                            self.state_pool=np.concatenate(self.state_pool_list)
+                            self.action_pool=np.concatenate(self.action_pool_list)
+                            self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool=np.concatenate(self.reward_pool_list)
+                            self.done_pool=np.concatenate(self.done_pool_list)
+                    else:
+                        self.state_pool[7]=np.concatenate(self.state_pool_list)
+                        self.action_pool[7]=np.concatenate(self.action_pool_list)
+                        self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                        self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                        self.done_pool[7]=np.concatenate(self.done_pool_list)
+            if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                 self.adjust_func()
             if self.PPO and self.batch_counter%self.update_batches==0:
                 return loss.detach().numpy()/batches
@@ -1019,11 +1046,11 @@ class RL_pytorch:
                     if hasattr(self,'window_size_func'):
                         window_size=int(self.window_size_func())
                         if self.PPO:
-                            scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * tf.abs(self.prioritized_replay.ratio - 1.0)
+                            scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * torch.abs(self.prioritized_replay.ratio - 1.0)
                             weights = scores + 1e-7
                         else:
                             weights = self.prioritized_replay.TD + 1e-7
-                        p=weights/tf.reduce_sum(weights)
+                        p=weights/torch.sum(weights)
                         idx=np.random.choice(np.arange(len(self.state_pool)),size=[len(self.state_pool)-window_size],p=p.numpy(),replace=False)
                     if window_size!=None and len(self.state_pool)>window_size:
                         self.state_pool=self.state_pool[idx]
@@ -1179,8 +1206,8 @@ class RL_pytorch:
                         index2=index1+self.pool_lengths[p]
                         self._get_buffer(p, 'TD')[:self.pool_lengths[p]]=self.prioritized_replay.TD[index1-1:index2]
         return
-            
-            
+    
+    
     def store_in_parallel(self,p):
         self.reward[p]=0
         s=self.env_(initial=True,p=p)
@@ -1193,8 +1220,8 @@ class RL_pytorch:
                     p=p
                     self.inverse_len[p]=1
                 else:
-                    inverse_len=tf.constant(self.inverse_len)
-                    total_inverse=tf.reduce_sum(inverse_len)
+                    inverse_len=torch.tensor(self.inverse_len)
+                    total_inverse=torch.sum(inverse_len)
                     prob=inverse_len/total_inverse
                     p=np.random.choice(self.processes,p=prob.numpy(),replace=False)
                     self.inverse_len[p]=1/self.pool_lengths[p]
@@ -1243,7 +1270,7 @@ class RL_pytorch:
                     self.pool(s,a,next_s,r,done,p)
                 if self.parallel_store_and_training:
                     self.lock_list[p].release()
-            self.done_length[p]=self.pool_lengths[p]
+            self.done_length[p]=len(self.done_pool_list[p])
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward[p]=r+self.reward[p]
@@ -1385,7 +1412,7 @@ class RL_pytorch:
                     if not hasattr(self,'ess_'):
                         self.ess_ = [None] * self.processes
                     if self.PPO:
-                        scores = self.lambda_ * self._get_buffer(p, 'TD')[:curr_len] + (1.0-self.lambda_) * tf.abs(self._get_buffer(p, 'ratio')[:curr_len] - 1.0)
+                        scores = self.lambda_ * self._get_buffer(p, 'TD')[:curr_len] + (1.0-self.lambda_) * torch.abs(self._get_buffer(p, 'ratio')[:curr_len] - 1.0)
                         weights = scores + 1e-7
                     else:
                         weights = self._get_buffer(p, 'TD')[:curr_len] + 1e-7
