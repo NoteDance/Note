@@ -176,6 +176,11 @@ class PR(pr):
             indices.append(data_idx)
 
         self.index = np.array(indices, dtype=np.int32)
+        
+        try:
+            self.batch.assign(batch_size)
+        except Exception:
+            self.batch=batch_size
 
         return (state_pool[indices], action_pool[indices],
                 next_state_pool[indices], reward_pool[indices],
