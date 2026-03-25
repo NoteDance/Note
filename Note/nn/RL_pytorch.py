@@ -98,7 +98,11 @@ class RL_pytorch:
                     else:
                         new_td = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                         new_prio = (new_td + 1e-7) ** self.alpha
-                    self.prioritized_replay.sum_tree.update(p * self.max_exp_per_proc + pos, new_prio)
+                    global_idx = 0
+                    for i in range(p):
+                        global_idx += self.pool_lengths[i]
+                    global_idx += pos
+                    self.prioritized_replay.sum_tree.update(global_idx, new_prio)
             self.write_indices[p] = pos + 1
             self.pool_lengths[p] = min(curr_len + 1, self.max_exp_per_proc)
             pos = self.write_indices[p]
