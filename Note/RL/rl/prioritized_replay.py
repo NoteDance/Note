@@ -87,8 +87,6 @@ class SumTree:
             self.tree = mp.Array('f', 2 * capacity - 1)
         else:
             self.tree = np.zeros(2 * capacity - 1, dtype=np.float32)
-        self.data_pointer = 0
-        self.full = False
     
     def _get_buffer(self):
         return np.frombuffer(self.tree.get_obj(), dtype=np.float32)
@@ -103,21 +101,12 @@ class SumTree:
             tree[parent] += change
             parent = (parent - 1) // 2
 
-    def update(self, idx: int, priority: float):
-        if self.pool_network:
-            tree = self._get_buffer()
-        else:
-            tree = self.tree
-        change = priority - self.tree[idx]
-        tree[idx] = priority
-        self._propagate(idx, change)
-
-    def add(self, priority: float):
-        tree_idx = self.capacity - 1 + self.data_pointer
-        self.update(tree_idx, priority)
-        self.data_pointer = (self.data_pointer + 1) % self.capacity
-        if self.data_pointer == 0:
-            self.full = True
+    def update(self, data_idx: int, priority: float):
+        tree = self._get_buffer()
+        tree_idx = self.capacity - 1 + data_idx
+        change = priority - tree[tree_idx]
+        tree[tree_idx] = priority
+        self._propagate(tree_idx, change)
 
     def get_leaf(self, value: float):
         if self.pool_network:
@@ -190,7 +179,7 @@ class PR(pr):
         else:
             self.sum_tree.tree.fill(0.0)
         for i in range(len(prios)):
-            self.sum_tree.update(self.capacity - 1 + i, prios[i])
+            self.sum_tree.update(i, prios[i])
 
     def sample(self, state_pool, action_pool, next_state_pool, reward_pool, done_pool,
                lambda_, alpha, batch_size):
@@ -232,7 +221,7 @@ class PR(pr):
         for i, td in enumerate(td_errors):
             data_idx = self.index[i]
             prio = (abs(td) + 1e-7) ** self.alpha
-            self.sum_tree.update(self.capacity - 1 + data_idx, prio)
+            self.sum_tree.update(data_idx, prio)
 
 
 class pr_mp:
