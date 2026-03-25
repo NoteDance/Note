@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Note import nn
-from Note.DL.dl.prioritized_replay import pr
+import Note.DL.dl.prioritized_replay.PR as PR_
 import multiprocessing
 from multiprocessing import shared_memory
 import numpy as np
@@ -946,7 +946,8 @@ class Model:
         self.min_num_updates=min_num_updates
         self.max_num_updates=max_num_updates
         if PR:
-            self.prioritized_replay=pr()
+            self.prioritized_replay=PR_()
+            self.prioritized_replay.build(len(train_data), alpha)
             self.prioritized_replay.loss=np.zeros(len(train_data), dtype=np.float32)
             self.prioritized_replay.loss_=tf.Variable(tf.zeros([self.batch_size]))
         if test_ds!=None:
@@ -1025,7 +1026,7 @@ class Model:
                     if self.PR and epoch % 2 != 0:
                         self.prioritized_replay.update()
                     elif self.PR:
-                        self.prioritized_replay.update(index=(index1, index2))
+                        self.prioritized_replay.update_loss(index=(index1, index2))
                     batch_logs = {'loss': loss.numpy()}
                     if train_accuracy != None:
                         batch_logs['accuracy'] = acc.numpy()
@@ -1217,7 +1218,7 @@ class Model:
                     if self.PR and i % 2 != 0:
                         self.prioritized_replay.update()
                     elif self.PR:
-                        self.prioritized_replay.update(index=(index1, index2))
+                        self.prioritized_replay.update_loss(index=(index1, index2))
                     batch_logs = {'loss': loss.numpy()}
                     if train_accuracy != None:
                         batch_logs['accuracy'] = acc.numpy()
@@ -1461,7 +1462,8 @@ class Model:
         self.min_num_updates=min_num_updates
         self.max_num_updates=max_num_updates
         if PR:
-            self.prioritized_replay=pr()
+            self.prioritized_replay=PR_()
+            self.prioritized_replay.build(len(train_data), alpha)
             self.prioritized_replay.loss=np.zeros(len(train_data), dtype=np.float32)
             self.prioritized_replay.loss_=tf.Variable(tf.zeros([self.batch_size]))
         self.global_test_batch_size=global_test_batch_size
@@ -1555,7 +1557,7 @@ class Model:
                         if self.PR and epoch % 2 != 0:
                             self.prioritized_replay.update()
                         elif self.PR:
-                            self.prioritized_replay.update(index=(index1, index2))
+                            self.prioritized_replay.update_loss(index=(index1, index2))
                         total_loss += loss
                         
                         batch_logs = {'loss': loss.numpy()}
@@ -1769,7 +1771,7 @@ class Model:
                         if self.PR and i % 2 != 0:
                             self.prioritized_replay.update()
                         elif self.PR:
-                            self.prioritized_replay.update(index=(index1, index2))
+                            self.prioritized_replay.update_loss(index=(index1, index2))
                         total_loss += loss
                         
                         batch_logs = {'loss': loss.numpy()}
@@ -2579,7 +2581,7 @@ class Model:
             if self.PR and self.total_epoch % 2 != 0:
                 self.prioritized_replay.update()
             elif self.PR:
-                self.prioritized_replay.update(index=(index1, index2))
+                self.prioritized_replay.update_loss(index=(index1, index2))
             total_loss += loss
             batch_logs = {'loss': loss.numpy()}
             if train_accuracy != None:
@@ -2695,7 +2697,7 @@ class Model:
             if self.PR and self.total_epoch % 2 != 0:
                 self.prioritized_replay.update()
             elif self.PR:
-                self.prioritized_replay.update(index=(index1, index2))
+                self.prioritized_replay.update_loss(index=(index1, index2))
             total_loss += loss
             batch_logs = {'loss': loss.fetch()}
             if train_accuracy != None:

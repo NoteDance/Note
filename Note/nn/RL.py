@@ -198,7 +198,7 @@ class RL:
                     else:
                         new_td = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                         new_prio = (new_td + 1e-7) ** self.alpha
-                    self.prioritized_replay.sum_tree.add(new_prio)
+                    self.prioritized_replay.sum_tree.update(pos, new_prio)
             self.write_indices[p] = pos + 1
             self.pool_lengths[p] = min(curr_len + 1, self.max_exp_per_proc)
             pos = self.write_indices[p]
@@ -2744,8 +2744,6 @@ class RL:
         self.episodes=episodes
         self.num_episodes=num_episodes
         self.pool_network=pool_network
-        if pool_network:
-            manager=mp.Manager()
         self.parallel_store_and_training=parallel_store_and_training
         self.parallel_training_and_save=parallel_training_and_save
         self.parallel_pickle=parallel_dump
