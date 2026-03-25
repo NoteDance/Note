@@ -716,8 +716,9 @@ class RL_pytorch:
             ratio_list=[]
             self.length_list=[]
             for p in range(self.processes):
-                TD_list.append(self._get_buffer(p, 'TD'))
-                self.length_list.append(len(TD_list[p]))
+                curr_len = self.pool_lengths[p]
+                TD_list.append(self._get_buffer(p, 'TD')[:curr_len])
+                self.length_list.append(curr_len)
                 if self.PPO:
                     ratio_list.append(self._get_buffer(p, 'ratio')[:self.length_list[p]])
             TD=np.concat(TD_list, axis=0)
