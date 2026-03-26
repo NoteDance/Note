@@ -80,22 +80,15 @@ class pr:
 
 
 class SumTree:
-    def __init__(self, capacity: int, pool_network: bool):
+    def __init__(self, capacity: int):
         self.capacity = capacity
-        self.pool_network = pool_network
-        if pool_network:
-            self.tree = mp.Array('f', 2 * capacity - 1)
-        else:
-            self.tree = np.zeros(2 * capacity - 1, dtype=np.float32)
+        self.tree = mp.Array('f', 2 * capacity - 1)
     
     def _get_buffer(self):
         return np.frombuffer(self.tree.get_obj(), dtype=np.float32)
 
     def _propagate(self, idx: int, change: float):
-        if self.pool_network:
-            tree = self._get_buffer()
-        else:
-            tree = self.tree
+        tree = self._get_buffer()
         parent = (idx - 1) // 2
         while parent >= 0:
             tree[parent] += change
@@ -109,10 +102,7 @@ class SumTree:
         self._propagate(tree_idx, change)
 
     def get_leaf(self, value: float):
-        if self.pool_network:
-            tree = self._get_buffer()
-        else:
-            tree = self.tree
+        tree = self._get_buffer()
         parent_idx = 0
         while True:
             left = 2 * parent_idx + 1
@@ -129,22 +119,13 @@ class SumTree:
         return leaf_idx, tree[leaf_idx], data_idx
 
     def total(self):
-        if self.pool_network:
-            tree = self._get_buffer()
-        else:
-            tree = self.tree
+        tree = self._get_buffer()
         return tree[0]
 
 
 class PR(pr):
     def __init__(self):
-        self.sum_tree = None
-        self.pool_network = True
-
-    def build(self, capacity: int, alpha: float = 0.7):
-        self.capacity = capacity
-        self.alpha = alpha
-        self.sum_tree = SumTree(capacity, self.pool_network)
+        self.sum_trees = None
         
     @tf.function(jit_compile=True)
     def compute_prios(self, td_errors, alpha):
@@ -154,54 +135,59 @@ class PR(pr):
     def compute_prios_(self, td_errors, alpha):
         return tf.pow(td_errors + 1e-7, alpha)
 
-    def rebuild(self):
+    def rebuild(self, p):
         if self.PPO:
             try:
-                scores = self.lambda_ * self.TD + (1.0 - self.lambda_) * np.abs(self.ratio - 1.0)
+                scores = self.lambda_ * self._get_buffer(p, 'TD') + (1.0 - self.lambda_) * np.abs(self._get_buffer(p, 'ratio') - 1.0)
                 if self.jit_compile:
                     prios=self.compute_prios(scores, self.alpha)
                 else:
                     prios=self.compute_prios_(scores, self.alpha)
             except Exception:
-                scores=self.lambda_*self.TD+(1.0-self.lambda_)*torch.abs(self.ratio-1.0)
+                scores=self.lambda_*self._get_buffer(p, 'TD')+(1.0-self.lambda_)*torch.abs(self._get_buffer(p, 'ratio')-1.0)
                 prios=torch.pow(scores+1e-7,self.alpha)
         else:
             try:
                 if self.jit_compile:
-                    prios=self.compute_prios(self.TD, self.alpha)
+                    prios=self.compute_prios(self._get_buffer(p, 'TD'), self.alpha)
                 else:
-                    prios=self.compute_prios_(self.TD, self.alpha)
+                    prios=self.compute_prios_(self._get_buffer(p, 'TD'), self.alpha)
             except Exception:
-                prios=(self.TD+1e-7)**self.alpha
+                prios=(self._get_buffer(p, 'TD')+1e-7)**self.alpha
                 
-        if self.pool_network:
-            self.sum_tree.self._get_buffer().fill(0.0)
-        else:
-            self.sum_tree.tree.fill(0.0)
-        for i in range(len(prios)):
-            self.sum_tree.update(i, prios[i])
+        np.frombuffer(self.sum_trees[p].tree.get_obj(), dtype=np.float32).fill(0.0)
+        for i, prio in enumerate(prios):
+            self.sum_trees[p].update(i, float(prio))
 
     def sample(self, state_pool, action_pool, next_state_pool, reward_pool, done_pool,
                lambda_, alpha, batch_size):
         self.lambda_ = lambda_
 
+        totals = [t.total() for t in self.sum_trees]
+        grand_total = sum(totals)
         indices = []
-        segment = self.sum_tree.total() / batch_size
+        segment = grand_total / batch_size
+    
         for i in range(batch_size):
             val = np.random.uniform(segment * i, segment * (i + 1))
-            _, _, data_idx = self.sum_tree.get_leaf(val)
-            indices.append(data_idx)
-
+            for proc, t in enumerate(self.sum_trees):
+                if val <= totals[proc]:
+                    _, _, local_idx = t.get_leaf(val)
+                    offset = sum(self.length_list[q] for q in range(proc))
+                    global_idx = offset + local_idx
+                    indices.append(min(global_idx, len(state_pool) - 1))
+                    break
+                val -= totals[proc]
+    
         self.index = np.array(indices, dtype=np.int32)
-        
         try:
             self.batch.assign(batch_size)
         except Exception:
-            self.batch=batch_size
-
-        return (state_pool[indices], action_pool[indices],
-                next_state_pool[indices], reward_pool[indices],
-                done_pool[indices])
+            self.batch = batch_size
+    
+        return (state_pool[self.index], action_pool[self.index],
+                next_state_pool[self.index], reward_pool[self.index],
+                done_pool[self.index])
 
     def update(self):
         try:
@@ -218,10 +204,15 @@ class PR(pr):
                 td_errors = score.numpy()
             else:
                 td_errors = torch.abs(self.TD_[:self.batch]).numpy()
-        for i, td in enumerate(td_errors):
-            data_idx = self.index[i]
-            prio = (abs(td) + 1e-7) ** self.alpha
-            self.sum_tree.update(data_idx, prio)
+        for j, global_idx in enumerate(self.index):
+            cumlen = 0
+            for proc, length in enumerate(self.length_list):
+                if global_idx < cumlen + length:
+                    local_idx = global_idx - cumlen
+                    prio = (float(abs(td_errors[j])) + 1e-7) ** self.alpha
+                    self.sum_trees[proc].update(local_idx, prio)
+                    break
+                cumlen += length
 
 
 class pr_mp:
