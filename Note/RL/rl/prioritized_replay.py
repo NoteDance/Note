@@ -135,25 +135,25 @@ class PR(pr):
     def compute_prios_(self, td_errors, alpha):
         return tf.pow(td_errors + 1e-7, alpha)
 
-    def rebuild(self, p):
+    def rebuild(self, p, TD, ratio=None):
         if self.PPO:
             try:
-                scores = self.lambda_ * self._get_buffer(p, 'TD') + (1.0 - self.lambda_) * np.abs(self._get_buffer(p, 'ratio') - 1.0)
+                scores = self.lambda_ * TD + (1.0 - self.lambda_) * np.abs(ratio - 1.0)
                 if self.jit_compile:
                     prios=self.compute_prios(scores, self.alpha)
                 else:
                     prios=self.compute_prios_(scores, self.alpha)
             except Exception:
-                scores=self.lambda_*self._get_buffer(p, 'TD')+(1.0-self.lambda_)*torch.abs(self._get_buffer(p, 'ratio')-1.0)
+                scores=self.lambda_*TD+(1.0-self.lambda_)*torch.abs(ratio-1.0)
                 prios=torch.pow(scores+1e-7,self.alpha)
         else:
             try:
                 if self.jit_compile:
-                    prios=self.compute_prios(self._get_buffer(p, 'TD'), self.alpha)
+                    prios=self.compute_prios(TD, self.alpha)
                 else:
-                    prios=self.compute_prios_(self._get_buffer(p, 'TD'), self.alpha)
+                    prios=self.compute_prios_(TD, self.alpha)
             except Exception:
-                prios=(self._get_buffer(p, 'TD')+1e-7)**self.alpha
+                prios=(TD+1e-7)**self.alpha
                 
         np.frombuffer(self.sum_trees[p].tree.get_obj(), dtype=np.float32).fill(0.0)
         for i, prio in enumerate(prios):
