@@ -219,7 +219,13 @@ class RL:
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
                             if hasattr(self.prioritized_replay, 'sum_trees'):
-                                self.prioritized_replay.rebuild(p)
+                                if self.PPO:
+                                    ratio = self._get_buffer(p, 'ratio')
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD, ratio)
+                                else:
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD)
                 if curr_len==math.ceil(self.pool_size/self.processes):
                     if type(self.window_size)!=int:
                         window_size=int(self.window_size(p))
@@ -240,7 +246,13 @@ class RL:
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                             if hasattr(self.prioritized_replay, 'sum_trees'):
-                                self.prioritized_replay.rebuild(p)
+                                if self.PPO:
+                                    ratio = self._get_buffer(p, 'ratio')
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD, ratio)
+                                else:
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD)
                     else:
                         self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
                         self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
@@ -256,7 +268,13 @@ class RL:
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
                             if hasattr(self.prioritized_replay, 'sum_trees'):
-                                self.prioritized_replay.rebuild(p)
+                                if self.PPO:
+                                    ratio = self._get_buffer(p, 'ratio')
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD, ratio)
+                                else:
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD)
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -1070,7 +1088,13 @@ class RL:
                                 weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                             self.ess_[p] = self.compute_ess_from_weights(weights)
                             if hasattr(self.prioritized_replay, 'sum_trees'):
-                                self.prioritized_replay.rebuild(p)
+                                if self.PPO:
+                                    ratio = self._get_buffer(p, 'ratio')
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD, ratio)
+                                else:
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD)
                         if self.parallel_store_and_training:
                             self.lock_list[p].release()
                     if self.PPO:
@@ -1233,7 +1257,13 @@ class RL:
                                 weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                             self.ess_[p] = self.compute_ess_from_weights(weights)
                             if hasattr(self.prioritized_replay, 'sum_trees'):
-                                self.prioritized_replay.rebuild(p)
+                                if self.PPO:
+                                    ratio = self._get_buffer(p, 'ratio')
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD, ratio)
+                                else:
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD)
                         if self.parallel_store_and_training:
                             self.lock_list[p].release()
                     if self.PPO:
@@ -1364,7 +1394,13 @@ class RL:
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
                             if hasattr(self.prioritized_replay, 'sum_trees'):
-                                self.prioritized_replay.rebuild(p)
+                                if self.PPO:
+                                    ratio = self._get_buffer(p, 'ratio')
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD, ratio)
+                                else:
+                                    TD = self._get_buffer(p, 'TD')
+                                    self.prioritized_replay.rebuild(p, TD)
                 if type(self.window_size)!=int:
                     window_size=int(self.window_size(p))
                 else:
@@ -1382,7 +1418,13 @@ class RL:
                         if self.PPO:
                             self._get_buffer(p, 'ratio')[:curr_len-window_size]=self._get_buffer(p, 'ratio')[window_size:]
                         if hasattr(self.prioritized_replay, 'sum_trees'):
-                            self.prioritized_replay.rebuild(p)
+                            if self.PPO:
+                                ratio = self._get_buffer(p, 'ratio')
+                                TD = self._get_buffer(p, 'TD')
+                                self.prioritized_replay.rebuild(p, TD, ratio)
+                            else:
+                                TD = self._get_buffer(p, 'TD')
+                                self.prioritized_replay.rebuild(p, TD)
                 else:
                     self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
                     self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
@@ -1396,7 +1438,13 @@ class RL:
                         if self.PPO:
                             self._get_buffer(p, 'ratio')[:curr_len-1]=self._get_buffer(p, 'ratio')[1:]
                         if hasattr(self.prioritized_replay, 'sum_trees'):
-                            self.prioritized_replay.rebuild(p)
+                            if self.PPO:
+                                ratio = self._get_buffer(p, 'ratio')
+                                TD = self._get_buffer(p, 'TD')
+                                self.prioritized_replay.rebuild(p, TD, ratio)
+                            else:
+                                TD = self._get_buffer(p, 'TD')
+                                self.prioritized_replay.rebuild(p, TD)
                 self.lock_list[p].release()
     
     
@@ -1470,7 +1518,13 @@ class RL:
                                     weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                                 self.ess_[p] = self.compute_ess_from_weights(weights)
                                 if hasattr(self.prioritized_replay, 'sum_trees'):
-                                    self.prioritized_replay.rebuild(p)
+                                    if self.PPO:
+                                        ratio = self._get_buffer(p, 'ratio')
+                                        TD = self._get_buffer(p, 'TD')
+                                        self.prioritized_replay.rebuild(p, TD, ratio)
+                                    else:
+                                        TD = self._get_buffer(p, 'TD')
+                                        self.prioritized_replay.rebuild(p, TD)
                             if self.parallel_store_and_training:
                                 self.lock_list[p].release()
                         if self.PPO:
@@ -1582,7 +1636,13 @@ class RL:
                                     weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                                 self.ess_[p] = self.compute_ess_from_weights(weights)
                                 if hasattr(self.prioritized_replay, 'sum_trees'):
-                                    self.prioritized_replay.rebuild(p)
+                                    if self.PPO:
+                                        ratio = self._get_buffer(p, 'ratio')
+                                        TD = self._get_buffer(p, 'TD')
+                                        self.prioritized_replay.rebuild(p, TD, ratio)
+                                    else:
+                                        TD = self._get_buffer(p, 'TD')
+                                        self.prioritized_replay.rebuild(p, TD)
                             if self.parallel_store_and_training:
                                 self.lock_list[p].release()
                         if self.PPO:
