@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 import multiprocessing as mp
 from Note.RL import rl
 from Note.RL.rl.prioritized_replay import PR
+from Note.RL.rl.prioritized_replay import SumTree
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -25,7 +26,6 @@ class RL_pytorch:
         self.step_counter=0
         self.store_counter=0
         self.prioritized_replay=PR()
-        self.buffer_safety_factor=1
         self.seed=7
         self.path=None
         self.save_freq=1
@@ -61,8 +61,6 @@ class RL_pytorch:
         self.initial_ratio=np.array(initial_ratio).astype('float32')
         self.initial_TD=np.array(initial_TD).astype('float32')
         if PR:
-            if hasattr(self.prioritized_replay, 'sum_tree'):
-                self.prioritized_replay.build(pool_size, alpha)
             if PPO:
                 self.prioritized_replay.PPO=PPO
                 self.prioritized_replay.ratio=self.initial_ratio
@@ -89,7 +87,7 @@ class RL_pytorch:
                     self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                 else:
                     self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
-                if hasattr(self.prioritized_replay, 'sum_tree'):
+                if hasattr(self.prioritized_replay, 'sum_trees'):
                     if self.PPO:
                         new_td = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                         new_ratio = self.initial_ratio if curr_len == 0 else np.max(self._get_buffer(p, 'ratio')[:curr_len])
@@ -98,13 +96,9 @@ class RL_pytorch:
                     else:
                         new_td = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                         new_prio = (new_td + 1e-7) ** self.alpha
-                    global_idx = 0
-                    for i in range(p):
-                        global_idx += self.pool_lengths[i]
-                    global_idx += pos
-                    self.prioritized_replay.sum_tree.update(global_idx, new_prio)
+                    self.prioritized_replay.sum_trees[p].update(pos, new_prio)
             self.write_indices[p] = pos + 1
-            self.pool_lengths[p] = min(curr_len + 1, self.max_exp_per_proc)
+            self.pool_lengths[p] = min(curr_len + 1, self.exp_per_proc)
             pos = self.write_indices[p]
             curr_len = self.pool_lengths[p]
             if not self.parallel_store_and_training or (self.parallel_store_and_training and not self.PR):
@@ -124,8 +118,8 @@ class RL_pytorch:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
-                            if hasattr(self.prioritized_replay, 'sum_tree'):
-                                self.prioritized_replay.rebuild()
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                self.prioritized_replay.rebuild(p)
                 if curr_len==math.ceil(self.pool_size/self.processes):
                     if type(self.window_size)!=int:
                         window_size=int(self.window_size(p))
@@ -145,8 +139,8 @@ class RL_pytorch:
                                 self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
-                            if hasattr(self.prioritized_replay, 'sum_tree'):
-                                self.prioritized_replay.rebuild()
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                self.prioritized_replay.rebuild(p)
                     else:
                         self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
                         self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
@@ -161,8 +155,8 @@ class RL_pytorch:
                                 self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
-                            if hasattr(self.prioritized_replay, 'sum_tree'):
-                                self.prioritized_replay.rebuild()
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                self.prioritized_replay.rebuild(p)
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -740,6 +734,7 @@ class RL_pytorch:
             if self.PPO:
                 self.prioritized_replay.ratio=np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[:length]
             self.length_list[-1]=self.length_list[-1]-(len(TD)-len(self.prioritized_replay.TD))
+            self.prioritized_replay.length_list = self.length_list
         if self.PR:
             s,a,next_s,r,d=self.prioritized_replay.sample(state_pool,action_pool,next_state_pool,reward_pool,done_pool,self.lambda_,self.alpha,self.batch)
         elif self.HER:
@@ -864,8 +859,8 @@ class RL_pytorch:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
-                            if hasattr(self.prioritized_replay, 'sum_tree'):
-                                self.prioritized_replay.rebuild()
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                self.prioritized_replay.rebuild(p)
                 if type(self.window_size)!=int:
                     window_size=int(self.window_size(p))
                 else:
@@ -882,8 +877,8 @@ class RL_pytorch:
                         self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                         if self.PPO:
                             self._get_buffer(p, 'ratio')[:curr_len-window_size]=self._get_buffer(p, 'ratio')[window_size:]
-                        if hasattr(self.prioritized_replay, 'sum_tree'):
-                            self.prioritized_replay.rebuild()
+                        if hasattr(self.prioritized_replay, 'sum_trees'):
+                            self.prioritized_replay.rebuild(p)
                 else:
                     self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
                     self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
@@ -896,8 +891,8 @@ class RL_pytorch:
                         self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
                         if self.PPO:
                             self._get_buffer(p, 'ratio')[:curr_len-1]=self._get_buffer(p, 'ratio')[1:]
-                        if hasattr(self.prioritized_replay, 'sum_tree'):
-                            self.prioritized_replay.rebuild()
+                        if hasattr(self.prioritized_replay, 'sum_trees'):
+                            self.prioritized_replay.rebuild(p)
                 self.lock_list[p].release()
                 
                 
@@ -956,6 +951,8 @@ class RL_pytorch:
                         else:
                             weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                         self.ess_[p] = self.compute_ess_from_weights(weights)
+                        if hasattr(self.prioritized_replay, 'sum_trees'):
+                            self.prioritized_replay.rebuild(p)
                     if self.parallel_store_and_training:
                         self.lock_list[p].release()
                 if self.PPO:
@@ -1451,28 +1448,33 @@ class RL_pytorch:
         self.shared_ratios = []
 
         for _ in range(processes):
-            self.shared_states.append(mp.Array('f', self.max_exp_per_proc * s_elements))
-            self.shared_next_states.append(mp.Array('f', self.max_exp_per_proc * s_elements))
-            self.shared_actions.append(mp.Array('f', self.max_exp_per_proc * a_elements))
-            self.shared_rewards.append(mp.Array('f', self.max_exp_per_proc))
-            self.shared_dones.append(mp.Array('f', self.max_exp_per_proc))
+            self.shared_states.append(mp.Array('f', self.exp_per_proc * s_elements))
+            self.shared_next_states.append(mp.Array('f', self.exp_per_proc * s_elements))
+            self.shared_actions.append(mp.Array('f', self.exp_per_proc * a_elements))
+            self.shared_rewards.append(mp.Array('f', self.exp_per_proc))
+            self.shared_dones.append(mp.Array('f', self.exp_per_proc))
 
             if self.PR:
-                self.shared_TDs.append(mp.Array('f', self.max_exp_per_proc))
+                self.shared_TDs.append(mp.Array('f', self.exp_per_proc))
                 if self.PPO:
-                    self.shared_ratios.append(mp.Array('f', self.max_exp_per_proc))
-    
+                    self.shared_ratios.append(mp.Array('f', self.exp_per_proc))
+                if hasattr(self.prioritized_replay, 'sum_trees'):
+                    self.prioritized_replay.sum_trees = [
+                        SumTree(self.exp_per_proc, pool_network=True)
+                        for _ in range(processes)
+                    ]
+
     
     def _get_buffer(self, p, field):
         if field == 'state':
             arr = np.frombuffer(self.shared_states[p].get_obj(), dtype=np.float32)
-            return arr.reshape((self.max_exp_per_proc,) + self.state_shape)
+            return arr.reshape((self.exp_per_proc,) + self.state_shape)
         if field == 'action':
             arr = np.frombuffer(self.shared_actions[p].get_obj(), dtype=np.float32)
-            return arr.reshape((self.max_exp_per_proc,) + self.action_shape)
+            return arr.reshape((self.exp_per_proc,) + self.action_shape)
         if field == 'next_state':
             arr = np.frombuffer(self.shared_next_states[p].get_obj(), dtype=np.float32)
-            return arr.reshape((self.max_exp_per_proc,) + self.next_state_shape)
+            return arr.reshape((self.exp_per_proc,) + self.next_state_shape)
         if field == 'reward':
             return np.frombuffer(self.shared_rewards[p].get_obj(), dtype=np.float32)
         if field == 'done':
@@ -1481,6 +1483,8 @@ class RL_pytorch:
             return np.frombuffer(self.shared_TDs[p].get_obj(), dtype=np.float32)
         if field == 'ratio':
             return np.frombuffer(self.shared_ratios[p].get_obj(), dtype=np.float32)
+        if field == 'sum_trees':
+            return np.frombuffer(self.sum_trees[p].get_obj(), dtype=np.float32)
     
     
     def train(self, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, p=None):
@@ -1551,7 +1555,7 @@ class RL_pytorch:
                     dummy_a = np.asarray(dummy_a)
                 self.action_shape = dummy_a.shape if dummy_a.ndim > 0 else (1,)
                 self.next_state_shape = self.state_shape
-            self.max_exp_per_proc = math.ceil(self.pool_size / self.processes * self.buffer_safety_factor)
+            self.exp_per_proc = math.ceil(self.pool_size / self.processes)
             self._init_shared_experience_buffers(processes)
             if save_data:
                 self.pool_lengths = manager.list(self.pool_lengths)

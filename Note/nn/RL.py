@@ -5,6 +5,7 @@ import multiprocessing as mp
 from multiprocessing import shared_memory
 from Note.RL import rl
 from Note.RL.rl.prioritized_replay import PR
+from Note.RL.rl.prioritized_replay import SumTree
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -28,7 +29,6 @@ class RL:
         self.step_counter=0
         self.store_counter=0
         self.prioritized_replay=PR()
-        self.buffer_safety_factor=1
         self.seed=7
         self.path=None
         self.save_freq=1
@@ -156,8 +156,6 @@ class RL:
         self.initial_ratio=np.array(initial_ratio).astype('float32')
         self.initial_TD=np.array(initial_TD).astype('float32')
         if PR:
-            if hasattr(self.prioritized_replay, 'sum_tree'):
-                self.prioritized_replay.build(pool_size, alpha)
             if PPO:
                 self.prioritized_replay.PPO=PPO
                 self.prioritized_replay.ratio=self.initial_ratio
@@ -189,7 +187,7 @@ class RL:
                     self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                 else:
                     self._get_buffer(p, 'TD')[pos] = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
-                if hasattr(self.prioritized_replay, 'sum_tree'):
+                if hasattr(self.prioritized_replay, 'sum_trees'):
                     if self.PPO:
                         new_td = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                         new_ratio = self.initial_ratio if curr_len == 0 else np.max(self._get_buffer(p, 'ratio')[:curr_len])
@@ -198,13 +196,9 @@ class RL:
                     else:
                         new_td = self.initial_TD if curr_len == 0 else np.max(self._get_buffer(p, 'TD')[:curr_len])
                         new_prio = (new_td + 1e-7) ** self.alpha
-                    global_idx = 0
-                    for i in range(p):
-                        global_idx += self.pool_lengths[i]
-                    global_idx += pos
-                    self.prioritized_replay.sum_tree.update(global_idx, new_prio)
+                    self.prioritized_replay.sum_trees[p].update(pos, new_prio)
             self.write_indices[p] = pos + 1
-            self.pool_lengths[p] = min(curr_len + 1, self.max_exp_per_proc)
+            self.pool_lengths[p] = min(curr_len + 1, self.exp_per_proc)
             pos = self.write_indices[p]
             curr_len = self.pool_lengths[p]
             if not self.parallel_store_and_training or (self.parallel_store_and_training and not self.PR):
@@ -224,8 +218,8 @@ class RL:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
-                            if hasattr(self.prioritized_replay, 'sum_tree'):
-                                self.prioritized_replay.rebuild()
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                self.prioritized_replay.rebuild(p)
                 if curr_len==math.ceil(self.pool_size/self.processes):
                     if type(self.window_size)!=int:
                         window_size=int(self.window_size(p))
@@ -245,8 +239,8 @@ class RL:
                                 self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
-                            if hasattr(self.prioritized_replay, 'sum_tree'):
-                                self.prioritized_replay.rebuild()
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                self.prioritized_replay.rebuild(p)
                     else:
                         self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
                         self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
@@ -261,8 +255,8 @@ class RL:
                                 self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
-                            if hasattr(self.prioritized_replay, 'sum_tree'):
-                                self.prioritized_replay.rebuild()
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                self.prioritized_replay.rebuild(p)
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -881,6 +875,7 @@ class RL:
             if self.PPO:
                 self.prioritized_replay.ratio=np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[:length]
             self.length_list[-1]=self.length_list[-1]-(len(TD)-len(self.prioritized_replay.TD))
+            self.prioritized_replay.length_list = self.length_list
         if self.PR:
             s,a,next_s,r,d=self.prioritized_replay.sample(state_pool,action_pool,next_state_pool,reward_pool,done_pool,self.lambda_,self.alpha,self.batch)
         elif self.HER:
@@ -1028,7 +1023,7 @@ class RL:
                 np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                 if self.PPO:
                     np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
-                if hasattr(self.prioritized_replay, 'sum_tree'):
+                if hasattr(self.prioritized_replay, 'sum_trees'):
                     self.prioritized_replay.update()
                 self.clear_pool()
             else:
@@ -1074,6 +1069,8 @@ class RL:
                             else:
                                 weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                             self.ess_[p] = self.compute_ess_from_weights(weights)
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                self.prioritized_replay.rebuild(p)
                         if self.parallel_store_and_training:
                             self.lock_list[p].release()
                     if self.PPO:
@@ -1189,7 +1186,7 @@ class RL:
                 np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                 if self.PPO:
                     np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
-                if hasattr(self.prioritized_replay, 'sum_tree'):
+                if hasattr(self.prioritized_replay, 'sum_trees'):
                     self.prioritized_replay.update()
                 self.clear_pool()
             else:
@@ -1235,6 +1232,8 @@ class RL:
                             else:
                                 weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                             self.ess_[p] = self.compute_ess_from_weights(weights)
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                self.prioritized_replay.rebuild(p)
                         if self.parallel_store_and_training:
                             self.lock_list[p].release()
                     if self.PPO:
@@ -1364,8 +1363,8 @@ class RL:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
                             else:
                                 self._get_buffer(p, 'TD')[:curr_len-self.window_size_]=self._get_buffer(p, 'TD')[self.window_size_:]
-                            if hasattr(self.prioritized_replay, 'sum_tree'):
-                                self.prioritized_replay.rebuild()
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                self.prioritized_replay.rebuild(p)
                 if type(self.window_size)!=int:
                     window_size=int(self.window_size(p))
                 else:
@@ -1382,8 +1381,8 @@ class RL:
                         self._get_buffer(p, 'TD')[:curr_len-window_size]=self._get_buffer(p, 'TD')[window_size:]
                         if self.PPO:
                             self._get_buffer(p, 'ratio')[:curr_len-window_size]=self._get_buffer(p, 'ratio')[window_size:]
-                        if hasattr(self.prioritized_replay, 'sum_tree'):
-                            self.prioritized_replay.rebuild()
+                        if hasattr(self.prioritized_replay, 'sum_trees'):
+                            self.prioritized_replay.rebuild(p)
                 else:
                     self._get_buffer(p, 'state')[:curr_len-1]=self._get_buffer(p, 'state')[1:]
                     self._get_buffer(p, 'action')[:curr_len-1]=self._get_buffer(p, 'action')[1:]
@@ -1396,8 +1395,8 @@ class RL:
                         self._get_buffer(p, 'TD')[:curr_len-1]=self._get_buffer(p, 'TD')[1:]
                         if self.PPO:
                             self._get_buffer(p, 'ratio')[:curr_len-1]=self._get_buffer(p, 'ratio')[1:]
-                        if hasattr(self.prioritized_replay, 'sum_tree'):
-                            self.prioritized_replay.rebuild()
+                        if hasattr(self.prioritized_replay, 'sum_trees'):
+                            self.prioritized_replay.rebuild(p)
                 self.lock_list[p].release()
     
     
@@ -1422,7 +1421,7 @@ class RL:
                     np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                     if self.PPO:
                         np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
-                    if hasattr(self.prioritized_replay, 'sum_tree'):
+                    if hasattr(self.prioritized_replay, 'sum_trees'):
                         self.prioritized_replay.update()
                     self.clear_pool()
                 else:
@@ -1470,6 +1469,8 @@ class RL:
                                 else:
                                     weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                                 self.ess_[p] = self.compute_ess_from_weights(weights)
+                                if hasattr(self.prioritized_replay, 'sum_trees'):
+                                    self.prioritized_replay.rebuild(p)
                             if self.parallel_store_and_training:
                                 self.lock_list[p].release()
                         if self.PPO:
@@ -1533,7 +1534,7 @@ class RL:
                 np.frombuffer(self.shared_TD.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=tf.abs(self.prioritized_replay.TD_[:self.prioritized_replay.batch])
                 if self.PPO:
                     np.frombuffer(self.shared_ratio.get_obj(), dtype=np.float32)[self.prioritized_replay.index]=self.prioritized_replay.ratio_[:self.prioritized_replay.batch]
-                if hasattr(self.prioritized_replay, 'sum_tree'):
+                if hasattr(self.prioritized_replay, 'sum_trees'):
                     self.prioritized_replay.update()
                 self.clear_pool()
             else:
@@ -1580,6 +1581,8 @@ class RL:
                                 else:
                                     weights = self._get_buffer(p, 'TD')[:len(idx)] + 1e-7
                                 self.ess_[p] = self.compute_ess_from_weights(weights)
+                                if hasattr(self.prioritized_replay, 'sum_trees'):
+                                    self.prioritized_replay.rebuild(p)
                             if self.parallel_store_and_training:
                                 self.lock_list[p].release()
                         if self.PPO:
@@ -2326,6 +2329,7 @@ class RL:
         shared_dones = []
         shared_TDs = []
         shared_ratios = []
+        sum_trees = []
         
         if self.save_data and hasattr(self,'shared_states'):
             for p in range(processes):
@@ -2338,6 +2342,8 @@ class RL:
                     shared_TDs.append(self.shared_TDs[p])
                     if self.PPO:
                         shared_ratios.append(self.shared_ratios[p])
+                    if hasattr(self.prioritized_replay, 'sum_trees'):
+                        sum_trees.append(self.sum_trees[p])
 
         self.shared_states = []
         self.shared_actions = []
@@ -2348,19 +2354,24 @@ class RL:
         self.shared_ratios = []
 
         for _ in range(processes):
-            self.shared_states.append(mp.Array('f', self.max_exp_per_proc * s_elements))
-            self.shared_actions.append(mp.Array('f', self.max_exp_per_proc * a_elements))
-            self.shared_next_states.append(mp.Array('f', self.max_exp_per_proc * s_elements))
-            self.shared_rewards.append(mp.Array('f', self.max_exp_per_proc))
-            self.shared_dones.append(mp.Array('f', self.max_exp_per_proc))
+            self.shared_states.append(mp.Array('f', self.exp_per_proc * s_elements))
+            self.shared_actions.append(mp.Array('f', self.exp_per_proc * a_elements))
+            self.shared_next_states.append(mp.Array('f', self.exp_per_proc * s_elements))
+            self.shared_rewards.append(mp.Array('f', self.exp_per_proc))
+            self.shared_dones.append(mp.Array('f', self.exp_per_proc))
 
             if self.PR:
-                self.shared_TDs.append(mp.Array('f', self.max_exp_per_proc))
+                self.shared_TDs.append(mp.Array('f', self.exp_per_proc))
                 if self.PPO:
-                    self.shared_ratios.append(mp.Array('f', self.max_exp_per_proc))
+                    self.shared_ratios.append(mp.Array('f', self.exp_per_proc))
+                if hasattr(self.prioritized_replay, 'sum_trees'):
+                    self.prioritized_replay.sum_trees = [
+                        SumTree(self.exp_per_proc, pool_network=True)
+                        for _ in range(processes)
+                    ]
         
         if self.save_data and len(shared_states) != 0:
-            for _ in range(processes):
+            for p in range(processes):
                 self._get_buffer(p, 'state') = shared_states[p]
                 self._get_buffer(p, 'action') = shared_actions[p]
                 self._get_buffer(p, 'next_state') = shared_next_states[p]
@@ -2370,18 +2381,20 @@ class RL:
                     self._get_buffer(p, 'TD') = shared_TDs[p]
                     if self.PPO:
                         self._get_buffer(p, 'ratio') = shared_ratios[p]
+                    if hasattr(self.prioritized_replay, 'sum_trees'):
+                        self._get_buffer(p, 'sum_trees') = sum_trees[p]
     
     
     def _get_buffer(self, p, field):
         if field == 'state':
             arr = np.frombuffer(self.shared_states[p].get_obj(), dtype=np.float32)
-            return arr.reshape((self.max_exp_per_proc,) + self.state_shape)
+            return arr.reshape((self.exp_per_proc,) + self.state_shape)
         if field == 'action':
             arr = np.frombuffer(self.shared_actions[p].get_obj(), dtype=np.float32)
-            return arr.reshape((self.max_exp_per_proc,) + self.action_shape)
+            return arr.reshape((self.exp_per_proc,) + self.action_shape)
         if field == 'next_state':
             arr = np.frombuffer(self.shared_next_states[p].get_obj(), dtype=np.float32)
-            return arr.reshape((self.max_exp_per_proc,) + self.next_state_shape)
+            return arr.reshape((self.exp_per_proc,) + self.next_state_shape)
         if field == 'reward':
             return np.frombuffer(self.shared_rewards[p].get_obj(), dtype=np.float32)
         if field == 'done':
@@ -2390,6 +2403,8 @@ class RL:
             return np.frombuffer(self.shared_TDs[p].get_obj(), dtype=np.float32)
         if field == 'ratio':
             return np.frombuffer(self.shared_ratios[p].get_obj(), dtype=np.float32)
+        if field == 'sum_trees':
+            return np.frombuffer(self.sum_trees[p].get_obj(), dtype=np.float32)
     
     
     def train(self, train_loss, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, parallel_dump=False, processes=None, num_store=1, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
@@ -2478,7 +2493,7 @@ class RL:
                     dummy_a = np.asarray(dummy_a)
                 self.action_shape = dummy_a.shape if dummy_a.ndim > 0 else (1,)
                 self.next_state_shape = self.state_shape
-            self.max_exp_per_proc = math.ceil(self.pool_size / self.processes * self.buffer_safety_factor)
+            self.exp_per_proc = math.ceil(self.pool_size / self.processes)
             self._init_shared_experience_buffers(processes)
             if save_data:
                 self.pool_lengths = manager.list(self.pool_lengths)
@@ -2815,7 +2830,7 @@ class RL:
                     dummy_a = np.asarray(dummy_a)
                 self.action_shape = dummy_a.shape if dummy_a.ndim > 0 else (1,)
                 self.next_state_shape = self.state_shape
-            self.max_exp_per_proc = math.ceil(self.pool_size / self.processes * self.buffer_safety_factor)
+            self.exp_per_proc = math.ceil(self.pool_size / self.processes)
             self.pool_lengths = manager.list([0 for _ in range(processes)])
             self.write_indices = manager.list([0 for _ in range(processes)])
             self._init_shared_experience_buffers(processes)
@@ -3738,6 +3753,8 @@ class RL:
             pickle.dump(self._get_buffer(p, 'TD'),output_file)
             if self.PPO:
                 pickle.dump(self._get_buffer(p, 'ratio'),output_file)
+            if hasattr(self.prioritized_replay, 'sum_trees'):
+                pickle.dump(self._get_buffer(p, 'sum_trees'),output_file)
         output_file.close()
         self.data_save_flag_list[p]=True
     
@@ -3873,6 +3890,8 @@ class RL:
                             pickle.dump(self._get_buffer(p, 'TD'),output_file)
                             if self.PPO:
                                 pickle.dump(self._get_buffer(p, 'ratio'),output_file)
+                            if hasattr(self.prioritized_replay, 'sum_trees'):
+                                pickle.dump(self._get_buffer(p, 'sum_trees'),output_file)
                     output_file.close()
             else:
                 for p in range(self.processes):
@@ -3885,6 +3904,8 @@ class RL:
                         pickle.dump(self._get_buffer(p, 'TD'),output_file)
                         if self.PPO:
                             pickle.dump(self._get_buffer(p, 'ratio'),output_file)
+                        if hasattr(self.prioritized_replay, 'sum_trees'):
+                            pickle.dump(self._get_buffer(p, 'sum_trees'),output_file)
             output_file.close()
         return
     
@@ -3996,6 +4017,8 @@ class RL:
                 self._get_buffer(p, 'TD') = pickle.load(input_file2)
                 if self.PPO:
                     self._get_buffer(p, 'ratio') = pickle.load(input_file2)
+                if hasattr(self.prioritized_replay, 'sum_trees'):
+                    self._get_buffer(p, 'sum_trees') = pickle.load(input_file2)
         input_file.close()
         return
     
@@ -4031,6 +4054,8 @@ class RL:
             self._get_buffer(p, 'TD') = pickle.load(input_file2)
             if self.PPO:
                 self._get_buffer(p, 'ratio') = pickle.load(input_file2)
+            if hasattr(self.prioritized_replay, 'sum_trees'):
+                self._get_buffer(p, 'sum_trees') = pickle.load(input_file2)
         input_file2.close()
     
     
@@ -4130,6 +4155,8 @@ class RL:
                         self._get_buffer(p, 'TD') = pickle.load(input_file2)
                         if self.PPO:
                             self._get_buffer(p, 'ratio') = pickle.load(input_file2)
+                        if hasattr(self.prioritized_replay, 'sum_trees'):
+                            self._get_buffer(p, 'sum_trees') = pickle.load(input_file2)
         input_file1.close()
         if not self.parallel_dump:
             input_file2.close()
