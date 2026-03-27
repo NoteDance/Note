@@ -118,6 +118,24 @@ class SumTree:
         data_idx = leaf_idx - self.capacity + 1
         return leaf_idx, tree[leaf_idx], data_idx
 
+    def get_leaf_batch(self, values: np.ndarray) -> np.ndarray:
+        tree = self._get_buffer()
+        parent = np.zeros(len(values), dtype=np.int32)
+
+        while True:
+            left = 2 * parent + 1
+            right = left + 1
+            is_leaf = left >= len(tree)
+            if np.all(is_leaf):
+                break
+            left_val = np.where(is_leaf, np.inf, tree[left])
+            go_right = (~is_leaf) & (values > left_val)
+            values = np.where(go_right, values - tree[left], values)
+            parent = np.where(is_leaf, parent,
+                     np.where(go_right, right, left))
+
+        return parent - (self.capacity - 1)
+
     def total(self):
         tree = self._get_buffer()
         return tree[0]
@@ -140,21 +158,21 @@ class PR(pr):
             try:
                 scores = self.lambda_ * TD + (1.0 - self.lambda_) * np.abs(ratio - 1.0)
                 if self.jit_compile:
-                    prios=self.compute_prios(scores, self.alpha)
+                    prios = self.compute_prios(scores, self.alpha)
                 else:
-                    prios=self.compute_prios_(scores, self.alpha)
+                    prios = self.compute_prios_(scores, self.alpha)
             except Exception:
-                scores=self.lambda_*TD+(1.0-self.lambda_)*torch.abs(ratio-1.0)
-                prios=torch.pow(scores+1e-7,self.alpha)
+                scores = self.lambda_ * TD + (1.0 - self.lambda_) * torch.abs(ratio - 1.0)
+                prios = torch.pow(scores + 1e-7, self.alpha)
         else:
             try:
                 if self.jit_compile:
-                    prios=self.compute_prios(TD, self.alpha)
+                    prios = self.compute_prios(TD, self.alpha)
                 else:
-                    prios=self.compute_prios_(TD, self.alpha)
+                    prios = self.compute_prios_(TD, self.alpha)
             except Exception:
-                prios=(TD+1e-7)**self.alpha
-                
+                prios = (TD + 1e-7) ** self.alpha
+
         np.frombuffer(self.sum_trees[p].tree.get_obj(), dtype=np.float32).fill(0.0)
         for i, prio in enumerate(prios):
             self.sum_trees[p].update(i, float(prio))
@@ -165,26 +183,33 @@ class PR(pr):
 
         totals = [t.total() for t in self.sum_trees]
         grand_total = sum(totals)
-        indices = []
         segment = grand_total / batch_size
-    
-        for i in range(batch_size):
-            val = np.random.uniform(segment * i, segment * (i + 1))
-            for proc, t in enumerate(self.sum_trees):
-                if val <= totals[proc]:
-                    _, _, local_idx = t.get_leaf(val)
-                    offset = sum(self.length_list[q] for q in range(proc))
-                    global_idx = offset + local_idx
-                    indices.append(min(global_idx, len(state_pool) - 1))
-                    break
-                val -= totals[proc]
-    
-        self.index = np.array(indices, dtype=np.int32)
+
+        lo = np.arange(batch_size, dtype=np.float32) * segment
+        hi = lo + segment
+        vals = np.random.uniform(lo, hi).astype(np.float32)  # shape: (batch_size,)
+
+        indices = np.empty(batch_size, dtype=np.int32)
+        assigned = np.zeros(batch_size, dtype=bool)
+        remaining = vals.copy()
+        offset = 0
+
+        for proc, t in enumerate(self.sum_trees):
+            mask = (~assigned) & (remaining <= totals[proc])
+            if mask.any():
+                local_idxs = t.get_leaf_batch(remaining[mask])
+                global_idxs = offset + local_idxs
+                indices[mask] = np.clip(global_idxs, 0, len(state_pool) - 1)
+                assigned[mask] = True
+            remaining[~assigned] -= totals[proc]
+            offset += self.length_list[proc]
+
+        self.index = indices
         try:
             self.batch.assign(batch_size)
         except Exception:
             self.batch = batch_size
-    
+
         return (state_pool[self.index], action_pool[self.index],
                 next_state_pool[self.index], reward_pool[self.index],
                 done_pool[self.index])
@@ -204,15 +229,18 @@ class PR(pr):
                 td_errors = score.numpy()
             else:
                 td_errors = torch.abs(self.TD_[:self.batch]).numpy()
-        for j, global_idx in enumerate(self.index):
-            cumlen = 0
-            for proc, length in enumerate(self.length_list):
-                if global_idx < cumlen + length:
-                    local_idx = global_idx - cumlen
-                    prio = (float(abs(td_errors[j])) + 1e-7) ** self.alpha
-                    self.sum_trees[proc].update(local_idx, prio)
-                    break
-                cumlen += length
+
+        prios = (np.abs(td_errors) + 1e-7) ** self.alpha
+        global_indices = self.index
+
+        cumlen = 0
+        for proc, length in enumerate(self.length_list):
+            mask = (global_indices >= cumlen) & (global_indices < cumlen + length)
+            if mask.any():
+                local_idxs = global_indices[mask] - cumlen
+                for local_idx, prio in zip(local_idxs, prios[mask]):
+                    self.sum_trees[proc].update(int(local_idx), float(prio))
+            cumlen += length
 
 
 class pr_mp:
