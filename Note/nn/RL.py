@@ -2426,7 +2426,7 @@ class RL:
                     self.shared_ratios.append(mp.Array('f', self.exp_per_proc))
                 if hasattr(self.prioritized_replay, 'sum_trees'):
                     self.prioritized_replay.sum_trees = [
-                        SumTree(self.exp_per_proc, pool_network=True)
+                        SumTree(self.exp_per_proc)
                         for _ in range(processes)
                     ]
         
