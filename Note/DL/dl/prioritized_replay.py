@@ -22,21 +22,30 @@ class SumTree:
         self.tree[tree_idx] = priority
         self._propagate(tree_idx, change)
 
-    def get_leaf(self, value: float):
-        parent_idx = 0
+    def get_leaf_batch(self, values: np.ndarray) -> np.ndarray:
+        values = values.copy().astype(np.float32)
+        parent = np.zeros(len(values), dtype=np.int32)
+
         while True:
-            left = 2 * parent_idx + 1
+            left = 2 * parent + 1
             right = left + 1
-            if left >= len(self.tree):
-                leaf_idx = parent_idx
+            is_leaf = left >= len(self.tree)
+            if np.all(is_leaf):
                 break
-            if value <= self.tree[left]:
-                parent_idx = left
-            else:
-                value -= self.tree[left]
-                parent_idx = right
-        data_idx = leaf_idx - self.capacity + 1
-        return leaf_idx, self.tree[leaf_idx], data_idx
+            left_val = np.where(is_leaf, np.inf, self.tree[left])
+            go_right = (~is_leaf) & (values > left_val)
+            values = np.where(go_right, values - self.tree[left], values)
+            parent = np.where(is_leaf, parent,
+                     np.where(go_right, right, left))
+
+        return parent - (self.capacity - 1)
+    
+    def update_batch(self, data_indices: np.ndarray, priorities: np.ndarray):
+        tree_indices = self.capacity - 1 + data_indices
+        changes = priorities - self.tree[tree_indices]
+        self.tree[tree_indices] = priorities
+        for idx, change in zip(tree_indices, changes):
+            self._propagate(int(idx), float(change))
 
     def total(self):
         return self.tree[0]
@@ -60,18 +69,20 @@ class PR:
         return tf.pow(td_errors + 1e-7, alpha)
 
     def sample(self, train_data, train_labels, alpha, batch_size):
-        indices = []
-        segment = self.sum_tree.total() / batch_size
-        for i in range(batch_size):
-            val = np.random.uniform(segment * i, segment * (i + 1))
-            _, _, data_idx = self.sum_tree.get_leaf(val)
-            indices.append(data_idx)
+        total = self.sum_tree.total()
+        segment = total / batch_size
 
-        self.index = np.array(indices, dtype=np.int32)
-        
-        self.batch=batch_size
+        lo = np.arange(batch_size, dtype=np.float32) * segment
+        hi = lo + segment
+        vals = np.random.uniform(lo, hi).astype(np.float32)
 
-        return train_data[indices], train_labels[indices]
+        self.index = np.clip(
+            self.sum_tree.get_leaf_batch(vals),
+            0, len(train_data) - 1
+        ).astype(np.int32)
+
+        self.batch = batch_size
+        return train_data[self.index], train_labels[self.index]
     
     def update_loss(self, loss=None, index=None):
         if loss is not None:
@@ -83,8 +94,8 @@ class PR:
 
     def update(self):
         td_errors = tf.abs(self.loss_[:self.batch]).numpy()
-        for i, td in enumerate(td_errors):
-            data_idx = self.index[i]
-            prio = (abs(td) + 1e-7) ** self.alpha
-            self.sum_tree.update(data_idx, prio)
-        self.loss[self.index]=self.loss_[:self.batch]
+        prios = (np.abs(td_errors) + 1e-7) ** self.alpha
+
+        self.loss[self.index] = self.loss_[:self.batch]
+
+        self.sum_tree.update_batch(self.index, prios)
