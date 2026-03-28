@@ -100,6 +100,14 @@ class SumTree:
         change = priority - tree[tree_idx]
         tree[tree_idx] = priority
         self._propagate(tree_idx, change)
+        
+    def update_batch(self, data_indices: np.ndarray, priorities: np.ndarray):
+        tree = self._get_buffer()
+        tree_indices = self.capacity - 1 + data_indices
+        changes = priorities - tree[tree_indices]
+        tree[tree_indices] = priorities
+        for idx, change in zip(tree_indices, changes):
+            self._propagate(int(idx), float(change))
 
     def get_leaf(self, value: float):
         tree = self._get_buffer()
@@ -237,9 +245,8 @@ class PR(pr):
         for proc, length in enumerate(self.length_list):
             mask = (global_indices >= cumlen) & (global_indices < cumlen + length)
             if mask.any():
-                local_idxs = global_indices[mask] - cumlen
-                for local_idx, prio in zip(local_idxs, prios[mask]):
-                    self.sum_trees[proc].update(int(local_idx), float(prio))
+                local_idxs = (global_indices[mask] - cumlen).astype(np.int32)
+                self.sum_trees[proc].update_batch(local_idxs, prios[mask])
             cumlen += length
 
 
