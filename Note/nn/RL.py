@@ -2403,7 +2403,7 @@ class RL:
                     if self.PPO:
                         shared_ratios.append(self.shared_ratios[p])
                     if hasattr(self.prioritized_replay, 'sum_trees'):
-                        sum_trees.append(self.sum_trees[p])
+                        sum_trees.append(self._get_buffer(p, 'sum_trees'))
 
         self.shared_states = []
         self.shared_actions = []
