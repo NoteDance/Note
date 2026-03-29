@@ -1525,8 +1525,6 @@ class RL_pytorch:
             return np.frombuffer(self.shared_TDs[p].get_obj(), dtype=np.float32)
         if field == 'ratio':
             return np.frombuffer(self.shared_ratios[p].get_obj(), dtype=np.float32)
-        if field == 'sum_trees':
-            return np.frombuffer(self.sum_trees[p].get_obj(), dtype=np.float32)
     
     
     def train(self, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, p=None):

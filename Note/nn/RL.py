@@ -2464,7 +2464,7 @@ class RL:
         if field == 'ratio':
             return np.frombuffer(self.shared_ratios[p].get_obj(), dtype=np.float32)
         if field == 'sum_trees':
-            return np.frombuffer(self.sum_trees[p].get_obj(), dtype=np.float32)
+            return np.frombuffer(self.sum_trees[p].tree.get_obj(), dtype=np.float32)
     
     
     def train(self, train_loss, optimizer=None, episodes=None, pool_network=True, parallel_store_and_training=True, parallel_training_and_save=False, parallel_dump=False, processes=None, num_store=1, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):

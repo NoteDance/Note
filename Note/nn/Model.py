@@ -946,10 +946,16 @@ class Model:
         self.min_num_updates=min_num_updates
         self.max_num_updates=max_num_updates
         if PR:
+            if hasattr(self, 'tree'):
+                loss=self.prioritized_replay.loss
             self.prioritized_replay=PR_()
             self.prioritized_replay.build(len(train_data), alpha)
-            self.prioritized_replay.loss=np.zeros(len(train_data), dtype=np.float32)
-            self.prioritized_replay.loss_=tf.Variable(tf.zeros([self.batch_size]))
+            if hasattr(self, 'tree'):
+                np.frombuffer(self.prioritized_replay.sum_tree.get_obj(), dtype=np.float32)=self.tree
+                self.prioritized_replay.loss=loss
+            else:
+                self.prioritized_replay.loss=np.zeros(len(train_data), dtype=np.float32)
+                self.prioritized_replay.loss_=tf.Variable(tf.zeros([self.batch_size]))
         if test_ds!=None:
             self.test_batch_size=test_ds._batch_size.numpy()
         self.processes=processes
@@ -1462,10 +1468,16 @@ class Model:
         self.min_num_updates=min_num_updates
         self.max_num_updates=max_num_updates
         if PR:
+            if hasattr(self, 'tree'):
+                loss=self.prioritized_replay.loss
             self.prioritized_replay=PR_()
             self.prioritized_replay.build(len(train_data), alpha)
-            self.prioritized_replay.loss=np.zeros(len(train_data), dtype=np.float32)
-            self.prioritized_replay.loss_=tf.Variable(tf.zeros([self.batch_size]))
+            if hasattr(self, 'tree'):
+                np.frombuffer(self.prioritized_replay.sum_tree.get_obj(), dtype=np.float32)=self.tree
+                self.prioritized_replay.loss=loss
+            else:
+                self.prioritized_replay.loss=np.zeros(len(train_data), dtype=np.float32)
+                self.prioritized_replay.loss_=tf.Variable(tf.zeros([self.batch_size]))
         self.global_test_batch_size=global_test_batch_size
         self.eval_steps_per_epoch=eval_steps_per_epoch
         self.jit_compile=jit_compile
@@ -3154,6 +3166,8 @@ class Model:
             optimizer=self.optimizer
             self.optimizer=None
             pickle.dump(self,output_file)
+        if self.PR and hasattr(self.prioritized_replay, 'sum_trees'):
+            pickle.dump(np.frombuffer(self.prioritized_replay.tree.get_obj(), dtype=np.float32),output_file)
         if self.parallel_training_and_save:
             self.active_shms = []
             if self.parallel_dump==True:
@@ -3325,6 +3339,8 @@ class Model:
     def restore(self,path):
         input_file=open(path,'rb')
         model=pickle.load(input_file)
+        if self.PR and hasattr(self.prioritized_replay, 'sum_tree'):
+            self.tree=pickle.load(input_file)
         param=self.param
         self.__dict__.update(model.__dict__)
         self.param=param
@@ -3372,6 +3388,8 @@ class Model:
         if not self.parallel_dump:
             input_file2=open(path2,'rb')
         model=pickle.load(input_file1)
+        if self.PR and hasattr(self.prioritized_replay, 'sum_tree'):
+            self.tree=pickle.load(input_file1)
         param=self.param
         self.__dict__.update(model.__dict__)
         if self.parallel_dump==True:
