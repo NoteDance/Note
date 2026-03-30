@@ -449,10 +449,10 @@ class RL:
         if self.pool_network==True:
             if ema is None:
                 if self.PPO:
-                    scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * tf.abs(self.ratio_list[p] - 1.0)
+                    scores = self.lambda_ * self._get_buffer(p, 'TD') + (1.0-self.lambda_) * tf.abs(self._get_buffer(p, 'ratio') - 1.0)
                     weights = scores + 1e-7
                 else:
-                    weights = self.TD_list[p] + 1e-7
+                    weights = self._get_buffer(p, 'TD') + 1e-7
                 
                 if not self.parallel_store_and_training:
                     ess = self.compute_ess_from_weights(weights)
@@ -1123,7 +1123,7 @@ class RL:
                             self.reward_pool = np.concatenate(reward_pools, axis=0)
                             done_pools = [self._get_buffer(p, 'done')[:curr_len] for p in range(self.processes)]
                             self.done_pool = np.concatenate(done_pools, axis=0)
-                if hasattr(self, 'adjust_func') and len(len(self.prioritized_replay.TD))>=self.pool_size_:
+                if hasattr(self, 'adjust_func') and len(self.prioritized_replay.TD)>=self.pool_size_:
                     self.adjust_func()
             return total_loss
         else:
@@ -1292,7 +1292,7 @@ class RL:
                             self.reward_pool = np.concatenate(reward_pools, axis=0)
                             done_pools = [self._get_buffer(p, 'done')[:curr_len] for p in range(self.processes)]
                             self.done_pool = np.concatenate(done_pools, axis=0)
-                if hasattr(self, 'adjust_func') and len(len(self.prioritized_replay.TD))>=self.pool_size_:
+                if hasattr(self, 'adjust_func') and len(self.prioritized_replay.TD)>=self.pool_size_:
                     self.adjust_func()
             return total_loss
         else:
@@ -1553,7 +1553,7 @@ class RL:
                                 self.reward_pool = np.concatenate(reward_pools, axis=0)
                                 done_pools = [self._get_buffer(p, 'done')[:curr_len] for p in range(self.processes)]
                                 self.done_pool = np.concatenate(done_pools, axis=0)
-                    if hasattr(self, 'adjust_func') and len(len(self.prioritized_replay.TD))>=self.pool_size_:
+                    if hasattr(self, 'adjust_func') and len(self.prioritized_replay.TD)>=self.pool_size_:
                         self.adjust_func()
                     if self.PPO and self.batch_counter%self.update_batches==0:
                         return (total_loss / num_batches).numpy()
@@ -1671,7 +1671,7 @@ class RL:
                                 self.reward_pool = np.concatenate(reward_pools, axis=0)
                                 done_pools = [self._get_buffer(p, 'done')[:curr_len] for p in range(self.processes)]
                                 self.done_pool = np.concatenate(done_pools, axis=0)
-                    if hasattr(self, 'adjust_func') and len(len(self.prioritized_replay.TD))>=self.pool_size_:
+                    if hasattr(self, 'adjust_func') and len(self.prioritized_replay.TD)>=self.pool_size_:
                         self.adjust_func()
                 if self.PPO and self.batch_counter%self.update_batches==0:
                     return self.train_loss.result().numpy()
