@@ -234,6 +234,58 @@ class RL_pytorch:
         return
     
     
+    def estimate_processes(self, memory_mb: float) -> int:
+        memory_bytes = memory_mb * 1024 * 1024
+    
+        s_elements = int(np.prod(self.state_shape))
+        a_elements = int(np.prod(self.action_shape))
+        bytes_per_exp = (
+            s_elements * 4 +
+            a_elements * 4 +
+            s_elements * 4 +
+            1 * 4 +
+            1 * 4
+        )
+        if self.PR:
+            bytes_per_exp += 1 * 4
+            if self.PPO:
+                bytes_per_exp += 1 * 4
+            if hasattr(self.prioritized_replay, 'sum_trees'):
+                cap = 1
+                exp_per_proc_est = math.ceil(self.pool_size / 1)
+                while cap < exp_per_proc_est:
+                    cap <<= 1
+                bytes_per_exp += (2 * cap - 1) * 4 / exp_per_proc_est
+    
+        best_processes = 1
+        for n_proc in range(1, mp.cpu_count() + 1):
+            exp_per_proc = math.ceil(self.pool_size / n_proc)
+    
+            exp_mem = n_proc * exp_per_proc * bytes_per_exp
+    
+            tree_mem = 0
+            if self.PR and hasattr(self.prioritized_replay, 'sum_trees'):
+                cap = 1
+                while cap < exp_per_proc:
+                    cap <<= 1
+                tree_mem = n_proc * (2 * cap - 1) * 4
+    
+            shared_mem = 0
+            if self.PR:
+                shared_mem += self.pool_size * 4
+                if self.PPO:
+                    shared_mem += self.pool_size * 4
+    
+            total_mem = exp_mem + tree_mem + shared_mem
+    
+            if total_mem <= memory_bytes:
+                best_processes = n_proc
+            else:
+                break
+    
+        return best_processes
+    
+    
     def select_action(self,s,i=None,p=None):
         if self.MARL!=True:
             if self.pool_network:
