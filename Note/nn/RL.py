@@ -356,6 +356,8 @@ class RL:
             for p in nest.flatten(self.param):
                 fixed_bytes += p.numpy().nbytes
         
+        param_shm_bytes = fixed_bytes
+        
         if self.PR:
             fixed_bytes += self.pool_size * 4
             if self.PPO:
@@ -390,7 +392,7 @@ class RL:
                     cap <<= 1
                 tree_mem = n_proc * (2 * cap - 1) * 4
             
-            total_mem = (fixed_bytes + exp_mem + tree_mem +
+            total_mem = (fixed_bytes + param_shm_bytes + exp_mem + tree_mem +
                          n_proc * (var_per_process_bytes + per_process_overhead_bytes))
             
             if total_mem > memory_bytes * safety_factor:
