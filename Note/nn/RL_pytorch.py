@@ -234,55 +234,81 @@ class RL_pytorch:
         return
     
     
-    def estimate_processes(self, memory_mb: float) -> int:
+    def get_optimal_processes(self, 
+                              memory_mb: float, 
+                              safety_factor: float = 0.75,
+                              min_exp_per_proc: int = None) -> int:
+        import multiprocessing as mp
+        import math
+        
+        if not hasattr(self, 'pool_size') or self.pool_size is None:
+            return min(8, mp.cpu_count())
+        
+        if min_exp_per_proc is None:
+            min_exp_per_proc = getattr(self, 'batch', 256) * 10
+        
         memory_bytes = memory_mb * 1024 * 1024
-    
-        s_elements = int(np.prod(self.state_shape))
-        a_elements = int(np.prod(self.action_shape))
-        bytes_per_exp = (
-            s_elements * 4 +
-            a_elements * 4 +
-            s_elements * 4 +
-            1 * 4 +
-            1 * 4
-        )
+        cpu_cores = mp.cpu_count()
+        
+        fixed_bytes = 0
+        if hasattr(self, 'param'):
+            from tensorflow.python.util import nest
+            for p in nest.flatten(self.param):
+                fixed_bytes += p.numpy().nbytes
+        
         if self.PR:
-            bytes_per_exp += 1 * 4
+            fixed_bytes += self.pool_size * 4
             if self.PPO:
-                bytes_per_exp += 1 * 4
-            if hasattr(self.prioritized_replay, 'sum_trees'):
-                cap = 1
-                exp_per_proc_est = math.ceil(self.pool_size / 1)
-                while cap < exp_per_proc_est:
-                    cap <<= 1
-                bytes_per_exp += (2 * cap - 1) * 4 / exp_per_proc_est
-    
+                fixed_bytes += self.pool_size * 4
+        
+        s_elements = int(np.prod(self.state_shape)) if hasattr(self, 'state_shape') else 1024
+        a_elements = int(np.prod(self.action_shape)) if hasattr(self, 'action_shape') else 8
+        bytes_per_exp = (s_elements * 4 + a_elements * 4 +
+                         s_elements * 4 + 4 + 4)
+        
+        if self.PR:
+            bytes_per_exp += 4
+            if self.PPO:
+                bytes_per_exp += 4
+        
+        batch = getattr(self, 'batch', 256)
+        var_per_process_bytes = batch * 4 * (2 if self.PPO else 1)
+        per_process_overhead_bytes = int(135 * 1024 * 1024)
+        
         best_processes = 1
-        for n_proc in range(1, mp.cpu_count() + 1):
+        for n_proc in range(1, cpu_cores + 1):
             exp_per_proc = math.ceil(self.pool_size / n_proc)
-    
-            exp_mem = n_proc * exp_per_proc * bytes_per_exp
-    
+            
+            if exp_per_proc < min_exp_per_proc:
+                break
+            
+            exp_mem = self.pool_size * bytes_per_exp
             tree_mem = 0
             if self.PR and hasattr(self.prioritized_replay, 'sum_trees'):
                 cap = 1
                 while cap < exp_per_proc:
                     cap <<= 1
                 tree_mem = n_proc * (2 * cap - 1) * 4
-    
-            shared_mem = 0
-            if self.PR:
-                shared_mem += self.pool_size * 4
-                if self.PPO:
-                    shared_mem += self.pool_size * 4
-    
-            total_mem = exp_mem + tree_mem + shared_mem
-    
-            if total_mem <= memory_bytes:
-                best_processes = n_proc
-            else:
+            
+            total_mem = (fixed_bytes + exp_mem + tree_mem +
+                         n_proc * (var_per_process_bytes + per_process_overhead_bytes))
+            
+            if total_mem > memory_bytes * safety_factor:
                 break
-    
+            
+            best_processes = n_proc
+        
+        print(f"Memory Analysis (Available {memory_mb:.0f} MB):")
+        print(f"   • Experience buffer total: {self.pool_size * bytes_per_exp / (1024*1024):.1f} MB")
+        print(f"   • Model parameters: {fixed_bytes / (1024*1024):.1f} MB (shared)")
+        print(f"   • Per-process tf.Variable + overhead: ≈{(var_per_process_bytes + per_process_overhead_bytes) / (1024*1024):.1f} MB")
+        print(f"   • Minimum experiences per process: ≥ {min_exp_per_proc} entries")
+        print(f"   • CPU cores: {cpu_cores}")
+        print(f"   → **Recommended processes: {best_processes}** (≈ {self.pool_size // best_processes} experiences per process)")
+        
+        if best_processes == 1 and self.pool_size // best_processes < min_exp_per_proc // 2:
+            print("⚠️  Warning: pool_size is small. Consider lowering min_exp_per_proc or increasing pool_size.")
+        
         return best_processes
     
     
