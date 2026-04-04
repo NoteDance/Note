@@ -237,10 +237,8 @@ class RL_pytorch:
     def get_optimal_processes(self, 
                               memory_mb: float, 
                               safety_factor: float = 0.75,
-                              min_exp_per_proc: int = None) -> int:
-        import multiprocessing as mp
-        import math
-        
+                              min_exp_per_proc: int = None,
+                              parallel_dump: bool = True) -> int:
         if not hasattr(self, 'pool_size') or self.pool_size is None:
             return min(8, mp.cpu_count())
         
@@ -256,7 +254,10 @@ class RL_pytorch:
             for p in nest.flatten(self.param):
                 fixed_bytes += p.numpy().nbytes
         
-        param_shm_bytes = fixed_bytes
+        if parallel_dump:
+            param_shm_bytes = fixed_bytes * 2
+        else:
+            param_shm_bytes = fixed_bytes
         
         if self.PR:
             fixed_bytes += self.pool_size * 4
