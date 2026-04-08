@@ -232,14 +232,14 @@ class BaseOptimizer(KerasSaveable):
     @tracking.no_automatic_dependency_tracking
     def build(self, variables):
         self.exp_avg_sq = []
-        if self.sn:
+        if hasattr(self, 'sn') and self.sn:
             self.subset_size_ = []
-        if self.sophia:
+        if hasattr(self, 'sophia') and self.sophia:
             self.hessian_moment = []
             self.hessian = []
-        if self.lookahead:
+        if hasattr(self, 'lookahead') and self.lookahead:
             self.slow_momentum = []
-        if self.DAdapt:
+        if hasattr(self, 'DAdapt') and self.DAdapt:
             self.s = []
             self.sk_l1 = tf.Variable(0.0)
             self.numerator_acc = tf.Variable(0.0)
@@ -249,10 +249,10 @@ class BaseOptimizer(KerasSaveable):
             self._track_variable(self.numerator_acc)
             self._track_variable(self.numerator_weighted)
             self._track_variable(self.d0_)
-        if self.pnm:
+        if hasattr(self, 'pnm') and self.pnm:
             self.pos_momentum = []
             self.neg_momentum = []
-        if self.update_proj_gap:
+        if hasattr(self, 'update_proj_gap') and self.update_proj_gap:
             self.projector = []
             self.ortho_matrix = []
         if self.use_ema:
@@ -270,7 +270,7 @@ class BaseOptimizer(KerasSaveable):
                         name="gradient_accumulator",
                     )
                 )
-            if self.sn:
+            if hasattr(self, 'sn') and self.sn:
                 size = tf.size(variable)
                 
                 def true_fn():
@@ -285,7 +285,7 @@ class BaseOptimizer(KerasSaveable):
                 reshaped_grad = tf.reshape(variable, (size // self.subset_size_[-1], self.subset_size_[-1]))
                 second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)  # fmt: skip
                 second_moment_update = tf.Variable(second_moment_update)
-                if self.sophia:
+                if hasattr(self, 'sophia') and self.sophia:
                     self.hessian[self._get_variable_index(variable)] =  self.add_variable_from_reference(
                                                                 reference_variable=second_moment_update, name="hessian"
                                                             )
@@ -297,7 +297,7 @@ class BaseOptimizer(KerasSaveable):
                             reference_variable=second_moment_update, name="exp_avg_sq"
                         ))
             else:
-                if self.sophia:
+                if hasattr(self, 'sophia') and self.sophia:
                     self.hessian[self._get_variable_index(variable)] =  self.add_variable_from_reference(
                                                                 reference_variable=variable, name="hessian"
                                                             )
@@ -309,16 +309,16 @@ class BaseOptimizer(KerasSaveable):
                         reference_variable=variable, name="exp_avg_sq"
                     ))
             
-            if self.lookahead:
+            if hasattr(self, 'lookahead') and self.lookahead:
                 self.slow_momentum.append(tf.Variable(variable))
                 self._track_variable(self.slow_momentum[-1])
                 
-            if self.DAdapt:
+            if hasattr(self, 'DAdapt') and self.DAdapt:
                 self.s.append(self.add_variable_from_reference(
                                     reference_variable=variable, name="s"
                                                         ))
             
-            if self.pnm:
+            if hasattr(self, 'pnm') and self.pnm:
                 self.pos_momentum.append(
                     self.add_variable_from_reference(
                         reference_variable=variable, name="pos_momentum"
@@ -631,7 +631,7 @@ class BaseOptimizer(KerasSaveable):
             gradient += variable * self.weight_decay
     
     def accumulate_numerator(self, s, gradient, de_nom, d_lr, idx):
-        if self.sn:
+        if hasattr(self, 'sn') and self.sn:
             size = tf.size(gradient)
             s = tf.reshape(s, (size // self.subset_size_[idx], self.subset_size_[idx]))
         flat_grad = tf.reshape(gradient, [-1])
@@ -708,7 +708,7 @@ class BaseOptimizer(KerasSaveable):
 
             for h_z, z, p in zip(h_zs, zs, params):
                 size = tf.size(p)
-                if self.sn:
+                if hasattr(self, 'sn') and self.sn:
                     reshaped_h_z = tf.reshape(h_z, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     reshaped_z = tf.reshape(z, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     hessian_update = tf.reduce_sum(reshaped_h_z * reshaped_z, axis=1, keepdims=True)
@@ -949,7 +949,7 @@ class BaseOptimizer(KerasSaveable):
         It is overridden by torch for performance reasons, and
         by TF to support tf.distribute.
         """
-        if self.sophia:
+        if hasattr(self, 'sophia') and self.sophia:
             def true_fn1():
                 self.compute_hutchinson_hessian(
                     grads,
