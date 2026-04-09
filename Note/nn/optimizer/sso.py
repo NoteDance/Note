@@ -388,6 +388,8 @@ class SpectralSphere_e(optimizer.Optimizer):
         cautious: bool = False,
         trust_ratio: bool = False,
         trust_clip: bool = False,
+        shampoo: bool = False,
+        update_freq: int = 1,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -433,6 +435,8 @@ class SpectralSphere_e(optimizer.Optimizer):
         self.cautious = cautious
         self.trust_ratio = trust_ratio
         self.trust_clip = trust_clip
+        self.shampoo = shampoo
+        self.update_freq = update_freq
 
     def build(self, var_list):
         if self.built:
@@ -514,6 +518,25 @@ class SpectralSphere_e(optimizer.Optimizer):
                     update = grad * (1.0 - self.momentum) + buf * self.momentum
                 else:
                     update = buf
+            
+            if self.shampoo:
+                for dim_id, dim in enumerate(grad.shape.as_list()):
+                    precond = self.precond[self._get_variable_index(p)]["precond_{}".format(dim_id)]
+                    inv_precond = self.inv_precond[self._get_variable_index(p)]["inv_precond_{}".format(dim_id)]
+        
+                    # mat_{dim_id}(grad)
+                    current_rank = len(grad.shape)
+                    perm = list(range(current_rank))
+                    perm[0], perm[dim_id] = perm[dim_id], perm[0]
+                    grad = tf.transpose(grad, perm=perm)
+                    grad = tf.reshape(grad, (dim, -1))
+                    
+                    self.update_inv_precond(self, grad, precond, inv_precond)
+                
+                    if dim_id == 0:
+                        update = tf.matmul(inv_precond, update)
+                    else:
+                        update = tf.matmul(update, inv_precond)
 
             update = compute_spectral_ball_update(
                 weight=p,
@@ -557,6 +580,8 @@ class SpectralSphere_e(optimizer.Optimizer):
                 "cautious": self.cautious,
                 "trust_ratio": self.trust_ratio,
                 "trust_clip": self.trust_clip,
+                "shampoo": self.shampoo,
+                "update_freq": self.update_freq,
             }
         )
         return config

@@ -13,6 +13,7 @@ from keras.src.utils.naming import auto_name
 import tensorflow as tf
 from Note.nn.optimizer.galore_projector import GaLoreProjector
 import math
+from typing import Optional, Tuple, Union
 
 
 def unit_norm(x, ord = 2.0):
@@ -255,6 +256,9 @@ class BaseOptimizer(KerasSaveable):
         if hasattr(self, 'update_proj_gap') and self.update_proj_gap:
             self.projector = []
             self.ortho_matrix = []
+        if hasattr(self, 'shampoo') and self.shampoo:
+            self.precond = []
+            self.inv_precond = []
         if self.use_ema:
             self._model_variables_moving_average = self.add_optimizer_variables(
                 variables, "average"
@@ -353,6 +357,17 @@ class BaseOptimizer(KerasSaveable):
             else:
                 self.projector.append(None)
                 self.ortho_matrix.append(None)
+                
+            if hasattr(self, 'shampoo') and self.shampoo:
+                shape = variable.shape.as_list()
+                self.precond.append(dict())
+                self.inv_precond.append(dict())
+                for dim_id, dim in enumerate(shape):
+                    self.precond[-1]["precond_{}".format(dim_id)] = tf.Variable(self.epsilon * tf.eye(dim, dtype=variable.dtype))
+                    self._track_variable(self.precond[-1]["precond_{}".format(dim_id)])
+                    self.inv_precond[-1]["inv_precond_{}".format(dim_id)] =  tf.Variable(tf.zeros((dim, dim), dtype=variable.dtype))
+                    self._track_variable(self.inv_precond[-1]["inv_precond_{}".format(dim_id)])
+        
         self._trainable_variables = variables[:]
         self.built = True
 
@@ -784,6 +799,215 @@ class BaseOptimizer(KerasSaveable):
         pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
         pos_momentum.assign(pos_momentum * self.beta1 ** 2 + gradient * (1.0 - self.beta1 ** 2))
         return (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
+    
+    def power_iteration(self, w: tf.Tensor, steps: int = 50):
+        """Leading singular triplet (sigma, u, v) via bilateral power iteration (bf16)."""
+        w = tf.cast(w, tf.bfloat16)
+        w_shape = tf.shape(w)
+        v = tf.ones([w_shape[1], 1], dtype=tf.bfloat16)
+    
+        for _ in range(steps):
+            tmp = tf.matmul(tf.transpose(w), tf.matmul(w, v))
+            v = tf.nn.l2_normalize(tmp, axis=0)
+    
+        u = tf.matmul(w, v)
+        u = tf.nn.l2_normalize(u, axis=0)
+        return u, v
+    
+    def msign(self, x: tf.Tensor, steps: int) -> tf.Tensor:
+        """Matrix sign via Newton-Schulz with Polar-Express coefficients."""
+        x_shape = tf.shape(x)
+        transpose_flag = tf.greater(x_shape[0], x_shape[1])
+    
+        x = tf.cond(transpose_flag, lambda: tf.transpose(x), lambda: x)
+        fro_norm = tf.linalg.norm(x, ord="fro")
+        x = x / tf.maximum(fro_norm, tf.constant(1e-7, dtype=x.dtype))
+        x = tf.cast(x, tf.bfloat16)
+    
+        coefficients = [
+            (8.2051, -22.9019, 16.4607),
+            (4.0664, -2.8612, 0.5184),
+            (3.9096, -2.8234, 0.5250),
+            (3.2856, -2.4153, 0.4853),
+            (2.2779, -1.6198, 0.3985),
+            (1.8726, -1.2307, 0.3585),
+            (1.8564, -1.2132, 0.3568),
+            (1.8750, -1.2500, 0.3750),
+        ]
+    
+        for i in range(steps):
+            coef_a, coef_b, coef_c = coefficients[i] if i < 8 else coefficients[-1]
+            a = tf.matmul(x, tf.transpose(x))
+            aa = tf.matmul(a, a)
+            b = coef_b * a + coef_c * aa
+            x = coef_a * x + tf.matmul(b, x)
+    
+        x = tf.cond(transpose_flag, lambda: tf.transpose(x), lambda: x)
+        return x
+    
+    def compute_f_tensor(
+        self,
+        x: tf.Tensor,
+        theta: tf.Tensor,
+        lambda_value: Union[float, tf.Tensor],
+        msign_steps: int = 8,
+    ) -> tf.Tensor:
+        """f(lambda) = <Θ, msign(G + lambdaΘ)>. Returns 0-d tensor."""
+        z = x + lambda_value * theta
+        phi = self.msign(z, steps=msign_steps)
+        return tf.reduce_sum(theta * phi)
+    
+    def find_bracket(
+        self,
+        x: tf.Tensor,
+        theta: tf.Tensor,
+        initial_guess: float = 0.0,
+        initial_step: float = 1e-3,
+        max_expansions: int = 10,
+        msign_steps: int = 8,
+        tolerance_f: float = 1e-8,
+    ) -> Tuple[Optional[float], Optional[float], tf.Tensor, tf.Tensor]:
+        """Find lambda_l < lambda_r such that f(lambda_l) <= 0 <= f(lambda_r)."""
+        lambda_0 = initial_guess
+        f0 = self.compute_f_tensor(x, theta, lambda_0, msign_steps)
+    
+        if tf.abs(f0) < tolerance_f:
+            return lambda_0, lambda_0, f0, f0
+    
+        step = initial_step if f0 < 0 else -initial_step
+        lambda_prev = lambda_0
+        f_prev = f0
+    
+        for _ in range(max_expansions):
+            lambda_new = lambda_prev + step
+            f_new = self.compute_f_tensor(x, theta, lambda_new, msign_steps)
+    
+            sign_prev = f_prev <= 0.0
+            sign_new = f_new <= 0.0
+    
+            if sign_prev != sign_new:
+                if f_prev <= 0 <= f_new:
+                    lambda_l, f_l = lambda_prev, f_prev
+                    lambda_r, f_r = lambda_new, f_new
+                elif f_new <= 0 <= f_prev:
+                    lambda_l, f_l = lambda_new, f_new
+                    lambda_r, f_r = lambda_prev, f_prev
+                elif abs(f_prev) <= abs(f_new):
+                    lambda_l = lambda_r = lambda_prev
+                    f_l = f_r = f_prev
+                else:
+                    lambda_l = lambda_r = lambda_new
+                    f_l = f_r = f_new
+                return lambda_l, lambda_r, f_l, f_r
+    
+            step *= 2.0
+            lambda_prev, f_prev = lambda_new, f_new
+    
+        return None, None, f0, f0
+    
+    def solve_lambda_with_bisection(
+        self,
+        x: tf.Tensor,
+        theta: tf.Tensor,
+        initial_guess: float = 0.0,
+        initial_step: float = 1e-3,
+        tolerance_f: float = 1e-6,
+        max_iterations: int = 20,
+        max_expansions: int = 10,
+        msign_steps: int = 8,
+    ) -> float:
+        """Solve lambda such that f(lambda) = 0 using bisection."""
+        lambda_l, lambda_r, f_l, f_r = self.find_bracket(
+            x,
+            theta,
+            initial_guess=initial_guess,
+            initial_step=initial_step,
+            max_expansions=max_expansions,
+            msign_steps=msign_steps,
+            tolerance_f=tolerance_f,
+        )
+        if lambda_l is None or lambda_r is None:
+            return 0.0
+    
+        if tf.abs(f_l) < tf.abs(f_r):
+            best_lambda, best_f = lambda_l, f_l
+        else:
+            best_lambda, best_f = lambda_r, f_r
+    
+        if tf.abs(best_f) <= tolerance_f:
+            return best_lambda
+    
+        for _ in range(1, max_iterations + 1):
+            lambda_mid = 0.5 * (lambda_l + lambda_r)
+            f_mid = self.compute_f_tensor(x, theta, lambda_mid, msign_steps)
+    
+            if tf.abs(f_mid) < tf.abs(best_f):
+                best_lambda, best_f = lambda_mid, f_mid
+    
+            if tf.abs(f_mid) <= tolerance_f:
+                return lambda_mid
+    
+            if f_mid < 0:
+                lambda_l, f_l = lambda_mid, f_mid
+            else:
+                lambda_r, f_r = lambda_mid, f_mid
+    
+        return best_lambda
+    
+    def compute_spectral_ball_update(
+        self,
+        weight: tf.Tensor,
+        momentum: tf.Tensor,
+        power_iteration_steps: int,
+        msign_steps: int,
+        solver_tolerance_f: float,
+        solver_max_iterations: int,
+    ) -> tf.Tensor:
+        """Compute spectral ball constrained update direction."""
+        momentum_fp32 = tf.cast(momentum, tf.float32)
+        norm = tf.linalg.norm(momentum_fp32, ord="fro")
+        momentum_fp32 = momentum_fp32 / tf.maximum(norm, tf.constant(1e-8, dtype=tf.float32))
+    
+        u, v = self.power_iteration(weight, steps=power_iteration_steps)
+        theta = tf.matmul(u, tf.transpose(v))
+    
+        lambda_value = self.solve_lambda_with_bisection(
+            momentum_fp32,
+            theta=theta,
+            initial_guess=0.0,
+            initial_step=1e-3,
+            tolerance_f=solver_tolerance_f,
+            max_iterations=solver_max_iterations,
+            max_expansions=10,
+            msign_steps=msign_steps,
+        )
+    
+        z = momentum_fp32 + lambda_value * theta
+        return self.msign(z, steps=msign_steps)
+    
+    def matrix_power(self, matrix, power):
+        original_device = matrix.device if hasattr(matrix, 'device') else '/CPU:0'
+    
+        with tf.device('/CPU:0'):
+            s, u, v = tf.linalg.svd(matrix)
+            s_power = tf.pow(s, power)
+            s_diag = tf.linalg.diag(s_power)
+            result_cpu = tf.matmul(u, tf.matmul(s_diag, tf.transpose(v)))
+    
+        with tf.device(original_device):
+            result = tf.identity(result_cpu)
+    
+        return result
+    
+    def update_inv_precond(self, gradient, precond, inv_precond):
+        order = len(gradient.shape)
+        gradient_t = tf.transpose(gradient)
+        precond.assign_add(tf.matmul(gradient, gradient_t))
+        def true_fn():
+            inv_precond.assign(self.matrix_power(precond, -1.0 / order))
+        def false_fn():
+            pass
+        tf.cond(self.iterations % self.update_freq == 0, true_fn, false_fn)
 
     def update_step(self, gradient, variable, learning_rate):
         raise NotImplementedError
