@@ -640,7 +640,7 @@ class BaseOptimizer(KerasSaveable):
             grads[self._get_variable_index(p)] = tf.reshape(g_ortho_scaled, original_shape)
     
     def apply_weight_decay(self, variable, gradient, lr):
-        if self.weight_decouple:
+        if hasattr(self, 'weight_decouple') and self.weight_decouple:
             variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
         elif self.weight_decay > 0.0:
             gradient += variable * self.weight_decay
