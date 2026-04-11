@@ -277,12 +277,7 @@ class SpectralSphere(optimizer.Optimizer):
 
         lr = tf.cast(learning_rate, variable.dtype)
 
-        if self.weight_decouple:
-            variable.assign(
-                variable * (1.0 - self.weight_decay * lr)
-            )
-        elif self.weight_decay > 0.0:
-            gradient += variable * self.weight_decay
+        gradient = self.apply_weight_decay(variable, gradient, lr)
 
         idx = self._get_variable_index(variable)
         buf = self.momentum_buffer[idx]
@@ -500,12 +495,7 @@ class SpectralSphere_e(optimizer.Optimizer):
                 grads[self._get_variable_index(p)] = self.agc(p, grad)
                 grad = grads[self._get_variable_index(p)]
 
-            if self.weight_decouple:
-                p.assign(
-                    p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr))
-                )
-            elif self.weight_decay > 0.0:
-                grad += p * self.weight_decay
+            grad = self.apply_weight_decay(p, grad, lr)
 
             idx = self._get_variable_index(p)
             if self.pnm:

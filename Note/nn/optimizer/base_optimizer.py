@@ -644,6 +644,7 @@ class BaseOptimizer(KerasSaveable):
             variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
         elif self.weight_decay > 0.0:
             gradient += variable * self.weight_decay
+        return gradient
     
     def accumulate_numerator(self, s, gradient, de_nom, d_lr, idx):
         if hasattr(self, 'sn') and self.sn:
@@ -1012,8 +1013,9 @@ class BaseOptimizer(KerasSaveable):
     def update_step(self, gradient, variable, learning_rate):
         raise NotImplementedError
 
-    def apply_gradients(self, grads_and_vars, tape=None):
+    def apply_gradients(self, grads_and_vars, tape=None, loss=None):
         self.tape = tape
+        self.loss = loss
         grads, trainable_variables = zip(*grads_and_vars)
         self.apply(grads, trainable_variables)
         # Return iterations for compat with tf.keras.
