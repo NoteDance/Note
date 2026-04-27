@@ -1074,22 +1074,13 @@ class Model:
                     if hasattr(self, 'build'):
                         self.shm_metadata = []
                         self.test_active_shms = []
-                        for param in self.param:
-                            if type(param) == list:
-                                for param in param:
-                                    param=param.numpy()
-                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                    shared_array[:] = param[:]
-                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                    self.test_active_shms.append(shm)
-                            else:
-                                param=param.numpy()
-                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                shared_array[:] = param[:]
-                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                self.test_active_shms.append(shm)
+                        for param in self.shared_param:
+                            param=param.numpy()
+                            shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                            shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                            shared_array[:] = param[:]
+                            self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                            self.test_active_shms.append(shm)
                     process=multiprocessing.Process(target=self.test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, processes, jit_compile))
                     process.start()
                     if hasattr(self, 'build'):
@@ -1275,22 +1266,13 @@ class Model:
                     if hasattr(self, 'build'):
                         self.shm_metadata = []
                         self.test_active_shms = []
-                        for param in self.param:
-                            if type(param) == list:
-                                for param in param:
-                                    param=param.numpy()
-                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                    shared_array[:] = param[:]
-                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                    self.test_active_shms.append(shm)
-                            else:
-                                param=param.numpy()
-                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                shared_array[:] = param[:]
-                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                self.test_active_shms.append(shm)
+                        for param in self.shared_param:
+                            param=param.numpy()
+                            shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                            shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                            shared_array[:] = param[:]
+                            self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                            self.test_active_shms.append(shm)
                     process=multiprocessing.Process(target=self.test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, processes, jit_compile))
                     process.start()
                     if hasattr(self, 'build'):
@@ -1642,22 +1624,13 @@ class Model:
                         if hasattr(self, 'build'):
                             self.shm_metadata = []
                             self.test_active_shms = []
-                            for param in self.param:
-                                if type(param) == list:
-                                    for param in param:
-                                        param=param.numpy()
-                                        shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                        shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                        shared_array[:] = param[:]
-                                        self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                        self.test_active_shms.append(shm)
-                                else:
-                                    param=param.numpy()
-                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                    shared_array[:] = param[:]
-                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                    self.test_active_shms.append(shm)
+                            for param in self.shared_param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                self.test_active_shms.append(shm)
                         process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                         process.start()
                         if hasattr(self, 'build'):
@@ -1866,22 +1839,13 @@ class Model:
                         if hasattr(self, 'build'):
                             self.shm_metadata = []
                             self.test_active_shms = []
-                            for param in self.param:
-                                if type(param) == list:
-                                    for param in param:
-                                        param=param.numpy()
-                                        shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                        shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                        shared_array[:] = param[:]
-                                        self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                        self.test_active_shms.append(shm)
-                                else:
-                                    param=param.numpy()
-                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                    shared_array[:] = param[:]
-                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                    self.test_active_shms.append(shm)
+                            for param in self.shared_param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                self.test_active_shms.append(shm)
                         process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                         process.start()
                         if hasattr(self, 'build'):
@@ -2012,22 +1976,13 @@ class Model:
                         if hasattr(self, 'build'):
                             self.shm_metadata = []
                             self.test_active_shms = []
-                            for param in self.param:
-                                if type(param) == list:
-                                    for param in param:
-                                        param=param.numpy()
-                                        shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                        shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                        shared_array[:] = param[:]
-                                        self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                        self.test_active_shms.append(shm)
-                                else:
-                                    param=param.numpy()
-                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                    shared_array[:] = param[:]
-                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                    self.test_active_shms.append(shm)
+                            for param in self.shared_param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                self.test_active_shms.append(shm)
                         process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                         process.start()
                         if hasattr(self, 'build'):
@@ -2164,22 +2119,13 @@ class Model:
                         if hasattr(self, 'build'):
                             self.shm_metadata = []
                             self.test_active_shms = []
-                            for param in self.param:
-                                if type(param) == list:
-                                    for param in param:
-                                        param=param.numpy()
-                                        shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                        shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                        shared_array[:] = param[:]
-                                        self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                        self.test_active_shms.append(shm)
-                                else:
-                                    param=param.numpy()
-                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                    shared_array[:] = param[:]
-                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                    self.test_active_shms.append(shm)
+                            for param in self.shared_param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                self.test_active_shms.append(shm)
                         process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                         process.start()
                         if hasattr(self, 'build'):
@@ -2313,22 +2259,13 @@ class Model:
                         if hasattr(self, 'build'):
                             self.shm_metadata = []
                             self.test_active_shms = []
-                            for param in self.param:
-                                if type(param) == list:
-                                    for param in param:
-                                        param=param.numpy()
-                                        shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                        shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                        shared_array[:] = param[:]
-                                        self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                        self.test_active_shms.append(shm)
-                                else:
-                                    param=param.numpy()
-                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                    shared_array[:] = param[:]
-                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                    self.test_active_shms.append(shm)
+                            for param in self.shared_param:
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                self.test_active_shms.append(shm)
                         process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                         process.start()
                         if hasattr(self, 'build'):
@@ -2460,22 +2397,13 @@ class Model:
                             if hasattr(self, 'build'):
                                 self.shm_metadata = []
                                 self.test_active_shms = []
-                                for param in self.param:
-                                    if type(param) == list:
-                                        for param in param:
-                                            param=param.numpy()
-                                            shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                            shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                            shared_array[:] = param[:]
-                                            self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                            self.test_active_shms.append(shm)
-                                    else:
-                                        param=param.numpy()
-                                        shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
-                                        shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
-                                        shared_array[:] = param[:]
-                                        self.shm_metadata.append((shm.name, param.shape, param.dtype))
-                                        self.test_active_shms.append(shm)
+                                for param in self.shared_param:
+                                    param=param.numpy()
+                                    shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                    shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                    shared_array[:] = param[:]
+                                    self.shm_metadata.append((shm.name, param.shape, param.dtype))
+                                    self.test_active_shms.append(shm)
                             process=multiprocessing.Process(target=self.distributed_test_p,args=(test_data, test_labels, loss_object, test_loss, test_accuracy, jit_compile))
                             process.start()
                             if hasattr(self, 'build'):
