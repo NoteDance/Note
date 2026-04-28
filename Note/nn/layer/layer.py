@@ -1,3 +1,4 @@
+import tensorflow as tf
 from Note import nn
 
 
@@ -18,6 +19,8 @@ class Layer(metaclass=LayerMeta):
         self._sub_layers = []
         
         self._param_assignments = []
+        
+        self._named_params = {}
         
         self.name_ = self.__class__.__name__
         
@@ -53,6 +56,8 @@ class Layer(metaclass=LayerMeta):
             object.__getattribute__(self, "_sub_layers").append(value)
             object.__setattr__(value, 'name', name)
             self.layer_list.append(value)
+        elif isinstance(value, tf.Variable) and value in self._param_assignments:
+            self._named_params[name] = value
         object.__setattr__(self, name, value)
     
     @property
@@ -61,4 +66,25 @@ class Layer(metaclass=LayerMeta):
         out = list(self._own_params)
         for child in self._sub_layers:
             out.extend(child.param)
+        return out
+    
+    @property
+    def layer(self):
+        out = [self]
+        for child in self._sub_layers:
+            out.extend(child.layer)
+        return out
+    
+    @property
+    def param_names_list(self):
+        out = [list(self._named_params.keys())]
+        for child in self._sub_layers:
+            out.append(child.param_names)
+        return out
+    
+    @property
+    def named_params(self):
+        out = dict(self._named_params)
+        for child in self._sub_layers:
+            out.update(child.named_params)
         return out
