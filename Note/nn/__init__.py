@@ -192,6 +192,7 @@ from Note.nn.pairwise_distance import pairwise_distance
 from Note.nn.parameter import Parameter
 from Note.nn.pos_embed import *
 from Note.nn.positional_encoding import positional_encoding
+from Note.nn.replace_array import replace_array
 from Note.nn.restore import *
 from Note.nn.RL import RL
 from Note.nn.RL_pytorch import RL_pytorch
