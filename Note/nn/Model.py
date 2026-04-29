@@ -3035,6 +3035,8 @@ class Model:
         output_file=open(path,'wb')
         param=self.param
         self.param=None
+        if hasattr(self, 'build'):
+            shared_param=self.shared_param
         if type(self.optimizer)==list:
             opt_config=[opt.get_config() for opt in self.optimizer]
         else:
@@ -3044,6 +3046,7 @@ class Model:
         self.optimizer=None
         pickle.dump(self,output_file)
         self.param=param
+        self.shared_param=shared_param
         self.optimizer=optimizer
         output_file.close()
         return
@@ -3146,6 +3149,8 @@ class Model:
             output_file=open(path,'wb')
             param=self.param
             self.param=None
+            if hasattr(self, 'build'):
+                shared_param=self.shared_param
             if type(self.optimizer)==list:
                 opt_config=[opt.get_config() for opt in self.optimizer]
             else:
@@ -3186,6 +3191,7 @@ class Model:
         else:
             pickle.dump(param,output_file)
             self.param=param
+            self.shared_param=shared_param
             self.optimizer=optimizer
         if self.parallel_training_and_save:
             if self.parallel_dump==True:
