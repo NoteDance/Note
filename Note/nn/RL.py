@@ -339,9 +339,6 @@ class RL:
                               safety_factor: float = 0.75,
                               min_exp_per_proc: int = None,
                               parallel_dump: bool = True) -> int:
-        if not hasattr(self, 'pool_size') or self.pool_size is None:
-            return min(8, mp.cpu_count())
-        
         if min_exp_per_proc is None:
             min_exp_per_proc = getattr(self, 'batch', 256) * 10
         
@@ -349,10 +346,9 @@ class RL:
         cpu_cores = mp.cpu_count()
         
         fixed_bytes = 0
-        if hasattr(self, 'param'):
-            from tensorflow.python.util import nest
-            for p in nest.flatten(self.param):
-                fixed_bytes += p.numpy().nbytes
+        from tensorflow.python.util import nest
+        for p in nest.flatten(self.param):
+            fixed_bytes += p.numpy().nbytes
         
         param_shm_bytes = 0
         for p in nest.flatten(self.shared_param):
