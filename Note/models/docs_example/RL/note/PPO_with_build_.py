@@ -46,7 +46,7 @@ class PPO(nn.RL):
     
     def build_(self, shared_params):
         self.actor_old=actor(self.state_dim,self.hidden_dim,self.action_dim)
-        nn.replace_array(self.actor_old, shared_params)
+        nn.replace_with_array(self.actor_old, shared_params)
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
