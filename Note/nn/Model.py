@@ -992,6 +992,13 @@ class Model:
                     num_updates = scale * self.ess / ess_threshold * self.num_updates
                     num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                     num_updates = int(num_updates)
+                    if hasattr(self, 'pr_flag'):
+                        self.pr_flag.assign(True)
+                        self.ess_.assign(self.ess)
+                    if hasattr(self, 'param_copy'):
+                        nn.assign_param(self.param_copy, self.param)
+                elif hasattr(self, 'pr_flag'):
+                    self.pr_flag.assign(False)
                 for train_data, labels in train_ds:
                     if parallel_training_and_test and self.test_flag.value:
                         if hasattr(self, 'build'):
@@ -1179,11 +1186,18 @@ class Model:
                 batch = 0
                 index1 = 0
                 batch_counter = 0
-                if self.PR and i % 2 != 0:
+                if self.PR and epoch % 2 != 0:
                     self.ess = self.compute_ess()
                     num_updates = scale * self.ess / ess_threshold * self.num_updates
                     num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                     num_updates = int(num_updates)
+                    if hasattr(self, 'pr_flag'):
+                        self.pr_flag.assign(True)
+                        self.ess_.assign(self.ess)
+                    if hasattr(self, 'param_copy'):
+                        nn.assign_param(self.param_copy, self.param)
+                elif hasattr(self, 'pr_flag'):
+                    self.pr_flag.assign(False)
                 for train_data, labels in train_ds:
                     if parallel_training_and_test and self.test_flag.value:
                         if hasattr(self, 'build'):
@@ -1520,6 +1534,13 @@ class Model:
                         num_updates = scale * self.ess / ess_threshold * self.num_updates
                         num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                         num_updates = int(num_updates)
+                        if hasattr(self, 'pr_flag'):
+                            self.pr_flag.assign(True)
+                            self.ess_.assign(self.ess)
+                        if hasattr(self, 'param_copy'):
+                            nn.assign_param(self.param_copy, self.param)
+                    elif hasattr(self, 'pr_flag'):
+                        self.pr_flag.assign(False)
                     for x in train_dist_dataset:
                         if parallel_training_and_test and self.test_flag.value:
                             if hasattr(self, 'build'):
@@ -1729,11 +1750,18 @@ class Model:
                     batch = 0
                     index1 = 0
                     batch_counter = 0
-                    if self.PR and i % 2 != 0:
+                    if self.PR and epoch % 2 != 0:
                         self.ess = self.compute_ess()
                         num_updates = scale * self.ess / ess_threshold * self.num_updates
                         num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
                         num_updates = int(num_updates)
+                        if hasattr(self, 'pr_flag'):
+                            self.pr_flag.assign(True)
+                            self.ess_.assign(self.ess)
+                        if hasattr(self, 'param_copy'):
+                            nn.assign_param(self.param_copy, self.param)
+                    elif hasattr(self, 'pr_flag'):
+                        self.pr_flag.assign(False)
                     for x in train_dist_dataset:
                         if parallel_training_and_test and self.test_flag.value:
                             if hasattr(self, 'build'):
@@ -2559,9 +2587,16 @@ class Model:
         batch_counter = 0
         if self.PR and self.total_epoch % 2 != 0:
             self.ess = self.compute_ess()
-            num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
-            num_updates = np.clip(num_updates, self.min_num_updates, self.max_num_updates)
+            num_updates = scale * self.ess / ess_threshold * self.num_updates
+            num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
             num_updates = int(num_updates)
+            if hasattr(self, 'pr_flag'):
+                self.pr_flag.assign(True)
+                self.ess_.assign(self.ess)
+            if hasattr(self, 'param_copy'):
+                nn.assign_param(self.param_copy, self.param)
+        elif hasattr(self, 'pr_flag'):
+            self.pr_flag.assign(False)
         while self.step_in_epoch < num_steps_per_epoch:
             index2 = index1 + self.batch_size
             if self.PR and self.total_epoch % 2 != 0:
@@ -2676,9 +2711,16 @@ class Model:
         batch_counter = 0
         if self.PR and self.total_epoch % 2 != 0:
             self.ess = self.compute_ess()
-            num_updates = self.scale * self.ess / self.ess_threshold * self.num_updates
-            num_updates = np.clip(num_updates, self.min_num_updates, self.max_num_updates)
+            num_updates = scale * self.ess / ess_threshold * self.num_updates
+            num_updates = np.clip(num_updates, min_num_updates, max_num_updates)
             num_updates = int(num_updates)
+            if hasattr(self, 'pr_flag'):
+                self.pr_flag.assign(True)
+                self.ess_.assign(self.ess)
+            if hasattr(self, 'param_copy'):
+                nn.assign_param(self.param_copy, self.param)
+        elif hasattr(self, 'pr_flag'):
+            self.pr_flag.assign(False)
         while self.step_in_epoch < num_steps_per_epoch:
             index2 = index1 + self.batch_size
             if self.PR and self.total_epoch % 2 != 0:
