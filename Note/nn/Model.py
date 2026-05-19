@@ -3075,6 +3075,10 @@ class Model:
         self.param=None
         if hasattr(self, 'build'):
             shared_param=self.shared_param
+            self.shared_param=None
+        if hasattr(self, 'pr_flag'):
+            param_copy=self.param_copy
+            self.param_copy=None
         if type(self.optimizer)==list:
             opt_config=[opt.get_config() for opt in self.optimizer]
         else:
@@ -3084,7 +3088,10 @@ class Model:
         self.optimizer=None
         pickle.dump(self,output_file)
         self.param=param
-        self.shared_param=shared_param
+        if hasattr(self, 'build'):
+            self.shared_param=shared_param
+        if hasattr(self, 'pr_flag'):
+            self.param_copy=param_copy
         self.optimizer=optimizer
         output_file.close()
         return
@@ -3189,6 +3196,10 @@ class Model:
             self.param=None
             if hasattr(self, 'build'):
                 shared_param=self.shared_param
+                self.shared_param=None
+            if hasattr(self, 'pr_flag'):
+                param_copy=self.param_copy
+                self.param_copy=None
             if type(self.optimizer)==list:
                 opt_config=[opt.get_config() for opt in self.optimizer]
             else:
@@ -3229,7 +3240,10 @@ class Model:
         else:
             pickle.dump(param,output_file)
             self.param=param
-            self.shared_param=shared_param
+            if hasattr(self, 'build'):
+                self.shared_param=shared_param
+            if hasattr(self, 'pr_flag'):
+                self.param_copy=param_copy
             self.optimizer=optimizer
         if self.parallel_training_and_save:
             if self.parallel_dump==True:
