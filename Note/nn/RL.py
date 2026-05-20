@@ -3642,6 +3642,23 @@ class RL:
         return
     
     
+    def _collect_model_attrs(self):
+        return {
+            k: v for k, v in self.__dict__.items()
+            if isinstance(v, nn.Model)
+        }
+    
+    
+    def _null_model_attrs(self, cache):
+        for k in cache:
+            self.__dict__[k] = None
+    
+    
+    def _restore_model_attrs(self, cache):
+        for k, v in cache.items():
+            self.__dict__[k] = v
+    
+    
     def save_param_(self,path):
         if self.save_top_k is None:
             if self.max_save_files==1:
@@ -3824,11 +3841,14 @@ class RL:
         self.opt_config=opt_config
         optimizer=self.optimizer
         self.optimizer=None
+        model_cache=self._collect_model_attrs()
+        self._null_model_attrs(model_cache)
         pickle.dump(self,output_file)
         self.param=param
         if hasattr(self, 'build') or hasattr(self, 'build_'):
             self.shared_param=shared_param
         self.optimizer=optimizer
+        self._restore_model_attrs(model_cache)
         output_file.close()
         return
     
@@ -3958,6 +3978,8 @@ class RL:
             self.opt_config=opt_config
             optimizer=self.optimizer
             self.optimizer=None
+            model_cache=self._collect_model_attrs()
+            self._null_model_attrs(model_cache)
             pickle.dump(self,output_file)
         if self.parallel_training_and_save:
             if self.parallel_dump==True:
@@ -3993,6 +4015,7 @@ class RL:
             if hasattr(self, 'build') or hasattr(self, 'build_'):
                 self.shared_param=shared_param
             self.optimizer=optimizer
+            self._restore_model_attrs(model_cache)
         if self.parallel_training_and_save:
             if self.parallel_dump==True:
                 counter=0
@@ -4149,9 +4172,11 @@ class RL:
     def restore(self,path):
         input_file=open(path,'rb')
         model=pickle.load(input_file)
+        model_cache=self._collect_model_attrs()
         param=self.param
         self.__dict__.update(model.__dict__)
         self.param=param
+        self._restore_model_attrs(model_cache)
         param=pickle.load(input_file)
         nn.assign_param(self.param,param)
         if type(self.optimizer)==list:
@@ -4225,8 +4250,10 @@ class RL:
         if not self.parallel_dump:
             input_file2=open(path2,'rb')
         model=pickle.load(input_file1)
+        model_cache=self._collect_model_attrs()
         param=self.param
         self.__dict__.update(model.__dict__)
+        self._restore_model_attrs(model_cache)
         if self.parallel_dump==True:
             manager=mp.Manager()
             param=manager.list()

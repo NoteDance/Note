@@ -2873,6 +2873,23 @@ class Model:
         return
     
     
+    def _collect_layer_attrs(self):
+        return {
+            k: v for k, v in self.__dict__.items()
+            if isinstance(v, nn.Layer) or isinstance(v, nn.Model)
+        }
+    
+    
+    def _null_layer_attrs(self, cache):
+        for k in cache:
+            self.__dict__[k] = None
+    
+    
+    def _restore_layer_attrs(self, cache):
+        for k, v in cache.items():
+            self.__dict__[k] = v
+    
+    
     def save_param_(self,path):
         if self.save_top_k is None:
             if self.max_save_files==1:
@@ -3086,6 +3103,8 @@ class Model:
         self.opt_config=opt_config
         optimizer=self.optimizer
         self.optimizer=None
+        layer_cache=self._collect_layer_attrs()
+        self._null_layer_attrs(layer_cache)
         pickle.dump(self,output_file)
         self.param=param
         if hasattr(self, 'build'):
@@ -3093,6 +3112,7 @@ class Model:
         if hasattr(self, 'pr_flag'):
             self.param_copy=param_copy
         self.optimizer=optimizer
+        self._restore_layer_attrs(layer_cache)
         output_file.close()
         return
     
@@ -3207,6 +3227,8 @@ class Model:
             self.opt_config=opt_config
             optimizer=self.optimizer
             self.optimizer=None
+            layer_cache=self._collect_layer_attrs()
+            self._null_layer_attrs(layer_cache)
             pickle.dump(self,output_file)
         if self.parallel_training_and_save:
             self.active_shms = []
@@ -3245,6 +3267,7 @@ class Model:
             if hasattr(self, 'pr_flag'):
                 self.param_copy=param_copy
             self.optimizer=optimizer
+            self._restore_layer_attrs(layer_cache)
         if self.parallel_training_and_save:
             if self.parallel_dump==True:
                 counter=0
@@ -3383,9 +3406,11 @@ class Model:
     def restore(self,path):
         input_file=open(path,'rb')
         model=pickle.load(input_file)
+        layer_cache=self._collect_layer_attrs()
         param=self.param
         self.__dict__.update(model.__dict__)
         self.param=param
+        self._restore_layer_attrs(layer_cache)
         param=pickle.load(input_file)
         nn.assign_param(self.param,param)
         if type(self.optimizer)==list:
@@ -3430,8 +3455,10 @@ class Model:
         if not self.parallel_dump:
             input_file2=open(path2,'rb')
         model=pickle.load(input_file1)
+        layer_cache=self._collect_layer_attrs()
         param=self.param
         self.__dict__.update(model.__dict__)
+        self._restore_layer_attrs(layer_cache)
         if self.parallel_dump==True:
             manager=multiprocessing.Manager()
             param=manager.list()
