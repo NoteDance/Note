@@ -26,10 +26,8 @@ class Model(nn.Model):
         x = self.d2(x)
         return self.d3(x)
     
-    
     def compute_svd_penalty(self) -> tf.Tensor:
-        weight = 1.0 - tf.minimum(self.ess / self.max_ess, 1.0)
-
+        weight  = 1.0 - tf.minimum(self.ess / self.max_ess, 1.0)
         penalty = tf.constant(0.0, dtype=tf.float32)
 
         for p, pc in zip(self.param, self.param_copy):
@@ -40,21 +38,28 @@ class Model(nn.Model):
             rows = 1
             for d in shape[:-1]:
                 rows *= d
-            cols = shape[-1]
+            cols    = shape[-1]
+            p_2d    = tf.reshape(tf.cast(p,  tf.float32), [rows, cols])
+            pc_2d   = tf.reshape(tf.cast(pc, tf.float32), [rows, cols])
 
-            p_2d  = tf.reshape(tf.cast(p,  tf.float32), [rows, cols])
-            pc_2d = tf.reshape(tf.cast(pc, tf.float32), [rows, cols])
+            k = tf.minimum(self.svd_k, tf.minimum(rows, cols))
 
             _, u_param, _ = tf.linalg.svd(p_2d,  full_matrices=False)
             _, u_copy,  _ = tf.linalg.svd(pc_2d, full_matrices=False)
 
-            sim_param = tf.matmul(u_param, u_param, transpose_b=True)
-            sim_copy  = tf.matmul(u_copy,  u_copy,  transpose_b=True)
+            u_param = u_param[:, :k]    # [rows, k]
+            u_copy  = u_copy[:,  :k]    # [rows, k]
 
-            penalty = penalty + tf.norm(sim_param - sim_copy, ord='fro')
+            M = tf.matmul(u_param, u_copy, transpose_a=True)
+
+            # ||UU^T - U_c U_c^T||_F = sqrt(2k - 2*||M||_F^2)
+            k_f       = tf.cast(k, tf.float32)
+            diff_norm = tf.sqrt(
+                tf.maximum(2.0 * k_f - 2.0 * tf.reduce_sum(M * M), 1e-12)
+            )
+            penalty = penalty + diff_norm
 
         return weight * penalty
-
 
     @tf.function(jit_compile=True)
     def train_step(self, train_data, labels, loss_object,
@@ -82,7 +87,6 @@ class Model(nn.Model):
             acc = train_accuracy(labels, output)
             return loss, acc
         return loss, None
-
 
     @tf.function
     def train_step_(self, train_data, labels, loss_object,
