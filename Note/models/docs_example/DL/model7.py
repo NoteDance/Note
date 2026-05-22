@@ -60,57 +60,11 @@ class Model(nn.Model):
             penalty = penalty + diff_norm
 
         return weight * penalty
-
-    @tf.function(jit_compile=True)
-    def train_step(self, train_data, labels, loss_object,
-                   train_loss, train_accuracy, optimizer):
-        with tf.GradientTape(persistent=True) as tape:
-            output = self.__call__(train_data)
-            loss   = loss_object(labels, output)
-            penalty = tf.cond(
-                self.pr_flag,
-                true_fn  = lambda: self.compute_svd_penalty(),
-                false_fn = lambda: tf.constant(0.0, dtype=tf.float32)
-            )
-            total_loss = loss + penalty
-
-        if type(optimizer) != list:
-            grads = tape.gradient(total_loss, self.param)
-            optimizer.apply_gradients(zip(grads, self.param))
-        else:
-            for i in range(len(optimizer)):
-                grads = tape.gradient(total_loss, self.param[i])
-                optimizer[i].apply_gradients(zip(grads, self.param[i]))
-
-        train_loss(loss)
-        if train_accuracy is not None:
-            acc = train_accuracy(labels, output)
-            return loss, acc
-        return loss, None
-
-    @tf.function
-    def train_step_(self, train_data, labels, loss_object,
-                    train_loss, train_accuracy, optimizer):
-        with tf.GradientTape(persistent=True) as tape:
-            output = self.__call__(train_data)
-            loss   = loss_object(labels, output)
-            penalty = tf.cond(
-                self.pr_flag,
-                true_fn  = lambda: self.compute_svd_penalty(),
-                false_fn = lambda: tf.constant(0.0, dtype=tf.float32)
-            )
-            total_loss = loss + penalty
-
-        if type(optimizer) != list:
-            grads = tape.gradient(total_loss, self.param)
-            optimizer.apply_gradients(zip(grads, self.param))
-        else:
-            for i in range(len(optimizer)):
-                grads = tape.gradient(total_loss, self.param[i])
-                optimizer[i].apply_gradients(zip(grads, self.param[i]))
-
-        train_loss(loss)
-        if train_accuracy is not None:
-            acc = train_accuracy(labels, output)
-            return loss, acc
-        return loss, None
+    
+    def loss_func(self, loss):
+        penalty = tf.cond(
+            self.pr_flag,
+            true_fn  = lambda: self.compute_svd_penalty(),
+            false_fn = lambda: tf.constant(0.0, dtype=tf.float32)
+        )
+        return loss + penalty
