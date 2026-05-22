@@ -333,7 +333,7 @@ class Model:
         total_params = 0
         trainable_params = 0
         non_trainable_params = 0
-        total_memory = 0  # Memory usage in bytes
+        total_memory = 0
 
         for param in self.param:
             param_count = tf.size(param).numpy()
@@ -356,7 +356,6 @@ class Model:
                 index += 1
             return f"{bytes_size:.2f} {units[index]}"
 
-        # Print the summary with formatted memory usage
         print("Model Summary")
         print("-------------")
         print(f"Total params: {total_params} ({format_memory(total_memory)})")
