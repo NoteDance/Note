@@ -411,6 +411,8 @@ class Model:
         with tf.GradientTape(persistent=True) as tape:
             output = self.__call__(train_data)
             loss = loss_object(labels, output)
+            if hasattr(self, 'loss_func'):
+                loss = self.loss_func(loss)
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
@@ -430,6 +432,8 @@ class Model:
         with tf.GradientTape(persistent=True) as tape:
             output = self.__call__(train_data)
             loss = loss_object(labels, output)
+            if hasattr(self, 'loss_func'):
+                loss = self.loss_func(loss)
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
@@ -470,6 +474,8 @@ class Model:
         with tf.GradientTape(persistent=True) as tape:
             output = self.__call__(data)
             loss = self.compute_loss(labels, output)
+            if hasattr(self, 'loss_func'):
+                loss = self.loss_func(loss)
         
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
