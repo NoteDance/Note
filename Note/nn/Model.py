@@ -3478,7 +3478,7 @@ class Model:
                 if type(self.param[i])==list:
                     for j in range(len(self.param[i])):
                         counter+=1
-                        input_file3=open(os.path.join(path2,"param_index_{counter}.dat"),'rb')
+                        input_file3=open(os.path.join(path2, f"param_index_{counter}.dat"),'rb')
                         param_index=pickle.load(input_file3)
                         process=multiprocessing.Process(target=self.parallel_param_load,args=(param, param_index, path2, counter))
                         process.start()
@@ -3486,7 +3486,7 @@ class Model:
                         input_file3.close()
                 else:
                     counter+=1
-                    input_file3=open(os.path.join(path2,"param_index_{counter}.dat"),'rb')
+                    input_file3=open(os.path.join(path2, f"param_index_{counter}.dat"),'rb')
                     param_index=pickle.load(input_file3)
                     process=multiprocessing.Process(target=self.parallel_state_load,args=(param, param_index, path2, counter))
                     process.start()
@@ -3505,7 +3505,7 @@ class Model:
                 for i in range(len(self.optimizer)):
                     for j in range(len(self.state_dict[i])):
                         counter+=1
-                        input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
+                        input_file3=open(os.path.join(path2, f"state_index_{counter}.dat"),'rb')
                         state_index=pickle.load(input_file3)
                         process=multiprocessing.Process(target=self.parallel_state_load,args=(state_dict, state_index, path2, counter))
                         process.start()
@@ -3515,7 +3515,7 @@ class Model:
                 state_dict=manager.dict()
                 for i in range(len(self.state_dict)):
                     counter+=1
-                    input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
+                    input_file3=open(os.path.join(path2, f"state_index_{counter}.dat"),'rb')
                     state_index=pickle.load(input_file3)
                     process=multiprocessing.Process(target=self.parallel_param_load,args=(state_dict, state_index, path2, counter))
                     process.start()
@@ -3547,7 +3547,7 @@ class Model:
                 for i in range(len(self.optimizer)):
                     for j in range(len(self.state_dict[i])):
                         counter+=1
-                        input_file3=open(os.path.join(path2,"state_index_{counter}.dat"),'rb')
+                        input_file3=open(os.path.join(path2, f"state_index_{counter}.dat"),'rb')
                         state_index=pickle.load(input_file3)
                     self.optimizer[state_index[0]].from_config(self.opt_config[state_index[0]])
                     self.optimizer[state_index[0]].built=False
