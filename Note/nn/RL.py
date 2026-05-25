@@ -3878,7 +3878,7 @@ class RL:
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"param_index_{counter}.dat")
             output_file=open(path,'wb')
-            pickle.dump((index1, index2),output_file)
+            pickle.dump(index1,output_file)
             output_file.close()
         shm.close()
         self.param_save_flag_list[counter]=True
