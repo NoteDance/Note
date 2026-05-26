@@ -2523,17 +2523,17 @@ class RL:
         
         if self.save_data and len(shared_states) != 0:
             for p in range(processes):
-                self._get_buffer(p, 'state') = shared_states[p]
-                self._get_buffer(p, 'action') = shared_actions[p]
-                self._get_buffer(p, 'next_state') = shared_next_states[p]
-                self._get_buffer(p, 'reward') = shared_rewards[p]
-                self._get_buffer(p, 'done') = shared_dones[p]
+                self._get_buffer(p, 'state')[:] = shared_states[p]
+                self._get_buffer(p, 'action')[:] = shared_actions[p]
+                self._get_buffer(p, 'next_state')[:] = shared_next_states[p]
+                self._get_buffer(p, 'reward')[:] = shared_rewards[p]
+                self._get_buffer(p, 'done')[:] = shared_dones[p]
                 if self.PR:
-                    self._get_buffer(p, 'TD') = shared_TDs[p]
+                    self._get_buffer(p, 'TD')[:] = shared_TDs[p]
                     if self.PPO:
-                        self._get_buffer(p, 'ratio') = shared_ratios[p]
+                        self._get_buffer(p, 'ratio')[:] = shared_ratios[p]
                     if hasattr(self.prioritized_replay, 'sum_trees'):
-                        self._get_buffer(p, 'sum_trees') = sum_trees[p]
+                        self._get_buffer(p, 'sum_trees')[:] = sum_trees[p]
     
     
     def _get_buffer(self, p, field):
@@ -3721,7 +3721,7 @@ class RL:
                             shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
                             shared_array[:] = param[:]
                             shm_metadata = (shm.name, param.shape, param.dtype, current_offset, True)
-                            current_offset += param.nbytes
+                            current_offset += self.align_to_64(param.nbytes)
                             pool.apply_async(self.parallel_param_dump,args=(shm_metadata, i, j, path, counter))
                     else:
                         counter+=1
@@ -3731,7 +3731,7 @@ class RL:
                         shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
                         shared_array[:] = param[:]
                         shm_metadata = (shm.name, param.shape, param.dtype, current_offset, False)
-                        current_offset += param.nbytes
+                        current_offset += self.align_to_64(param.nbytes)
                         pool.apply_async(self.parallel_param_dump,args=(shm_metadata, i, None, path, counter))
             else:
                 output_file=open(path,'wb')
@@ -3757,10 +3757,10 @@ class RL:
                 if type(self.param[i])==list:
                     param.append([])
                     for param in range(len(self.param[i])):
-                        total_size += param.nbytes
+                        total_size += self.align_to_64(param.nbytes)
                         param[i].append(None)
                 else:
-                    total_size += param.nbytes
+                    total_size += self.align_to_64(param.nbytes)
                     param.append(None)
             large_shm_p = shared_memory.SharedMemory(create=True, size=total_size)
             pool = mp.Pool(processes=os.cpu_count())
@@ -3768,24 +3768,24 @@ class RL:
                 if type(self.param[i])==list:
                     for j in range(len(self.param[i])):
                         counter+=1
-                        input_file3=open(os.path.join(path2, f"param_index_{counter}.dat"),'rb')
+                        input_file3=open(os.path.join(path, f"param_index_{counter}.dat"),'rb')
                         param_index=pickle.load(input_file3)
                         param_index_list.append(param_index)
-                        input_file4=open(os.path.join(path2, f"param_metadata_{counter}.dat"),'rb')
+                        input_file4=open(os.path.join(path, f"param_metadata_{counter}.dat"),'rb')
                         param_metadata=pickle.load(input_file3)
                         param_metadata_list.append(param_metadata)
-                        pool.apply_async(self.parallel_param_load,args=(large_shm_p.name, param_metadata, path2, counter))
+                        pool.apply_async(self.parallel_param_load,args=(large_shm_p.name, param_metadata, path, counter))
                         input_file3.close()
                         input_file4.close()
                 else:
                     counter+=1
-                    input_file3=open(os.path.join(path2, f"param_index_{counter}.dat"),'rb')
+                    input_file3=open(os.path.join(path, f"param_index_{counter}.dat"),'rb')
                     param_index=pickle.load(input_file3)
                     param_index_list.append(param_index)
-                    input_file4=open(os.path.join(path2, f"param_metadata_{counter}.dat"),'rb')
+                    input_file4=open(os.path.join(path, f"param_metadata_{counter}.dat"),'rb')
                     param_metadata=pickle.load(input_file3)
                     param_metadata_list.append(param_metadata)
-                    pool.apply_async(self.parallel_state_load,args=(large_shm_p.name, param_metadata, path2, counter))
+                    pool.apply_async(self.parallel_state_load,args=(large_shm_p.name, param_metadata, path, counter))
                     input_file3.close()
                     input_file4.close()
             pool.close()
@@ -4035,7 +4035,7 @@ class RL:
                             shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
                             shared_array[:] = param[:]
                             shm_metadata = (shm.name, param.shape, param.dtype, current_offset, True)
-                            current_offset += param.nbytes
+                            current_offset += self.align_to_64(param.nbytes)
                             pool.apply_async(self.parallel_param_dump,args=(shm_metadata, i, j, path, counter))
                     else:
                         counter+=1
@@ -4045,7 +4045,7 @@ class RL:
                         shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
                         shared_array[:] = param[:]
                         shm_metadata = (shm.name, param.shape, param.dtype, current_offset, False)
-                        current_offset += param.nbytes
+                        current_offset += self.align_to_64(param.nbytes)
                         pool.apply_async(self.parallel_param_dump,args=(shm_metadata, i, None, path, counter))
             else:
                 output_file=open(path,'wb')
@@ -4071,7 +4071,7 @@ class RL:
                             shared_array = np.ndarray(state.shape, dtype=state.dtype, buffer=shm.buf)
                             shared_array[:] = state[:]
                             shm_metadata = (shm.name, state.shape, state.dtype, current_offset, True)
-                            current_offset += state.nbytes
+                            current_offset += self.align_to_64(state.nbytes)
                             pool.apply_async(self.parallel_state_dump,args=(shm_metadata, i, j, path, counter))
                 else:
                     for i in range(len(self.state_dict)):
@@ -4082,7 +4082,7 @@ class RL:
                         shared_array = np.ndarray(state.shape, dtype=state.dtype, buffer=shm.buf)
                         shared_array[:] = state[:]
                         shm_metadata = (shm.name, state.shape, state.dtype, current_offset, False)
-                        current_offset += state.nbytes
+                        current_offset += self.align_to_64(state.nbytes)
                         pool.apply_async(self.parallel_state_dump,args=(shm_metadata, i, None, path, counter))
             else:
                 pickle.dump(self.state_dict,output_file)
@@ -4237,17 +4237,17 @@ class RL:
             self.optimizer.load_own_variables(state_dict)
         self._init_shared_experience_buffers(self.processes)
         for p in range(self.processes):
-            self._get_buffer(p, 'state') = pickle.load(input_file2)
-            self._get_buffer(p, 'action') = pickle.load(input_file2)
-            self._get_buffer(p, 'next_state') = pickle.load(input_file2)
-            self._get_buffer(p, 'reward') = pickle.load(input_file2)
-            self._get_buffer(p, 'done') = pickle.load(input_file2)
+            self._get_buffer(p, 'state')[:] = pickle.load(input_file)
+            self._get_buffer(p, 'action')[:] = pickle.load(input_file)
+            self._get_buffer(p, 'next_state')[:] = pickle.load(input_file)
+            self._get_buffer(p, 'reward')[:] = pickle.load(input_file)
+            self._get_buffer(p, 'done')[:] = pickle.load(input_file)
             if self.PR:
-                self._get_buffer(p, 'TD') = pickle.load(input_file2)
+                self._get_buffer(p, 'TD')[:] = pickle.load(input_file)
                 if self.PPO:
-                    self._get_buffer(p, 'ratio') = pickle.load(input_file2)
+                    self._get_buffer(p, 'ratio')[:] = pickle.load(input_file)
                 if hasattr(self.prioritized_replay, 'sum_trees'):
-                    self._get_buffer(p, 'sum_trees') = pickle.load(input_file2)
+                    self._get_buffer(p, 'sum_trees')[:] = pickle.load(input_file)
         input_file.close()
         return
     
@@ -4272,21 +4272,21 @@ class RL:
     
     def parallel_data_load(self, path, p):
         input_file2=open(os.path.join(path,f"data_{p}.dat"),'rb')
-        self._get_buffer(p, 'state') = pickle.load(input_file2)
-        self._get_buffer(p, 'action') = pickle.load(input_file2)
-        self._get_buffer(p, 'next_state') = pickle.load(input_file2)
-        self._get_buffer(p, 'reward') = pickle.load(input_file2)
-        self._get_buffer(p, 'done') = pickle.load(input_file2)
+        self._get_buffer(p, 'state')[:] = pickle.load(input_file2)
+        self._get_buffer(p, 'action')[:] = pickle.load(input_file2)
+        self._get_buffer(p, 'next_state')[:] = pickle.load(input_file2)
+        self._get_buffer(p, 'reward')[:] = pickle.load(input_file2)
+        self._get_buffer(p, 'done')[:] = pickle.load(input_file2)
         if self.PR:
-            self._get_buffer(p, 'TD') = pickle.load(input_file2)
+            self._get_buffer(p, 'TD')[:] = pickle.load(input_file2)
             if self.PPO:
-                self._get_buffer(p, 'ratio') = pickle.load(input_file2)
+                self._get_buffer(p, 'ratio')[:] = pickle.load(input_file2)
             if hasattr(self.prioritized_replay, 'sum_trees'):
-                self._get_buffer(p, 'sum_trees') = pickle.load(input_file2)
+                self._get_buffer(p, 'sum_trees')[:] = pickle.load(input_file2)
         input_file2.close()
     
     
-    def align_to_64(size_in_bytes):
+    def align_to_64(self, size_in_bytes):
         return (size_in_bytes + 63) & ~63
     
     
@@ -4309,10 +4309,11 @@ class RL:
                 if type(self.param[i])==list:
                     param.append([])
                     for param in range(len(self.param[i])):
-                        total_size += param.nbytes
+                        aligned_nbytes = self.align_to_64(param.nbytes)
+                        total_size += aligned_nbytes
                         param[i].append(None)
                 else:
-                    aligned_nbytes = align_to_64(param.nbytes)
+                    aligned_nbytes = self.align_to_64(param.nbytes)
                     total_size += aligned_nbytes
                     param.append(None)
             large_shm_p = shared_memory.SharedMemory(create=True, size=total_size)
@@ -4349,6 +4350,15 @@ class RL:
             counter=0
             state_index_list=[]
             state_metadata_list=[]
+            if type(self.optimizer)==list:
+                for i in range(len(self.optimizer)):
+                    for state in list(self.state_dict[i].values()):
+                        aligned_nbytes = self.align_to_64(state.nbytes)
+                        total_size += aligned_nbytes
+            else:
+                for state in list(self.state_dict.values()):
+                    aligned_nbytes = self.align_to_64(state.nbytes)
+                    total_size += aligned_nbytes
             large_shm_s = shared_memory.SharedMemory(create=True, size=total_size)
             if type(self.optimizer)==list:
                 state_dict=[]
@@ -4400,17 +4410,17 @@ class RL:
                     pool.apply_async(self.parallel_data_load,args=(path2, p))
             else:
                 for p in range(self.processes):
-                    self._get_buffer(p, 'state') = pickle.load(input_file2)
-                    self._get_buffer(p, 'action') = pickle.load(input_file2)
-                    self._get_buffer(p, 'next_state') = pickle.load(input_file2)
-                    self._get_buffer(p, 'reward') = pickle.load(input_file2)
-                    self._get_buffer(p, 'done') = pickle.load(input_file2)
+                    self._get_buffer(p, 'state')[:] = pickle.load(input_file2)
+                    self._get_buffer(p, 'action')[:] = pickle.load(input_file2)
+                    self._get_buffer(p, 'next_state')[:] = pickle.load(input_file2)
+                    self._get_buffer(p, 'reward')[:] = pickle.load(input_file2)
+                    self._get_buffer(p, 'done')[:] = pickle.load(input_file2)
                     if self.PR:
-                        self._get_buffer(p, 'TD') = pickle.load(input_file2)
+                        self._get_buffer(p, 'TD')[:] = pickle.load(input_file2)
                         if self.PPO:
-                            self._get_buffer(p, 'ratio') = pickle.load(input_file2)
+                            self._get_buffer(p, 'ratio')[:] = pickle.load(input_file2)
                         if hasattr(self.prioritized_replay, 'sum_trees'):
-                            self._get_buffer(p, 'sum_trees') = pickle.load(input_file2)
+                            self._get_buffer(p, 'sum_trees')[:] = pickle.load(input_file2)
         input_file1.close()
         if not self.parallel_dump:
             input_file2.close()
