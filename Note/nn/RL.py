@@ -2693,17 +2693,15 @@ class RL:
                                 shared_array[:] = param[:]
                                 self.shm_metadata.append((shm.name, param.shape, param.dtype))
                                 active_shms.append(shm)
-                        process_list=[]
+                        pool = mp.Pool(processes=os.cpu_count())
                         for p in range(processes):
-                            process=mp.Process(target=self.prepare,args=(p,))
-                            process.start()
-                            process_list.append(process)
+                            pool.apply_async(self.prepare, args=(p,))
+                        pool.close()
                         while True:
                             if sum(self.done_length)>=self.batch:
                                 break
                         self.train1()
-                        for process in process_list:
-                            process.join()
+                        pool.join()
                         if hasattr(self, 'build'):
                             for shm in active_shms:
                                 shm.close()
@@ -2783,17 +2781,15 @@ class RL:
                                 shared_array[:] = param[:]
                                 self.shm_metadata.append((shm.name, param.shape, param.dtype))
                                 active_shms.append(shm)
-                        process_list=[]
+                        pool = mp.Pool(processes=os.cpu_count())
                         for p in range(processes):
-                            process=mp.Process(target=self.prepare,args=(p,))
-                            process.start()
-                            process_list.append(process)
+                            pool.apply_async(self.prepare, args=(p,))
+                        pool.close()
                         while True:
                             if sum(self.done_length)>=self.batch:
                                 break
                         self.train1()
-                        for process in process_list:
-                            process.join()
+                        pool.join()
                         if hasattr(self, 'build'):
                             for shm in active_shms:
                                 shm.close()
@@ -3034,17 +3030,15 @@ class RL:
                                     shared_array[:] = param[:]
                                     self.shm_metadata.append((shm.name, param.shape, param.dtype))
                                     active_shms.append(shm)
-                            process_list=[]
+                            pool = mp.Pool(processes=os.cpu_count())
                             for p in range(processes):
-                                process=mp.Process(target=self.prepare,args=(p,))
-                                process.start()
-                                process_list.append(process)
+                                pool.apply_async(self.prepare, args=(p,))
+                            pool.close()
                             while True:
                                 if sum(self.done_length)>=self.batch:
                                     break
                             self.train1()
-                            for process in process_list:
-                                process.join()
+                            pool.join()
                             if hasattr(self, 'build'):
                                 for shm in active_shms:
                                     shm.close()
@@ -3123,17 +3117,15 @@ class RL:
                                     shared_array[:] = param[:]
                                     self.shm_metadata.append((shm.name, param.shape, param.dtype))
                                     active_shms.append(shm)
-                            process_list=[]
+                            pool = mp.Pool(processes=os.cpu_count())
                             for p in range(processes):
-                                process=mp.Process(target=self.prepare,args=(p,))
-                                process.start()
-                                process_list.append(process)
+                                pool.apply_async(self.prepare, args=(p,))
+                            pool.close()
                             while True:
                                 if sum(self.done_length)>=self.batch:
                                     break
                             self.train1()
-                            for process in process_list:
-                                process.join()
+                            pool.join()
                             if hasattr(self, 'build'):
                                 for shm in active_shms:
                                     shm.close()
@@ -3215,17 +3207,15 @@ class RL:
                                     shared_array[:] = param[:]
                                     self.shm_metadata.append((shm.name, param.shape, param.dtype))
                                     active_shms.append(shm)
-                            process_list=[]
+                            pool = mp.Pool(processes=os.cpu_count())
                             for p in range(processes):
-                                process=mp.Process(target=self.prepare,args=(p,))
-                                process.start()
-                                process_list.append(process)
+                                pool.apply_async(self.prepare, args=(p,))
+                            pool.close()
                             while True:
                                 if sum(self.done_length)>=self.batch:
                                     break
                             self.train1()
-                            for process in process_list:
-                                process.join()
+                            pool.join()
                             if hasattr(self, 'build'):
                                 for shm in active_shms:
                                     shm.close()
@@ -3312,17 +3302,15 @@ class RL:
                                     shared_array[:] = param[:]
                                     self.shm_metadata.append((shm.name, param.shape, param.dtype))
                                     active_shms.append(shm)
-                            process_list=[]
+                            pool = mp.Pool(processes=os.cpu_count())
                             for p in range(processes):
-                                process=mp.Process(target=self.prepare,args=(p,))
-                                process.start()
-                                process_list.append(process)
+                                pool.apply_async(self.prepare, args=(p,))
+                            pool.close()
                             while True:
                                 if sum(self.done_length)>=self.batch:
                                     break
                             self.train1()
-                            for process in process_list:
-                                process.join()
+                            pool.join()
                             if hasattr(self, 'build'):
                                 for shm in active_shms:
                                     shm.close()
@@ -3407,17 +3395,15 @@ class RL:
                                     shared_array[:] = param[:]
                                     self.shm_metadata.append((shm.name, param.shape, param.dtype))
                                     active_shms.append(shm)
-                            process_list=[]
+                            pool = mp.Pool(processes=os.cpu_count())
                             for p in range(processes):
-                                process=mp.Process(target=self.prepare,args=(p,))
-                                process.start()
-                                process_list.append(process)
+                                pool.apply_async(self.prepare, args=(p,))
+                            pool.close()
                             while True:
                                 if sum(self.done_length)>=self.batch:
                                     break
                             self.train1()
-                            for process in process_list:
-                                process.join()
+                            pool.join()
                             if hasattr(self, 'build'):
                                 for shm in active_shms:
                                     shm.close()
@@ -3719,22 +3705,37 @@ class RL:
                     if len(self.path_list_)>self.max_save_files:
                         os.remove(self.path_list_[0])
                         del self.path_list_[0]
-        if self.parallel_training_and_save and hasattr(self, 'param_'):
+        if self.parallel_training_and_save:
             if self.parallel_dump==True:
                 counter=0
+                self.active_shms = []
+                current_offset = 0
+                pool = mp.Pool(processes=os.cpu_count())
                 for i in range(len(self.param)):
                     if type(self.param[i])==list:
                         for j in range(len(self.param[i])):
                             counter+=1
-                            process=mp.Process(target=self.parallel_param_dump,args=(self.param[i][j], i, j, path, counter))
-                            process.start()
+                            param = self.param[i][j].numpy()
+                            shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                            self.active_shms.append(shm)
+                            shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                            shared_array[:] = param[:]
+                            shm_metadata = (shm.name, param.shape, param.dtype, current_offset, True)
+                            current_offset += param.nbytes
+                            pool.apply_async(self.parallel_param_dump,args=(shm_metadata, i, j, path, counter))
                     else:
                         counter+=1
-                        process=mp.Process(target=self.parallel_param_dump,args=(self.param[i], i, None, path, counter))
-                        process.start()
+                        param = self.param[i].numpy()
+                        shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                        self.active_shms.append(shm)
+                        shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                        shared_array[:] = param[:]
+                        shm_metadata = (shm.name, param.shape, param.dtype, current_offset, False)
+                        current_offset += param.nbytes
+                        pool.apply_async(self.parallel_param_dump,args=(shm_metadata, i, None, path, counter))
             else:
                 output_file=open(path,'wb')
-                pickle.dump(self.param_,output_file)
+                pickle.dump(self.param,output_file)
                 output_file.close()
         else:
             output_file=open(path,'wb')
@@ -3747,35 +3748,65 @@ class RL:
     
     def restore_param(self,path):
         if self.parallel_dump==True:
-            manager=mp.Manager()
-            param=manager.list()
+            param=[]
+            param_index_list=[]
+            param_metadata_list=[]
             counter=0
+            total_size = 0
             for i in range(len(self.param)):
                 if type(self.param[i])==list:
-                    param.append(manager.list([None for _ in range(len(self.param[i]))]))
+                    param.append([])
+                    for param in range(len(self.param[i])):
+                        total_size += param.nbytes
+                        param[i].append(None)
                 else:
+                    total_size += param.nbytes
                     param.append(None)
-            process_list=[]
+            large_shm_p = shared_memory.SharedMemory(create=True, size=total_size)
+            pool = mp.Pool(processes=os.cpu_count())
             for i in range(len(self.param)):
                 if type(self.param[i])==list:
                     for j in range(len(self.param[i])):
                         counter+=1
-                        input_file1=open(os.path.join(path,"param_index_{counter}.dat"),'rb')
-                        param_index=pickle.load(input_file1)
-                        process=mp.Process(target=self.parallel_param_load,args=(param, param_index, path, counter))
-                        process.start()
-                        process_list.append(process)
-                        input_file1.close()
+                        input_file3=open(os.path.join(path2, f"param_index_{counter}.dat"),'rb')
+                        param_index=pickle.load(input_file3)
+                        param_index_list.append(param_index)
+                        input_file4=open(os.path.join(path2, f"param_metadata_{counter}.dat"),'rb')
+                        param_metadata=pickle.load(input_file3)
+                        param_metadata_list.append(param_metadata)
+                        pool.apply_async(self.parallel_param_load,args=(large_shm_p.name, param_metadata, path2, counter))
+                        input_file3.close()
+                        input_file4.close()
                 else:
                     counter+=1
-                    input_file1=open(os.path.join(path,"param_index_{counter}.dat"),'rb')
-                    param_index=pickle.load(input_file1)
-                    process=mp.Process(target=self.parallel_state_load,args=(param, param_index, path, counter))
-                    process.start()
-                    process_list.append(process)
-                    input_file1.close()
-            for process in process_list:
-                process.join()
+                    input_file3=open(os.path.join(path2, f"param_index_{counter}.dat"),'rb')
+                    param_index=pickle.load(input_file3)
+                    param_index_list.append(param_index)
+                    input_file4=open(os.path.join(path2, f"param_metadata_{counter}.dat"),'rb')
+                    param_metadata=pickle.load(input_file3)
+                    param_metadata_list.append(param_metadata)
+                    pool.apply_async(self.parallel_state_load,args=(large_shm_p.name, param_metadata, path2, counter))
+                    input_file3.close()
+                    input_file4.close()
+            pool.close()
+            pool.join()
+            counter=0
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    for _ in range(len(self.param[i])):
+                        counter+=1
+                        metadata=param_metadata_list[counter]
+                        shm_arr = np.ndarray(metadata[0], dtype=metadata[1], buffer=large_shm_p.buf, offset=metadata[2])
+                        index=param_index_list[counter]
+                        param[index[0]][index[1]] = shm_arr.copy()
+                else:
+                    counter+=1
+                    metadata=param_metadata_list[counter]
+                    shm_arr = np.ndarray(metadata[0], dtype=metadata[1], buffer=large_shm_p.buf, offset=metadata[2])
+                    index=param_index_list[counter]
+                    param[index] = shm_arr.copy()
+            large_shm_p.close()
+            large_shm_p.unlink()
             nn.assign_param(self.param,param)
         else:
             input_file=open(path,'rb')
@@ -3856,10 +3887,10 @@ class RL:
     def parallel_param_dump(self, shm_metadata, index1, index2, path, counter):
         self.param_save_flag_list.append(False)
         os.makedirs(path, exist_ok=True)
-        filename = os.path.join(path, f"param_{counter}.dat")
-        output_file=open(filename,'wb')
+        path = os.path.join(path, f"param_{counter}.dat")
+        output_file=open(path,'wb')
         if shm_metadata[-1]:
-            name, shape, dtype, _ = shm_metadata
+            name, shape, dtype, offset, _ = shm_metadata
             shm = shared_memory.SharedMemory(name=name)
             weight_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
             pickle.dump(weight_array,output_file)
@@ -3870,7 +3901,7 @@ class RL:
             pickle.dump((index1, index2),output_file)
             output_file.close()
         else:
-            name, shape, dtype, _ = shm_metadata
+            name, shape, dtype, offset, _ = shm_metadata
             shm = shared_memory.SharedMemory(name=name)
             weight_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
             pickle.dump(weight_array,output_file)
@@ -3880,6 +3911,10 @@ class RL:
             output_file=open(path,'wb')
             pickle.dump(index1,output_file)
             output_file.close()
+        path = os.path.join(path, f"param_metadata_{counter}.dat")
+        output_file=open(path,'wb')
+        pickle.dump((weight_array.shape, weight_array.dtype, offset), output_file)
+        output_file.close()
         shm.close()
         self.param_save_flag_list[counter]=True
             
@@ -3890,7 +3925,7 @@ class RL:
         path = os.path.join(path, f"state_{counter}.dat")
         output_file=open(path,'wb')
         if shm_metadata[-1]:
-            name, shape, dtype, _ = shm_metadata
+            name, shape, dtype, offset, _ = shm_metadata
             shm = shared_memory.SharedMemory(name=name)
             state_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
             pickle.dump(state_array,output_file)
@@ -3901,7 +3936,7 @@ class RL:
             pickle.dump((index1, str(index2)),output_file)
             output_file.close()
         else:
-            name, shape, dtype, _ = shm_metadata
+            name, shape, dtype, offset, _ = shm_metadata
             shm = shared_memory.SharedMemory(name=name)
             state_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
             pickle.dump(state_array,output_file)
@@ -3911,6 +3946,9 @@ class RL:
             output_file=open(path,'wb')
             pickle.dump(str(index2),output_file)
             output_file.close()
+        path = os.path.join(path, f"state_metadata_{counter}.dat")
+        output_file=open(path,'wb')
+        pickle.dump((state_array.shape, state_array.dtype, offset), output_file)
         shm.close()
         self.state_save_flag_list[counter]=True
     
@@ -3984,6 +4022,9 @@ class RL:
         if self.parallel_training_and_save:
             if self.parallel_dump==True:
                 counter=0
+                self.active_shms = []
+                current_offset = 0
+                pool = mp.Pool(processes=os.cpu_count())
                 for i in range(len(self.param)):
                     if type(self.param[i])==list:
                         for j in range(len(self.param[i])):
@@ -3993,9 +4034,9 @@ class RL:
                             self.active_shms.append(shm)
                             shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
                             shared_array[:] = param[:]
-                            shm_metadata = (shm.name, param.shape, param.dtype, True)
-                            process=multiprocessing.Process(target=self.parallel_param_dump,args=(shm_metadata, i, j, path, counter))
-                            process.start()
+                            shm_metadata = (shm.name, param.shape, param.dtype, current_offset, True)
+                            current_offset += param.nbytes
+                            pool.apply_async(self.parallel_param_dump,args=(shm_metadata, i, j, path, counter))
                     else:
                         counter+=1
                         param = self.param[i].numpy()
@@ -4003,12 +4044,12 @@ class RL:
                         self.active_shms.append(shm)
                         shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
                         shared_array[:] = param[:]
-                        shm_metadata = (shm.name, param.shape, param.dtype, False)
-                        process=multiprocessing.Process(target=self.parallel_param_dump,args=(shm_metadata, i, None, path, counter))
-                        process.start()
+                        shm_metadata = (shm.name, param.shape, param.dtype, current_offset, False)
+                        current_offset += param.nbytes
+                        pool.apply_async(self.parallel_param_dump,args=(shm_metadata, i, None, path, counter))
             else:
                 output_file=open(path,'wb')
-                pickle.dump(self.param_,output_file)
+                pickle.dump(self.param,output_file)
         else:
             pickle.dump(param,output_file)
             self.param=param
@@ -4019,6 +4060,7 @@ class RL:
         if self.parallel_training_and_save:
             if self.parallel_dump==True:
                 counter=0
+                current_offset = 0
                 if type(self.optimizer)==list:
                     for i in range(len(self.optimizer)):
                         for j in range(len(self.state_dict[i])):
@@ -4028,9 +4070,9 @@ class RL:
                             self.active_shms.append(shm)
                             shared_array = np.ndarray(state.shape, dtype=state.dtype, buffer=shm.buf)
                             shared_array[:] = state[:]
-                            shm_metadata = (shm.name, state.shape, state.dtype, True)
-                            process=multiprocessing.Process(target=self.parallel_state_dump,args=(shm_metadata, i, j, path, counter))
-                            process.start()
+                            shm_metadata = (shm.name, state.shape, state.dtype, current_offset, True)
+                            current_offset += state.nbytes
+                            pool.apply_async(self.parallel_state_dump,args=(shm_metadata, i, j, path, counter))
                 else:
                     for i in range(len(self.state_dict)):
                         counter+=1
@@ -4039,9 +4081,9 @@ class RL:
                         self.active_shms.append(shm)
                         shared_array = np.ndarray(state.shape, dtype=state.dtype, buffer=shm.buf)
                         shared_array[:] = state[:]
-                        shm_metadata = (shm.name, state.shape, state.dtype, False)
-                        process=multiprocessing.Process(target=self.parallel_state_dump,args=(shm_metadata, i, None, path, counter))
-                        process.start()
+                        shm_metadata = (shm.name, state.shape, state.dtype, current_offset, False)
+                        current_offset += state.nbytes
+                        pool.apply_async(self.parallel_state_dump,args=(shm_metadata, i, None, path, counter))
             else:
                 pickle.dump(self.state_dict,output_file)
                 output_file.close()
@@ -4061,8 +4103,7 @@ class RL:
             if self.parallel_training_and_save:
                 if self.parallel_dump==True:
                     for p in range(self.processes):
-                        process=multiprocessing.Process(target=self.parallel_data_dump,args=(path, p))
-                        process.start()
+                        pool.apply_async(self.parallel_data_dump,args=(path, p))
                 else:
                     for p in range(self.processes):
                         pickle.dump(self._get_buffer(p, 'state'),output_file)
@@ -4107,21 +4148,21 @@ class RL:
                 self.state_dict=dict()
                 self.optimizer.save_own_variables(self.state_dict)
             if self.parallel_dump:
+                pool = mp.Pool(processes=os.cpu_count())
                 self._save(path+'.dat')
-                process=mp.Process(target=self.save,args=(path,))
-                process.start()
+                pool.apply_async(self.save,args=(path,))
             else:
+                pool = mp.Pool(processes=os.cpu_count())
                 self._save(path)
-                process=mp.Process(target=self.save,args=(path.replace(path[self.path.find('.'):],'-parallel.dat'),))
-                process.start()
+                pool.apply_async(self.save,args=(path.replace(path[self.path.find('.'):],'-parallel.dat'),))
         else:
             if self.parallel_training_and_save:
                 if self.parallel_dump:
-                    process=mp.Process(target=self.save_param,args=(path,))
-                    process.start()
+                    pool = mp.Pool(processes=os.cpu_count())
+                    pool.apply_async(self.save_param,args=(path,))
                 else:
-                    process=mp.Process(target=self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-parallel.dat'),))
-                    process.start()
+                    pool = mp.Pool(processes=os.cpu_count())
+                    pool.apply_async(self.save_param,args=(self.path.replace(self.path[self.path.find('.'):],'-parallel.dat'),))
     
     
     def save_checkpoint(self):
@@ -4211,24 +4252,22 @@ class RL:
         return
     
     
-    def parallel_param_load(self, param, param_index, path, counter):
+    def parallel_param_load(self, shm_name, metadata, path, counter):
         input_file2=open(os.path.join(path,f"param_{counter}.dat"),'rb')
-        if type(param[param_index[0]])==list:
-            param[param_index[0]][param_index[1]]=pickle.load(input_file2)
-            input_file2.close()
-        else:
-            param[param_index]=pickle.load(input_file2)
-            input_file2.close()
+        existing_shm = shared_memory.SharedMemory(name=shm_name)
+        shared_array = np.ndarray(metadata[0], dtype=metadata[1], buffer=existing_shm.buf, offset=metadata[2])
+        shared_array[:] = pickle.load(input_file2)[:]
+        existing_shm.close()
+        input_file2.close()
             
     
-    def parallel_state_load(self, state_dict, state_index, path, counter):
+    def parallel_state_load(self, shm_name, metadata, path, counter):
         input_file2=open(os.path.join(path,f"state_{counter}.dat"),'rb')
-        if type(self.optimizer)==list:
-            state_dict[state_index[0]][self.state_index[1]]=pickle.load(input_file2)
-            input_file2.close()
-        else:
-            state_dict[state_index]=pickle.load(input_file2)
-            input_file2.close()
+        existing_shm = shared_memory.SharedMemory(name=shm_name)
+        shared_array = np.ndarray(metadata[0], dtype=metadata[1], buffer=existing_shm.buf, offset=metadata[2])
+        shared_array[:] = pickle.load(input_file2)[:]
+        existing_shm.close()
+        input_file2.close()
     
     
     def parallel_data_load(self, path, p):
@@ -4247,6 +4286,10 @@ class RL:
         input_file2.close()
     
     
+    def align_to_64(size_in_bytes):
+        return (size_in_bytes + 63) & ~63
+    
+    
     def restore_p(self,path1,path2):
         input_file1=open(path1,'rb')
         if not self.parallel_dump:
@@ -4257,62 +4300,85 @@ class RL:
         self.__dict__.update(model.__dict__)
         self._restore_model_attrs(model_cache)
         if self.parallel_dump==True:
-            manager=mp.Manager()
-            param=manager.list()
+            param=[]
+            param_index_list=[]
+            param_metadata_list=[]
             counter=0
+            total_size = 0
             for i in range(len(self.param)):
                 if type(self.param[i])==list:
-                    param.append(manager.list([None for _ in range(len(self.param[i]))]))
+                    param.append([])
+                    for param in range(len(self.param[i])):
+                        total_size += param.nbytes
+                        param[i].append(None)
                 else:
+                    aligned_nbytes = align_to_64(param.nbytes)
+                    total_size += aligned_nbytes
                     param.append(None)
-            process_list=[]
+            large_shm_p = shared_memory.SharedMemory(create=True, size=total_size)
+            pool = mp.Pool(processes=os.cpu_count())
             for i in range(len(self.param)):
                 if type(self.param[i])==list:
                     for j in range(len(self.param[i])):
                         counter+=1
                         input_file3=open(os.path.join(path2, f"param_index_{counter}.dat"),'rb')
                         param_index=pickle.load(input_file3)
-                        process=mp.Process(target=self.parallel_param_load,args=(param, param_index, path2, counter))
-                        process.start()
-                        process_list.append(process)
+                        param_index_list.append(param_index)
+                        input_file4=open(os.path.join(path2, f"param_metadata_{counter}.dat"),'rb')
+                        param_metadata=pickle.load(input_file3)
+                        param_metadata_list.append(param_metadata)
+                        pool.apply_async(self.parallel_param_load,args=(large_shm_p.name, param_metadata, path2, counter))
                         input_file3.close()
+                        input_file4.close()
                 else:
                     counter+=1
                     input_file3=open(os.path.join(path2, f"param_index_{counter}.dat"),'rb')
                     param_index=pickle.load(input_file3)
-                    process=mp.Process(target=self.parallel_state_load,args=(param, param_index, path2, counter))
-                    process.start()
-                    process_list.append(process)
+                    param_index_list.append(param_index)
+                    input_file4=open(os.path.join(path2, f"param_metadata_{counter}.dat"),'rb')
+                    param_metadata=pickle.load(input_file3)
+                    param_metadata_list.append(param_metadata)
+                    pool.apply_async(self.parallel_state_load,args=(large_shm_p.name, param_metadata, path2, counter))
                     input_file3.close()
+                    input_file4.close()
         else:
             self.param=param
             param=pickle.load(input_file2)
             nn.assign_param(self.param,param)
         if self.parallel_dump==True:
             counter=0
+            state_index_list=[]
+            state_metadata_list=[]
+            large_shm_s = shared_memory.SharedMemory(create=True, size=total_size)
             if type(self.optimizer)==list:
-                state_dict=manager.list()
+                state_dict=[]
                 for i in range(len(self.optimizer)):
-                    state_dict.append(manager.dict())
+                    state_dict.append(dict())
                 for i in range(len(self.optimizer)):
-                    for j in range(len(self.state_dict[i])):
+                    for _ in range(len(self.state_dict[i])):
                         counter+=1
                         input_file3=open(os.path.join(path2, f"state_index_{counter}.dat"),'rb')
                         state_index=pickle.load(input_file3)
-                        process=mp.Process(target=self.parallel_state_load,args=(state_dict, state_index, path2, counter))
-                        process.start()
-                        process_list.append(process)
-                    input_file3.close()
+                        state_index_list.append(state_index)
+                        input_file4=open(os.path.join(path2, f"state_metadata_{counter}.dat"),'rb')
+                        state_metadata=pickle.load(input_file3)
+                        state_metadata_list.append(state_metadata)
+                        pool.apply_async(self.parallel_state_load,args=(large_shm_s.name, state_metadata, path2, counter))
+                        input_file3.close()
+                        input_file4.close()
             else:
-                state_dict=manager.dict()
-                for i in range(len(self.state_dict)):
+                state_dict=dict()
+                for _ in range(len(self.state_dict)):
                     counter+=1
                     input_file3=open(os.path.join(path2, f"state_index_{counter}.dat"),'rb')
                     state_index=pickle.load(input_file3)
-                    process=mp.Process(target=self.parallel_param_load,args=(state_dict, state_index, path2, counter))
-                    process.start()
-                    process_list.append(process)
-                input_file3.close()
+                    state_index_list.append(state_index)
+                    input_file4=open(os.path.join(path2, f"state_metadata_{counter}.dat"),'rb')
+                    state_metadata=pickle.load(input_file3)
+                    state_metadata_list.append(state_metadata)
+                    pool.apply_async(self.parallel_state_load,args=(large_shm_s.name, state_metadata, path2, counter))
+                    input_file3.close()
+                    input_file4.close()
         else:
             if type(self.optimizer)==list:
                 state_dict=pickle.load(input_file2)
@@ -4331,9 +4397,7 @@ class RL:
             self._init_shared_experience_buffers(self.processes)
             if self.parallel_dump==True:
                 for p in range(self.processes):
-                    process=mp.Process(target=self.parallel_data_load,args=(path2, p))
-                    process.start()
-                    process_list.append(process)
+                    pool.apply_async(self.parallel_data_load,args=(path2, p))
             else:
                 for p in range(self.processes):
                     self._get_buffer(p, 'state') = pickle.load(input_file2)
@@ -4351,25 +4415,50 @@ class RL:
         if not self.parallel_dump:
             input_file2.close()
         else:
-            for process in process_list:
-                process.join()
+            pool.close()
+            pool.join()
+            counter=0
+            for i in range(len(self.param)):
+                if type(self.param[i])==list:
+                    for _ in range(len(self.param[i])):
+                        counter+=1
+                        metadata=param_metadata_list[counter]
+                        shm_arr = np.ndarray(metadata[0], dtype=metadata[1], buffer=large_shm_p.buf, offset=metadata[2])
+                        index=param_index_list[counter]
+                        param[index[0]][index[1]] = shm_arr.copy()
+                else:
+                    counter+=1
+                    metadata=param_metadata_list[counter]
+                    shm_arr = np.ndarray(metadata[0], dtype=metadata[1], buffer=large_shm_p.buf, offset=metadata[2])
+                    index=param_index_list[counter]
+                    param[index] = shm_arr.copy()
+            large_shm_p.close()
+            large_shm_p.unlink()
             nn.assign_param(self.param,param)
             counter=0
             if type(self.optimizer)==list:
                 for i in range(len(self.optimizer)):
-                    for j in range(len(self.state_dict[i])):
+                    for _ in range(len(self.state_dict[i])):
                         counter+=1
-                        input_file3=open(os.path.join(path2, f"state_index_{counter}.dat"),'rb')
-                        state_index=pickle.load(input_file3)
-                    self.optimizer[state_index[0]].from_config(self.opt_config[state_index[0]])
-                    self.optimizer[state_index[0]].built=False
-                    self.optimizer[state_index[0]].build(self.optimizer[state_index[0]]._trainable_variables)
-                    self.optimizer[state_index[0]].load_own_variables(state_dict[state_index[0]])
-                    input_file3.close()
+                        metadata=state_metadata_list[counter]
+                        shm_arr = np.ndarray(metadata[0], dtype=metadata[1], buffer=large_shm_s.buf, offset=metadata[2])
+                        index=state_index_list[counter]
+                        state_dict[index[0]][index[1]] = shm_arr.copy()
+                    self.optimizer[index[0]].from_config(self.opt_config[index[0]])
+                    self.optimizer[index[0]].built=False
+                    self.optimizer[index[0]].build(self.optimizer[index[0]]._trainable_variables)
+                    self.optimizer[index[0]].load_own_variables(state_dict[index[0]])
             else:
+                for _ in range(len(self.state_dict)):
+                    counter+=1
+                    metadata=state_metadata_list[counter]
+                    shm_arr = np.ndarray(metadata[0], dtype=metadata[1], buffer=large_shm_s.buf, offset=metadata[2])
+                    index=state_index_list[counter]
+                    state_dict[index] = shm_arr.copy()
                 self.optimizer.from_config(self.opt_config)
                 self.optimizer.built=False
                 self.optimizer.build(self.optimizer._trainable_variables)
                 self.optimizer.load_own_variables(state_dict)
-                input_file3.close()
+            large_shm_s.close()
+            large_shm_s.unlink()
         return

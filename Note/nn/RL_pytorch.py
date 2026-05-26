@@ -1743,23 +1743,21 @@ class RL_pytorch:
                             self.shm_metadata = []
                             active_shms = []
                             for param in self.shared_param:
-                                param_np = param.detach().numpy()
-                                shm = shared_memory.SharedMemory(create=True, size=param_np.nbytes)
-                                shared_array = np.ndarray(param_np.shape, dtype=param_np.dtype, buffer=shm.buf)
-                                shared_array[:] = param_np[:]
-                                self.shm_metadata.append((shm.name, param_np.shape, param_np.dtype))
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
                                 active_shms.append(shm)
-                        process_list=[]
+                        pool = mp.Pool(processes=os.cpu_count())
                         for p in range(processes):
-                            process=mp.Process(target=self.prepare,args=(p,))
-                            process.start()
-                            process_list.append(process)
+                            pool.apply_async(self.prepare, args=(p,))
+                        pool.close()
                         while True:
                             if sum(self.done_length)>=self.batch:
                                 break
                         self.train1()
-                        for process in process_list:
-                            process.join()
+                        pool.join()
                         if hasattr(self, 'build'):
                             for shm in active_shms:
                                 shm.close()
@@ -1813,23 +1811,21 @@ class RL_pytorch:
                             self.shm_metadata = []
                             active_shms = []
                             for param in self.shared_param:
-                                param_np = param.detach().numpy()
-                                shm = shared_memory.SharedMemory(create=True, size=param_np.nbytes)
-                                shared_array = np.ndarray(param_np.shape, dtype=param_np.dtype, buffer=shm.buf)
-                                shared_array[:] = param_np[:]
-                                self.shm_metadata.append((shm.name, param_np.shape, param_np.dtype))
+                                param=param.numpy()
+                                shm = shared_memory.SharedMemory(create=True, size=param.nbytes)
+                                shared_array = np.ndarray(param.shape, dtype=param.dtype, buffer=shm.buf)
+                                shared_array[:] = param[:]
+                                self.shm_metadata.append((shm.name, param.shape, param.dtype))
                                 active_shms.append(shm)
-                        process_list=[]
+                        pool = mp.Pool(processes=os.cpu_count())
                         for p in range(processes):
-                            process=mp.Process(target=self.prepare,args=(p,))
-                            process.start()
-                            process_list.append(process)
+                            pool.apply_async(self.prepare, args=(p,))
+                        pool.close()
                         while True:
                             if sum(self.done_length)>=self.batch:
                                 break
                         self.train1()
-                        for process in process_list:
-                            process.join()
+                        pool.join()
                         if hasattr(self, 'build'):
                             for shm in active_shms:
                                 shm.close()
