@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from Note.nn import RL_pytorch
 from Note.RL.rl.mcts import Node_, run_mcts_search_, select_action_after_search_
+import multiprocessing as mp
 
 
 # ==============================================================
@@ -38,7 +39,8 @@ class AlphaZeroCartPole(RL_pytorch):
         super().__init__()
 
         self.env = [gym.make(env_name) for _ in range(processes)]
-        self.sim_env = [gym.make(env_name) for _ in range(processes)]
+        manager=mp.Manager()
+        self.sim_env = manager.list([gym.make(env_name) for _ in range(processes)])
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.n
 
