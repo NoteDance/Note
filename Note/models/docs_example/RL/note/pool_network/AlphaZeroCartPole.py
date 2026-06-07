@@ -2,6 +2,7 @@ import gym
 import tensorflow as tf
 from Note import nn
 from Note.RL.rl.mcts import Node, run_mcts_search, select_action_after_search
+import multiprocessing as mp
 
 
 # ==============================================================
@@ -30,7 +31,8 @@ class AlphaZeroCartPole(nn.RL):
         super().__init__()
 
         self.env = [gym.make(env_name) for _ in range(processes)]
-        self.sim_env = [gym.make(env_name) for _ in range(processes)]
+        manager=mp.Manager()
+        self.sim_env = manager.list([gym.make(env_name) for _ in range(processes)])
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.n
 
