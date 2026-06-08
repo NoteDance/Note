@@ -416,14 +416,12 @@ class Model:
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
-            if hasattr(self, 'soft_update'):
-                self.soft_update()
         else:
             for i in range(len(optimizer)):
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
-                if hasattr(self, 'soft_update'):
-                    self.soft_update()
+        if hasattr(self, 'soft_update'):
+            self.soft_update()
         train_loss(loss)
         if train_accuracy!=None:
             acc=train_accuracy(labels, output)
@@ -441,14 +439,12 @@ class Model:
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
-            if hasattr(self, 'soft_update'):
-                self.soft_update()
         else:
             for i in range(len(optimizer)):
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
-                if hasattr(self, 'soft_update'):
-                    self.soft_update()
+        if hasattr(self, 'soft_update'):
+            self.soft_update()
         train_loss(loss)
         if train_accuracy!=None:
             acc=train_accuracy(labels, output)
@@ -488,14 +484,12 @@ class Model:
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
-            if hasattr(self, 'soft_update'):
-                self.soft_update()
         else:
             for i in range(len(optimizer)):
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
-                if hasattr(self, 'soft_update'):
-                    self.soft_update()
+        if hasattr(self, 'soft_update'):
+            self.soft_update()
         
         if train_accuracy!=None:
             acc=train_accuracy.update_state(labels, output)
