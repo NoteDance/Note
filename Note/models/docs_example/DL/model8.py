@@ -98,7 +98,7 @@ class Model(nn.Model):
                 else tf.norm(diff, ord=2)
             )
 
-        return loss + self.lambda_param * kl_weight * param_penalty + kl
+        return [loss + self.lambda_param * kl_weight * param_penalty, kl]
 
     # ------------------------------------------------------------------
     # Soft update: Model_new ← τ · Model_trained + (1-τ) · Model_new
