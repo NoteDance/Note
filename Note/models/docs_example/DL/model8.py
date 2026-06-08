@@ -37,7 +37,7 @@ class Model(nn.Model):
         self.Model_new.param[-2][:, :-1].assign(trained_param[-2])
         self.Model_new.param[-1][:-1].assign(trained_param[-1])
         self.new_class_batch_size = 64
-        self.param = self.Model_new.param
+        self.param = [self.Model_new.param, self.Model_new.param[-2][:, :-1]]
 
     # ------------------------------------------------------------------
     def __call__(self, x):
@@ -62,8 +62,7 @@ class Model(nn.Model):
         q_full = tf.nn.softmax(
             tf.stop_gradient(self.distribution_new)
         )                                                           # [B, 11]
-        q_old  = q_full[:, :10]
-        q = q_old / (tf.reduce_sum(q_old, axis=-1, keepdims=True) + 1e-8)
+        q  = q_full[:, :10]
 
         kl = tf.reduce_mean(
             tf.reduce_sum(
@@ -99,7 +98,7 @@ class Model(nn.Model):
                 else tf.norm(diff, ord=2)
             )
 
-        return loss + self.lambda_param * kl_weight * param_penalty
+        return loss + self.lambda_param * kl_weight * param_penalty + kl
 
     # ------------------------------------------------------------------
     # Soft update: Model_new ← τ · Model_trained + (1-τ) · Model_new
