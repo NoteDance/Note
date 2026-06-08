@@ -56,11 +56,11 @@ class Model(nn.Model):
         #   When distributions are identical: KL = 0 → kl_weight = 0 → penalty = 0  ✓
         # ----------------------------------------------------------------
         p = tf.nn.softmax(
-            tf.stop_gradient(self.distribution_trained)
+            self.distribution_trained
         )                                                           # [B, 10]
 
         q_full = tf.nn.softmax(
-            tf.stop_gradient(self.distribution_new)
+            self.distribution_new
         )                                                           # [B, 11]
         q  = q_full[:, :10]
 
