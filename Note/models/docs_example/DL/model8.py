@@ -37,7 +37,7 @@ class Model(nn.Model):
         self.Model_new.param[-2][:, :-1].assign(trained_param[-2])
         self.Model_new.param[-1][:-1].assign(trained_param[-1])
         self.new_class_batch_size = 64
-        self.param = [self.Model_new.param, self.Model_new.param[-2][:, :-1]]
+        self.param = [self.Model_new.param, [self.Model_new.param[-2][:, :-1], self.Model_new.param[-1][:-1]]]
 
     # ------------------------------------------------------------------
     def __call__(self, x):
