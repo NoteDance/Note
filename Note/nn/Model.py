@@ -417,7 +417,11 @@ class Model:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
         else:
+            if type(loss) == list:
+                loss_list = loss
             for i in range(len(optimizer)):
+                if type(loss) == list:
+                    loss = loss_list[i]
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         if hasattr(self, 'soft_update'):
@@ -440,7 +444,11 @@ class Model:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
         else:
+            if type(loss) == list:
+                loss_list = loss
             for i in range(len(optimizer)):
+                if type(loss) == list:
+                    loss = loss_list[i]
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         if hasattr(self, 'soft_update'):
@@ -485,7 +493,11 @@ class Model:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
         else:
+            if type(loss) == list:
+                loss_list = loss
             for i in range(len(optimizer)):
+                if type(loss) == list:
+                    loss = loss_list[i]
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         if hasattr(self, 'soft_update'):
