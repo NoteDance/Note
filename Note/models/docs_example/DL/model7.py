@@ -20,6 +20,7 @@ class Model(nn.Model):
                                     name=f'param_copy_{i}')
                         for i, p in enumerate(self.param)
                     ]
+        self.svd_k = 7
 
     def __call__(self, x):
         x = self.d1(x)

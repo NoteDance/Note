@@ -38,6 +38,7 @@ class Model(nn.Model):
         self.Model_new.param[-1][:-1].assign(trained_param[-1])
         self.new_class_batch_size = 64
         self.param = [self.Model_new.param, [self.Model_new.param[-2][:, -1:], self.Model_new.param[-1][-1:]]]
+        self.svd_k = 7
 
     # ------------------------------------------------------------------
     def __call__(self, x):
@@ -78,25 +79,46 @@ class Model(nn.Model):
         # ----------------------------------------------------------------
         param_penalty = tf.constant(0.0, dtype=tf.float32)
         n = len(self.Model_trained.param)
+        
+        penalty = tf.constant(0.0, dtype=tf.float32)
 
         for i, (p_t, p_n) in enumerate(
             zip(self.Model_trained.param, self.Model_new.param)
         ):
+            shape = p.shape
+            if len(shape) < 2:
+                continue
+            
             p_t = tf.cast(tf.stop_gradient(p_t), tf.float32)
             p_n = tf.cast(p_n, tf.float32)
-
+            
             if i == n - 2:      # d3 weight [64,10] vs [64,11]
-                diff = p_n[:, :10] - p_t
-            elif i == n - 1:    # d3 bias   [10]    vs [11]
-                diff = p_n[:10] - p_t
-            else:
-                diff = p_n - p_t
+                p_n = p_n[:, :10]
+            
+            rows = 1
+            for d in shape[:-1]:
+                rows *= d
+            cols    = shape[-1]
+            p_t_2d    = tf.reshape(tf.cast(p_t,  tf.float32), [rows, cols])
+            p_n_2d   = tf.reshape(tf.cast(p_n, tf.float32), [rows, cols])
 
-            param_penalty = param_penalty + (
-                tf.norm(diff, ord='fro')
-                if len(diff.shape) > 1
-                else tf.norm(diff, ord=2)
+            k = tf.minimum(self.svd_k, tf.minimum(rows, cols))
+
+            _, u_param, _ = tf.linalg.svd(p_t_2d,  full_matrices=False)
+            _, u_copy,  _ = tf.linalg.svd(p_n_2d, full_matrices=False)
+
+            u_param = u_param[:, :k]    # [rows, k]
+            u_copy  = u_copy[:,  :k]    # [rows, k]
+
+            M = tf.matmul(u_param, u_copy, transpose_a=True)
+
+            # ||UU^T - U_c U_c^T||_F = sqrt(2k - 2*||M||_F^2)
+            k_f       = tf.cast(k, tf.float32)
+            diff_norm = tf.sqrt(
+                tf.maximum(2.0 * k_f - 2.0 * tf.reduce_sum(M * M), 1e-12)
             )
+
+            penalty = penalty + diff_norm
 
         return [loss + self.lambda_param * kl_weight * param_penalty, kl]
 
