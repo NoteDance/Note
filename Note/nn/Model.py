@@ -425,6 +425,8 @@ class Model:
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         if hasattr(self, 'soft_update'):
             self.soft_update()
+        if type(loss) == list:
+            loss = sum(loss)
         train_loss(loss)
         if train_accuracy!=None:
             acc=train_accuracy(labels, output)
@@ -451,6 +453,8 @@ class Model:
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         if hasattr(self, 'soft_update'):
             self.soft_update()
+        if type(loss) == list:
+            loss = sum(loss)
         train_loss(loss)
         if train_accuracy!=None:
             acc=train_accuracy(labels, output)
@@ -499,6 +503,9 @@ class Model:
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         if hasattr(self, 'soft_update'):
             self.soft_update()
+            
+        if type(loss) == list:
+            loss = sum(loss)
         
         if train_accuracy!=None:
             acc=train_accuracy.update_state(labels, output)
