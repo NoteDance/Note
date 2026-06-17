@@ -176,7 +176,6 @@ class FlashAdamW(optimizer.Optimizer):
         beta2: float = 0.999,
         eps: float = 1e-8,
         weight_decay: float = 1e-2,
-        decouple_lr: bool = False,
         quantize: bool = True,
         master_weight_bits: Optional[int] = None,
         maximize: bool = False,
@@ -199,7 +198,6 @@ class FlashAdamW(optimizer.Optimizer):
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
-        self.decouple_lr = decouple_lr
         self.quantize = quantize
         self._master_weight_bits = master_weight_bits       # kept for get_config
         self.master_byte_width = self._BITS_TO_BYTES[master_weight_bits]
