@@ -143,9 +143,6 @@ class FlashAdamW(optimizer.Optimizer):
         beta2 (float): Exponential decay for the second moment. Default: ``0.999``.
         eps (float): Numerical stability constant. Default: ``1e-8``.
         weight_decay (float): Decoupled weight-decay coefficient. Default: ``1e-2``.
-        decouple_lr (bool): Scale weight decay by ``lr / initial_lr`` rather
-            than ``lr``.  Makes the effective regularisation magnitude
-            independent of the current LR schedule.  Default: ``False``.
         quantize (bool): Store Adam moments as grouped 8-bit values plus fp16
             scale factors.  Default: ``True``.
         master_weight_bits (int | None): Effective master-weight precision for
@@ -538,7 +535,6 @@ class FlashAdamW(optimizer.Optimizer):
             'beta1':              self.beta1,
             'beta2':              self.beta2,
             'eps':                self.eps,
-            'decouple_lr':        self.decouple_lr,
             'quantize':           self.quantize,
             'master_weight_bits': self._master_weight_bits,
             'maximize':           self.maximize,
