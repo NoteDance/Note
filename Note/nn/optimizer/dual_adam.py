@@ -380,7 +380,7 @@ class DualAdam_e(optimizer.Optimizer):
             # After reshaping: exp_avg_hat (n_subsets, ss)
             #                  de_nom      (n_subsets, 1)   ← broadcasts over ss
             if self.sn:
-                exp_avg_hat = self.get_reshaped_exg_avg(exp_avg, grad, idx)
+                exp_avg_hat = self.get_reshaped_exg_avg(exp_avg_hat, grad, idx)
 
             # ── Dual Adam update ───────────────────────────────────────────
             # Inverse Adam blends (1/de_nom) with de_nom, interpolated by r.
