@@ -604,7 +604,7 @@ class BaseOptimizer(KerasSaveable):
     
         return tf.where(g_norm > max_norm, clipped_grad, grad)
     
-    def gradient_centralize(g):
+    def gradient_centralize(self, g):
         if len(g.shape) > 1:
             axes = tuple(range(1, len(g.shape)))
             return g - tf.reduce_mean(g, axis=axes, keepdims=True)
