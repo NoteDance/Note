@@ -604,18 +604,11 @@ class BaseOptimizer(KerasSaveable):
     
         return tf.where(g_norm > max_norm, clipped_grad, grad)
     
-    def gc(self, grads, gradient, idx):
-        size = len(gradient.shape)
-        if size > 1:
-            grads[idx] += tf.reduce_mean(-gradient, axis=tuple(range(1, size)), keepdims=True)
-        def true_fn():
-            s = tf.math.reduce_std(grads[idx]) + 1e-8
-            grads[idx] = grads[idx] / s
-        def false_fn():
-            pass
-        tf.cond(tf.size(gradient) > 2, true_fn, false_fn)
-        gradient = grads[idx]
-        return gradient
+    def gradient_centralize(g):
+        if len(g.shape) > 1:
+            axes = tuple(range(1, len(g.shape)))
+            return g - tf.reduce_mean(g, axis=axes, keepdims=True)
+        return g
     
     def apply_orthogonal_gradients(self, params, grads, eps = 1e-16):
         for p, g in zip(params, grads):
@@ -1019,6 +1012,79 @@ class BaseOptimizer(KerasSaveable):
         self.apply(grads, trainable_variables)
         # Return iterations for compat with tf.keras.
         return self._iterations
+    
+    def compute_ecc_bits(
+        self,
+        fp32_param: tf.Tensor,
+        narrow_param: tf.Tensor,
+        master_byte_width: int,
+    ) -> tf.Tensor:
+        error_bytes = master_byte_width - self._TF_DTYPE_BYTES[narrow_param.dtype]
+        if error_bytes == 1:
+            signed_max, error_dtype = 127.0, tf.int8
+        elif error_bytes == 2:
+            signed_max, error_dtype = 32767.0, tf.int16
+        else:
+            raise ValueError(
+                f'master_byte_width={master_byte_width} gives unsupported '
+                f'error_bytes={error_bytes} for dtype {narrow_param.dtype}'
+            )
+        normalized = (
+            (fp32_param - tf.cast(narrow_param, tf.float32))
+            / ulp_scale(narrow_param)
+        )
+        return tf.cast(
+            tf.round(tf.clip_by_value(normalized, -1.0, 1.0) * signed_max),
+            error_dtype,
+        )
+    
+    def materialize(self, name: str, idx: int) -> tf.Tensor:
+        """Return the named optimizer state as a float32 tensor."""
+        signed, sqrt, softsign = self._STATE_SPECS[name]
+        if self.quantize:
+            q, s = (
+                (self.q_exp_avg[idx],    self.s_exp_avg[idx])
+                if name == 'exp_avg'
+                else (self.q_exp_avg_sq[idx], self.s_exp_avg_sq[idx])
+            )
+            return dequantize_state(q, s, signed=signed, sqrt=sqrt, softsign=softsign)
+        else:
+            raw = self.exp_avg[idx] if name == 'exp_avg' else self.exp_avg_sq[idx]
+            return tf.cast(raw, tf.float32)
+
+    def store(
+        self,
+        name: str,
+        idx: int,
+        value: tf.Tensor,
+        var_dtype: tf.DType,
+    ) -> None:
+        signed, sqrt, softsign = self._STATE_SPECS[name]
+        if self.quantize:
+            q, s = quantize_state(value, signed=signed, sqrt=sqrt, softsign=softsign)
+            if name == 'exp_avg':
+                self.q_exp_avg[idx].assign(q)
+                self.s_exp_avg[idx].assign(s)
+            else:
+                self.q_exp_avg_sq[idx].assign(q)
+                self.s_exp_avg_sq[idx].assign(s)
+        else:
+            target = self.exp_avg[idx] if name == 'exp_avg' else self.exp_avg_sq[idx]
+            target.assign(tf.cast(value, var_dtype))
+
+    def get_param_fp32(self, var: tf.Variable, idx: int) -> tf.Tensor:
+        ecc = self.error_bits[idx]
+        if ecc is not None:
+            return reconstruct_fp32_param(var, ecc)
+        return tf.cast(var, tf.float32)
+
+    def set_param_fp32(
+        self, var: tf.Variable, idx: int, value: tf.Tensor
+    ) -> None:
+        var.assign(tf.cast(value, var.dtype))
+        ecc = self.error_bits[idx]
+        if ecc is not None:
+            ecc.assign(self.compute_ecc_bits(value, var, self.master_byte_width))
 
     def apply(self, grads, trainable_variables=None):
         """Update traininable variables according to provided gradient values.
@@ -1765,3 +1831,90 @@ def clip_by_global_norm(value_list, clip_norm):
     # this will make scale NaN.
     scale = scale_for_finite + (use_norm - use_norm)
     return [v * scale if v is not None else v for v in value_list]
+
+
+def quantize_state(
+    tensor: tf.Tensor,
+    signed: bool = True,
+    sqrt: bool = False,
+    softsign: bool = True,
+    group_size: int = 32,
+) -> Tuple[tf.Tensor, tf.Tensor]:
+    original_shape = tf.shape(tensor)
+    numel = tf.size(tensor)
+    values = tf.cast(tf.reshape(tensor, [-1]), tf.float32)
+
+    if sqrt:
+        values = tf.sqrt(tf.maximum(values, 0.0))
+
+    pad = tf.math.floormod(-numel, group_size)
+    values_padded = tf.concat(
+        [values, tf.zeros([pad], dtype=tf.float32)], axis=0
+    )
+
+    groups = tf.reshape(values_padded, [-1, group_size])
+    scales = tf.reduce_max(tf.abs(groups), axis=1)
+    scales = tf.maximum(scales, 1e-12)
+    normalized = groups / tf.expand_dims(scales, 1)
+
+    if softsign:
+        normalized = 2.0 * normalized / (1.0 + tf.abs(normalized))
+
+    quant_max = 127.0 if signed else 255.0
+    quant_min = -127.0 if signed else 0.0
+    quantized = tf.clip_by_value(
+        tf.round(normalized * quant_max), quant_min, quant_max
+    )
+    quantized = tf.reshape(tf.reshape(quantized, [-1])[:numel], original_shape)
+
+    target_dtype = tf.int8 if signed else tf.uint8
+    return tf.cast(quantized, target_dtype), tf.cast(scales, tf.float16)
+
+
+def dequantize_state(
+    quantized: tf.Tensor,
+    scales: tf.Tensor,
+    signed: bool = True,
+    sqrt: bool = False,
+    softsign: bool = True,
+    group_size: int = 32,
+) -> tf.Tensor:
+    original_shape = tf.shape(quantized)
+    numel = tf.size(quantized)
+    values = tf.cast(tf.reshape(quantized, [-1]), tf.float32)
+
+    pad = tf.math.floormod(-numel, group_size)
+    values_padded = tf.concat(
+        [values, tf.zeros([pad], dtype=tf.float32)], axis=0
+    )
+
+    quant_max = 127.0 if signed else 255.0
+    groups = tf.reshape(values_padded, [-1, group_size]) / quant_max
+
+    if softsign:
+        groups = groups / tf.maximum(2.0 - tf.abs(groups), 1e-12)
+
+    restored = groups * tf.reshape(tf.cast(scales, tf.float32), [-1, 1])
+    restored = tf.reshape(tf.reshape(restored, [-1])[:numel], original_shape)
+    return tf.square(restored) if sqrt else restored
+
+
+def ulp_scale(narrow: tf.Tensor) -> tf.Tensor:
+    abs_vals = tf.abs(tf.cast(narrow, tf.float32))
+    eps_half = (
+        tf.constant(2.0 ** -11, dtype=tf.float32)
+        if narrow.dtype == tf.float16
+        else tf.constant(2.0 ** -8, dtype=tf.float32)
+    )
+    return tf.maximum(abs_vals * eps_half, tf.constant(1.1754944e-38, dtype=tf.float32))
+
+
+def reconstruct_fp32_param(
+    narrow_param: tf.Tensor, error_bits: tf.Tensor
+) -> tf.Tensor:
+    """Reconstruct the fp32 master weight from the narrow copy + ECC bits."""
+    signed_max = 127.0 if error_bits.dtype == tf.int8 else 32767.0
+    correction = (
+        tf.cast(error_bits, tf.float32) / signed_max * ulp_scale(narrow_param)
+    )
+    return tf.cast(narrow_param, tf.float32) + correction
