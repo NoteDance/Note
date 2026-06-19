@@ -11,7 +11,7 @@ from keras.src.utils import tracking
 from keras.src.utils.naming import auto_name
 
 import tensorflow as tf
-from Note.nn.optimizer.galore_projector import GaLoreProjector
+from optimizer.galore_projector import GaLoreProjector
 import math
 from typing import Optional, Tuple, Union
 
@@ -604,7 +604,7 @@ class BaseOptimizer(KerasSaveable):
     
         return tf.where(g_norm > max_norm, clipped_grad, grad)
     
-    def gradient_centralize(self, g):
+    def apply_gc(self, g):
         if len(g.shape) > 1:
             axes = tuple(range(1, len(g.shape)))
             return g - tf.reduce_mean(g, axis=axes, keepdims=True)
