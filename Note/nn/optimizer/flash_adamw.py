@@ -571,7 +571,7 @@ class FlashAdamW_e(optimizer.Optimizer):
         agc (bool): Unit-wise Adaptive Gradient Clipping. Default ``False``.
         agc_clip_val (float): AGC clipping ratio. Default ``1e-2``.
         agc_eps (float): AGC minimum weight norm. Default ``1e-3``.
-        use_gc (bool): Gradient Centralization — subtract per-filter mean
+        gc (bool): Gradient Centralization — subtract per-filter mean
             before the Adam step. Default ``False``.
         pnm (bool): Replace the first-moment EMA with Positive-Negative
             Momentum. Skips the quantised exp_avg buffers entirely.
@@ -608,7 +608,7 @@ class FlashAdamW_e(optimizer.Optimizer):
         agc: bool = False,
         agc_clip_val: float = 1e-2,
         agc_eps: float = 1e-3,
-        use_gc: bool = False,
+        gc: bool = False,
         pnm: bool = False,
         cautious: bool = False,
         trust_ratio: bool = False,
@@ -650,7 +650,7 @@ class FlashAdamW_e(optimizer.Optimizer):
         self.agc = agc
         self.agc_clip_val = agc_clip_val
         self.agc_eps = agc_eps
-        self.use_gc = use_gc
+        self.gc = gc
         self.pnm = pnm
         self.cautious = cautious
         self.trust_ratio = trust_ratio
@@ -783,9 +783,8 @@ class FlashAdamW_e(optimizer.Optimizer):
             if self.maximize:
                 g = -g
 
-            if self.use_gc and len(g.shape) > 1:
-                axes = tuple(range(1, len(g.shape)))
-                g = g - tf.reduce_mean(g, axis=axes, keepdims=True)
+            if self.gc:
+                g = self.gradient_centralize(g)
 
             if self.agc:
                 g = self.apply_agc(
@@ -985,7 +984,7 @@ class FlashAdamW_e(optimizer.Optimizer):
             'agc':                      self.agc,
             'agc_clip_val':             self.agc_clip_val,
             'agc_eps':                  self.agc_eps,
-            'use_gc':                   self.use_gc,
+            'gc':                       self.gc,
             'pnm':                      self.pnm,
             'cautious':                 self.cautious,
             'trust_ratio':              self.trust_ratio,
