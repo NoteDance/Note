@@ -866,8 +866,8 @@ class LoRARite_e(optimizer.Optimizer):
             g_l, g_r = -g_l, -g_r
 
         if self.gc:
-            g_l = self.gradient_centralize(g_l)
-            g_r = self.gradient_centralize(g_r)
+            g_l = self.apply_gc(g_l)
+            g_r = self.apply_gc(g_r)
         if self.agc:
             g_l = self.apply_agc(param_left, g_l, agc_eps=self.agc_eps, agc_clip_val=self.agc_clip_val)
             g_r = self.apply_agc(param_right, g_r, agc_eps=self.agc_eps, agc_clip_val=self.agc_clip_val)

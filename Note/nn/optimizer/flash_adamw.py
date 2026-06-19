@@ -784,7 +784,7 @@ class FlashAdamW_e(optimizer.Optimizer):
                 g = -g
 
             if self.gc:
-                g = self.gradient_centralize(g)
+                g = self.apply_gc(g)
 
             if self.agc:
                 g = self.apply_agc(
