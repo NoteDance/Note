@@ -38,7 +38,8 @@ class Model(nn.Model):
         self.Model_new.param[-1][:-1].assign(trained_param[-1])
         self.new_class_batch_size = 64
         self.param = [self.Model_new.param, [self.Model_new.param[-2][:, -1:], self.Model_new.param[-1][-1:]]]
-        self.svd_k = 7
+        self.svd_k = tf.Variable(7)
+        self.sv_threshold = 1e-7
 
     # ------------------------------------------------------------------
     def __call__(self, x):
