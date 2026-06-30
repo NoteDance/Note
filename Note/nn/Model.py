@@ -1067,6 +1067,8 @@ class Model:
                         if hasattr(callback, 'on_batch_end'):
                             callback.on_batch_end(batch, logs=batch_logs)
                     self.batch_counter+=1
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if self.PR and epoch % 2 != 0:
                         batch_counter+=1
                     batch += 1
@@ -1154,8 +1156,6 @@ class Model:
                     if hasattr(callback, 'on_test_end'):
                         callback.on_test_end(epoch, logs=epoch_logs)
                 self.total_epoch+=1   
-                if hasattr(self, 'update_param'):
-                    self.update_param()
                 if p!=0:
                     if epoch%p==0:
                         if self.test_ds==None:
@@ -1267,6 +1267,8 @@ class Model:
                         if hasattr(callback, 'on_batch_end'):
                             callback.on_batch_end(batch, logs=batch_logs)
                     self.batch_counter+=1
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if self.PR and i % 2 != 0:
                         batch_counter+=1
                     batch += 1
@@ -1355,8 +1357,6 @@ class Model:
                         callback.on_test_end(i, logs=epoch_logs)
                 i+=1
                 self.total_epoch+=1
-                if hasattr(self, 'update_param'):
-                    self.update_param()
                 if p!=0:
                     if i%p==0:
                         if self.test_ds==None:
@@ -1617,6 +1617,8 @@ class Model:
                                 callback.on_batch_end(batch, logs=batch_logs)
                         num_batches += 1
                         self.batch_counter+=1
+                        if hasattr(self, 'update_param'):
+                            self.update_param()
                         if self.PR and epoch % 2 != 0:
                             batch_counter+=1
                         batch += 1
@@ -1715,8 +1717,6 @@ class Model:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
                     self.total_epoch+=1
-                    if hasattr(self, 'update_param'):
-                        self.update_param()
                     if p!=0:
                         if epoch%p==0:
                             if self.test_ds==None:
@@ -1839,6 +1839,8 @@ class Model:
                                 callback.on_batch_end(batch, logs=batch_logs)
                         num_batches += 1
                         self.batch_counter+=1
+                        if hasattr(self, 'update_param'):
+                            self.update_param()
                         if self.PR and i % 2 != 0:
                             batch_counter+=1
                         batch +=1
@@ -1939,8 +1941,6 @@ class Model:
                             callback.on_test_end(i, logs=epoch_logs)
                     i+=1
                     self.total_epoch+=1
-                    if hasattr(self, 'update_param'):
-                        self.update_param()
                     if p!=0:
                         if i%p==0:
                             if self.test_ds==None:
@@ -2076,8 +2076,6 @@ class Model:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
                     self.total_epoch+=1  
-                    if hasattr(self, 'update_param'):
-                        self.update_param()
                     if p!=0:
                         if epoch%p==0:
                             if self.test_ds==None:
@@ -2221,8 +2219,6 @@ class Model:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
                     self.total_epoch+=1  
-                    if hasattr(self, 'update_param'):
-                        self.update_param()
                     if p!=0:
                         if epoch%p==0:
                             if self.test_ds==None:
@@ -2363,8 +2359,6 @@ class Model:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
                     self.total_epoch+=1 
-                    if hasattr(self, 'update_param'):
-                        self.update_param()
                     if p!=0:
                         if epoch%p==0:
                             if self.test_ds==None:
@@ -2503,8 +2497,6 @@ class Model:
                             if hasattr(callback, 'on_test_end'):
                                 callback.on_test_end(epoch, logs=epoch_logs)
                         self.total_epoch+=1  
-                        if hasattr(self, 'update_param'):
-                            self.update_param()
                         if p!=0:
                             if epoch%p==0:
                                 if self.test_ds==None:
@@ -2666,6 +2658,8 @@ class Model:
             num_batches += 1
             self.step_in_epoch += 1
             self.batch_counter += 1
+            if hasattr(self, 'update_param'):
+                self.update_param()
             if self.PR and self.total_epoch % 2 != 0:
                 batch_counter += 1
             batch += 1
@@ -2789,6 +2783,8 @@ class Model:
             num_batches += 1
             self.step_in_epoch += 1
             self.batch_counter += 1
+            if hasattr(self, 'update_param'):
+                self.update_param()
             if self.PR and self.total_epoch % 2 != 0:
                 batch_counter += 1
             batch += 1
