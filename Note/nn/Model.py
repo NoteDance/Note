@@ -1014,6 +1014,8 @@ class Model:
                 batch = 0
                 index1 = 0
                 batch_counter = 0
+                if hasattr(self, 'update_param'):
+                    self.update_param()
                 if self.PR and epoch % 2 != 0:
                     self._ess = self.compute_ess()
                     num_updates = scale * self._ess / ess_threshold * self.num_updates
@@ -1212,6 +1214,8 @@ class Model:
                 batch = 0
                 index1 = 0
                 batch_counter = 0
+                if hasattr(self, 'update_param'):
+                    self.update_param()
                 if self.PR and epoch % 2 != 0:
                     self._ess = self.compute_ess()
                     num_updates = scale * self._ess / ess_threshold * self.num_updates
@@ -1554,6 +1558,8 @@ class Model:
                     batch = 0
                     index1 = 0
                     batch_counter = 0
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if self.PR and epoch % 2 != 0:
                         self._ess = self.compute_ess()
                         num_updates = scale * self._ess / ess_threshold * self.num_updates
@@ -1774,6 +1780,8 @@ class Model:
                     batch = 0
                     index1 = 0
                     batch_counter = 0
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if self.PR and epoch % 2 != 0:
                         self._ess = self.compute_ess()
                         num_updates = scale * self._ess / ess_threshold * self.num_updates
@@ -2040,6 +2048,8 @@ class Model:
                             for shm in self.test_active_shms:
                                 shm.close()
                     
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
@@ -2183,6 +2193,8 @@ class Model:
                             for shm in self.test_active_shms:
                                 shm.close()
                     
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
@@ -2323,6 +2335,8 @@ class Model:
                             for shm in self.test_active_shms:
                                 shm.close()
                     
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
@@ -2461,6 +2475,8 @@ class Model:
                                 for shm in self.test_active_shms:
                                     shm.close()
                         
+                        if hasattr(self, 'update_param'):
+                            self.update_param()
                         if self.PR and self.total_epoch % 2 != 0:
                             self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                         else:
