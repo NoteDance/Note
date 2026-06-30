@@ -1014,8 +1014,6 @@ class Model:
                 batch = 0
                 index1 = 0
                 batch_counter = 0
-                if hasattr(self, 'update_param'):
-                    self.update_param()
                 if self.PR and epoch % 2 != 0:
                     self._ess = self.compute_ess()
                     num_updates = scale * self._ess / ess_threshold * self.num_updates
@@ -1156,6 +1154,8 @@ class Model:
                     if hasattr(callback, 'on_test_end'):
                         callback.on_test_end(epoch, logs=epoch_logs)
                 self.total_epoch+=1   
+                if hasattr(self, 'update_param'):
+                    self.update_param()
                 if p!=0:
                     if epoch%p==0:
                         if self.test_ds==None:
@@ -1214,8 +1214,6 @@ class Model:
                 batch = 0
                 index1 = 0
                 batch_counter = 0
-                if hasattr(self, 'update_param'):
-                    self.update_param()
                 if self.PR and epoch % 2 != 0:
                     self._ess = self.compute_ess()
                     num_updates = scale * self._ess / ess_threshold * self.num_updates
@@ -1357,6 +1355,8 @@ class Model:
                         callback.on_test_end(i, logs=epoch_logs)
                 i+=1
                 self.total_epoch+=1
+                if hasattr(self, 'update_param'):
+                    self.update_param()
                 if p!=0:
                     if i%p==0:
                         if self.test_ds==None:
@@ -1558,8 +1558,6 @@ class Model:
                     batch = 0
                     index1 = 0
                     batch_counter = 0
-                    if hasattr(self, 'update_param'):
-                        self.update_param()
                     if self.PR and epoch % 2 != 0:
                         self._ess = self.compute_ess()
                         num_updates = scale * self._ess / ess_threshold * self.num_updates
@@ -1716,7 +1714,9 @@ class Model:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
-                    self.total_epoch+=1     
+                    self.total_epoch+=1
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if p!=0:
                         if epoch%p==0:
                             if self.test_ds==None:
@@ -1780,8 +1780,6 @@ class Model:
                     batch = 0
                     index1 = 0
                     batch_counter = 0
-                    if hasattr(self, 'update_param'):
-                        self.update_param()
                     if self.PR and epoch % 2 != 0:
                         self._ess = self.compute_ess()
                         num_updates = scale * self._ess / ess_threshold * self.num_updates
@@ -1941,6 +1939,8 @@ class Model:
                             callback.on_test_end(i, logs=epoch_logs)
                     i+=1
                     self.total_epoch+=1
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if p!=0:
                         if i%p==0:
                             if self.test_ds==None:
@@ -2048,8 +2048,6 @@ class Model:
                             for shm in self.test_active_shms:
                                 shm.close()
                     
-                    if hasattr(self, 'update_param'):
-                        self.update_param()
                     if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
@@ -2077,7 +2075,9 @@ class Model:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
-                    self.total_epoch+=1     
+                    self.total_epoch+=1  
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if p!=0:
                         if epoch%p==0:
                             if self.test_ds==None:
@@ -2193,8 +2193,6 @@ class Model:
                             for shm in self.test_active_shms:
                                 shm.close()
                     
-                    if hasattr(self, 'update_param'):
-                        self.update_param()
                     if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
@@ -2222,7 +2220,9 @@ class Model:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
-                    self.total_epoch+=1     
+                    self.total_epoch+=1  
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if p!=0:
                         if epoch%p==0:
                             if self.test_ds==None:
@@ -2335,8 +2335,6 @@ class Model:
                             for shm in self.test_active_shms:
                                 shm.close()
                     
-                    if hasattr(self, 'update_param'):
-                        self.update_param()
                     if self.PR and self.total_epoch % 2 != 0:
                         self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                     else:
@@ -2364,7 +2362,9 @@ class Model:
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
-                    self.total_epoch+=1     
+                    self.total_epoch+=1 
+                    if hasattr(self, 'update_param'):
+                        self.update_param()
                     if p!=0:
                         if epoch%p==0:
                             if self.test_ds==None:
@@ -2475,8 +2475,6 @@ class Model:
                                 for shm in self.test_active_shms:
                                     shm.close()
                         
-                        if hasattr(self, 'update_param'):
-                            self.update_param()
                         if self.PR and self.total_epoch % 2 != 0:
                             self.train_loss=tf.reduce_mean(self.prioritized_replay.loss).numpy()
                         else:
@@ -2504,7 +2502,9 @@ class Model:
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_test_end'):
                                 callback.on_test_end(epoch, logs=epoch_logs)
-                        self.total_epoch+=1     
+                        self.total_epoch+=1  
+                        if hasattr(self, 'update_param'):
+                            self.update_param()
                         if p!=0:
                             if epoch%p==0:
                                 if self.test_ds==None:
