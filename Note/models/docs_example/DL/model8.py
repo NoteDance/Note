@@ -149,3 +149,5 @@ class Model(nn.Model):
                 target = p_t_c
 
             p_n.assign(self.tau * target + (1.0 - self.tau) * p_n)
+    
+    def update_param(self):
