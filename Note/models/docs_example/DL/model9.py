@@ -1,0 +1,168 @@
+from Note import nn
+import tensorflow as tf
+
+
+def compute_covariance(x, rowvar=False):
+    if rowvar:
+        x = tf.transpose(x)
+    
+    x = tf.cast(x, tf.float32)
+    mean = tf.reduce_mean(x, axis=0, keepdims=True)
+    x_centered = x - mean
+    
+    n = tf.cast(tf.shape(x)[0], tf.float32)
+    cov = tf.matmul(x_centered, x_centered, transpose_a=True) / (n - 1)
+    return cov
+
+
+class Model_trained(nn.Model):
+    def __init__(self, input_dim: int, n_train_samples: int):
+        super().__init__()
+        self.d1 = nn.dense(128, input_dim, activation='relu')
+        self.d2 = nn.dense(64,  128,       activation='relu')
+        self.d3 = nn.dense(10,  64)
+
+    def __call__(self, x):
+        x = self.d1(x)
+        x = self.d2(x)
+        return self.d3(x)
+
+
+class Model_new(nn.Model):
+    def __init__(self, input_dim: int, n_train_samples: int):
+        super().__init__()
+        self.d1 = nn.dense(128, input_dim, activation='relu')
+        self.d2 = nn.dense(64,  128,       activation='relu')
+        self.d3 = nn.dense(11,  64)
+
+    def __call__(self, x):
+        x = self.d1(x)
+        x = self.d2(x)
+        return self.d3(x)
+
+
+class Model(nn.Model):
+    def __init__(self, input_dim: int, n_train_samples: int, trained_param):
+        self.Model_trained = Model_trained(input_dim, n_train_samples)
+        nn.assign_param(self.Model_trained.param, trained_param)
+        self.Model_new = Model_new(input_dim, n_train_samples + 1)
+        nn.assign_param(self.Model_new.param[:-2], trained_param[:-2])
+        self.Model_new.param[-2][:, :-1].assign(trained_param[-2])
+        self.Model_new.param[-1][:-1].assign(trained_param[-1])
+        self.new_class_batch_size = 64
+        self.param = [self.Model_new.param, [self.Model_new.param[-2][:, -1:], self.Model_new.param[-1][-1:]]]
+        self.svd_k = tf.Variable(7)
+        self.sv_threshold = 1e-7
+
+    # ------------------------------------------------------------------
+    def __call__(self, x):
+        # Old-class samples → knowledge distillation
+        self.distribution_trained = self.Model_trained(x[self.new_class_batch_size:])
+        self.distribution_new     = self.Model_new(x[self.new_class_batch_size:])
+        # New-class samples → main task output (loss comes only from here)
+        return self.Model_new(x[:self.new_class_batch_size])
+
+    # ------------------------------------------------------------------
+    def loss_func(self, loss: tf.Tensor) -> tf.Tensor:
+        # ----------------------------------------------------------------
+        # KL(p_trained || q_new)
+        #   Both sides are fully stop_gradient → KL does not affect parameter updates at all
+        #   Used only as a scaling weight for param_penalty
+        #   When distributions are identical: KL = 0 → kl_weight = 0 → penalty = 0  ✓
+        # ----------------------------------------------------------------
+        p = tf.nn.softmax(
+            self.distribution_trained
+        )                                                           # [B, 10]
+
+        q_full = tf.nn.softmax(
+            self.distribution_new
+        )                                                           # [B, 11]
+        q  = q_full[:, :10]
+
+        kl = tf.reduce_mean(
+            tf.reduce_sum(
+                p * (tf.math.log(p + 1e-8) - tf.math.log(q + 1e-8)),
+                axis=-1
+            )
+        )
+        kl_weight = tf.stop_gradient(kl)                           # pure scaling factor, no gradient
+
+        # ----------------------------------------------------------------
+        # Parameter difference norm penalty (gradients flow only through Model_new.param)
+        # d3 is truncated to align with the old-class portion
+        # ----------------------------------------------------------------
+        param_penalty = tf.constant(0.0, dtype=tf.float32)
+        n = len(self.Model_trained.param)
+        
+        penalty = tf.constant(0.0, dtype=tf.float32)
+
+        for i, (p_t, p_n) in enumerate(
+            zip(self.Model_trained.param, self.Model_new.param)
+        ):
+            shape = p.shape
+            if len(shape) < 2:
+                continue
+            
+            p_t = tf.cast(tf.stop_gradient(p_t), tf.float32)
+            p_n = tf.cast(p_n, tf.float32)
+            
+            if i == n - 2:      # d3 weight [64,10] vs [64,11]
+                p_n = p_n[:, :10]
+            
+            rows = 1
+            for d in shape[:-1]:
+                rows *= d
+            cols    = shape[-1]
+            p_t_2d    = tf.reshape(tf.cast(p_t,  tf.float32), [rows, cols])
+            p_n_2d   = tf.reshape(tf.cast(p_n, tf.float32), [rows, cols])
+
+            k = tf.minimum(self.svd_k, tf.minimum(rows, cols))
+
+            _, u_param, _ = tf.linalg.svd(p_t_2d,  full_matrices=False)
+            _, u_copy,  _ = tf.linalg.svd(p_n_2d, full_matrices=False)
+
+            u_param = u_param[:, :k]    # [rows, k]
+            u_copy  = u_copy[:,  :k]    # [rows, k]
+            
+            s_param = compute_covariance(u_param)
+            s_copy = compute_covariance(u_copy)
+
+            M = tf.matmul(s_param, s_copy)
+
+            k_f       = tf.cast(k, tf.float32)
+            diff_norm = tf.sqrt(
+                tf.maximum(2.0 * k_f - 2.0 * tf.reduce_sum(M * M), 1e-12)
+            )
+
+            penalty = penalty + diff_norm
+
+        return [loss + self.lambda_param * kl_weight * param_penalty, kl]
+
+    # ------------------------------------------------------------------
+    # Soft update: Model_new ← τ · Model_trained + (1-τ) · Model_new
+    #
+    # Direction: pull Model_new toward Model_trained to prevent forgetting old classes
+    # d3: use concatenation instead of truncation to keep the 11th neuron (new class) undisturbed
+    #
+    #   Effect on weight [64, 11]:
+    #     First 10 columns: p_n[:,i] ← τ·p_t[:,i] + (1-τ)·p_n[:,i]  (pulled toward old model)
+    #     11th column:      p_n[:,10] ← τ·p_n[:,10] + (1-τ)·p_n[:,10] = p_n[:,10]  (unchanged)
+    # ------------------------------------------------------------------
+    def soft_update(self) -> None:
+        n = len(self.Model_trained.param)
+        for i, (p_t, p_n) in enumerate(
+            zip(self.Model_trained.param, self.Model_new.param)
+        ):
+            dtype  = p_n.dtype
+            p_t_c  = tf.cast(p_t, dtype)
+
+            if i == n - 2:      # d3 weight: trained[64,10] → pad → [64,11]
+                target = tf.concat([p_t_c, p_n[:, 10:11]], axis=1)
+            elif i == n - 1:    # d3 bias:   trained[10]    → pad → [11]
+                target = tf.concat([p_t_c, p_n[10:11]], axis=0)
+            else:               # d1, d2: same shape, update directly
+                target = p_t_c
+
+            p_n.assign(self.tau * target + (1.0 - self.tau) * p_n)
+    
+    def update_param(self):
