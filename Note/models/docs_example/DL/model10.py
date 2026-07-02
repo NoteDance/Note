@@ -111,7 +111,9 @@ class Model(nn.Model):
             u_param = u_param[:, :k]    # [rows, k]
             u_copy  = u_copy[:,  :k]    # [rows, k]
 
-            # Use the projection matrix because it minimizes the distance between the projected vector and the original vector.
+            # The projection matrix is used because U is an orthonormal basis 
+            # for the parameter column space, and the projection matrix minimizes the distance 
+            # between vectors in the column space and their projected vectors in the subspace.
             PM_param = tf.matmul(u_param, u_param, transpose_b=True)
             PM_copy = tf.matmul(u_copy, u_copy, transpose_b=True)
             M = tf.matmul(PM_param, PM_copy)
