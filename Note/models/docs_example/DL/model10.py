@@ -2,19 +2,6 @@ from Note import nn
 import tensorflow as tf
 
 
-def compute_covariance(x, rowvar=False):
-    if rowvar:
-        x = tf.transpose(x)
-    
-    x = tf.cast(x, tf.float32)
-    mean = tf.reduce_mean(x, axis=0, keepdims=True)
-    x_centered = x - mean
-    
-    n = tf.cast(tf.shape(x)[0], tf.float32)
-    cov = tf.matmul(x_centered, x_centered, transpose_a=True) / (n - 1)
-    return cov
-
-
 class Model_trained(nn.Model):
     def __init__(self, input_dim: int, n_train_samples: int):
         super().__init__()
@@ -123,25 +110,20 @@ class Model(nn.Model):
             p_n_2d   = tf.reshape(tf.cast(p_n, tf.float32), [rows, cols])
 
             k = tf.minimum(self.svd_k, tf.minimum(rows, cols))
-
-            s_param, u_param, v_param = tf.linalg.svd(p_t_2d,  full_matrices=False)
-            s_param, u_copy,  v_param = tf.linalg.svd(p_n_2d, full_matrices=False)
+            
+            # Since U is the orthonormal basis of the parameter matrix, when U remains unchanged,
+            # the column space of the parameter matrix remains unchanged. 
+            # Moreover, because Ax = y with both x and y fixed, 
+            # the parameter matrix is uniquely determined.
+            _, u_param, _ = tf.linalg.svd(p_t_2d,  full_matrices=False)
+            _, u_copy,  _ = tf.linalg.svd(p_n_2d, full_matrices=False)
 
             u_param = u_param[:, :k]    # [rows, k]
             u_copy  = u_copy[:,  :k]    # [rows, k]
-            s_param = u_param[:, :k]    # [rows, k]
-            s_copy  = u_copy[:,  :k]    # [rows, k]
-            v_param = u_param[:, :k]    # [rows, k]
-            v_copy  = u_copy[:,  :k]    # [rows, k]
-            
-            approx_param = tf.matmul(u_param, tf.matmul(tf.linalg.diag(s_param), v_param, adjoint_b=True))
-            approx_copy = tf.matmul(u_copy, tf.matmul(tf.linalg.diag(s_copy), v_copy, adjoint_b=True))
-            s_param = compute_covariance(approx_param)
-            s_copy = compute_covariance(approx_copy)
 
-            M = tf.matmul(s_param, s_copy)
+            M = tf.matmul(u_param, u_copy, transpose_a=True)
 
-            k_f       = tf.cast(k, tf.float32)
+            k_f = tf.cast(k, tf.float32)
             diff_norm = tf.sqrt(
                 tf.maximum(2.0 * k_f - 2.0 * tf.reduce_sum(M * M), 1e-12)
             )
