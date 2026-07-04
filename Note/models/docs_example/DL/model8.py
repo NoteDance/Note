@@ -29,7 +29,7 @@ class Model_new(nn.Model):
 
 
 class Model(nn.Model):
-    def __init__(self, input_dim: int, n_train_samples: int, trained_param):
+    def __init__(self, input_dim: int, n_train_samples: int, trained_param, kl_threshold: float):
         self.Model_trained = Model_trained(input_dim, n_train_samples)
         nn.assign_param(self.Model_trained.param, trained_param)
         self.Model_new = Model_new(input_dim, n_train_samples + 1)
@@ -40,6 +40,7 @@ class Model(nn.Model):
         self.param = [self.Model_new.param, [self.Model_new.param[-2][:, -1:], self.Model_new.param[-1][-1:]]]
         self.svd_k = tf.Variable(7)
         self.sv_threshold = 1e-7
+        self.kl_threshold = tf.constant(kl_threshold, dtype=tf.float32)
 
     # ------------------------------------------------------------------
     def __call__(self, x):
@@ -66,13 +67,18 @@ class Model(nn.Model):
         )                                                           # [B, 11]
         q  = q_full[:, :10]
 
-        kl = tf.reduce_mean(
-            tf.reduce_sum(
-                p * (tf.math.log(p + 1e-8) - tf.math.log(q + 1e-8)),
-                axis=-1
-            )
-        )
-        kl_weight = tf.stop_gradient(kl)                           # pure scaling factor, no gradient
+        kl_per_sample = tf.reduce_sum(
+            p * (tf.math.log(p + 1e-8) - tf.math.log(q + 1e-8)),
+            axis=-1
+        )                                                      
+
+        kl_per_sample_detached = tf.stop_gradient(kl_per_sample)
+
+        mask = tf.cast(kl_per_sample_detached > self.kl_threshold, kl_per_sample.dtype)
+        gated_kl_per_sample = kl_per_sample_detached + mask * (kl_per_sample - kl_per_sample_detached)  # [B]
+
+        kl = tf.reduce_mean(gated_kl_per_sample)
+        kl_weight = tf.reduce_mean(kl_per_sample_detached)                           # pure scaling factor, no gradient
 
         # ----------------------------------------------------------------
         # Parameter difference norm penalty (gradients flow only through Model_new.param)
@@ -126,7 +132,7 @@ class Model(nn.Model):
 
             penalty = penalty + diff_norm
 
-        return [loss + self.lambda_param * kl_weight * param_penalty, kl]
+        return loss + kl + self.lambda_param * kl_weight * param_penalty
 
     # ------------------------------------------------------------------
     # Soft update: Model_new ← τ · Model_trained + (1-τ) · Model_new
