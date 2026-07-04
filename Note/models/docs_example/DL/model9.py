@@ -42,7 +42,7 @@ class Model_new(nn.Model):
 
 
 class Model(nn.Model):
-    def __init__(self, input_dim: int, n_train_samples: int, trained_param, kl_threshold: float):
+    def __init__(self, input_dim: int, n_train_samples: int, trained_param, kl_threshold1: float, kl_threshold2: float):
         self.Model_trained = Model_trained(input_dim, n_train_samples)
         nn.assign_param(self.Model_trained.param, trained_param)
         self.Model_new = Model_new(input_dim, n_train_samples + 1)
@@ -53,7 +53,8 @@ class Model(nn.Model):
         self.param = [self.Model_new.param, [self.Model_new.param[-2][:, -1:], self.Model_new.param[-1][-1:]]]
         self.svd_k = tf.Variable(7)
         self.sv_threshold = 1e-7
-        self.kl_threshold = tf.constant(kl_threshold, dtype=tf.float32)
+        self.kl_threshold1 = tf.constant(kl_threshold1, dtype=tf.float32)
+        self.kl_threshold2 = tf.constant(kl_threshold2, dtype=tf.float32)
 
     # ------------------------------------------------------------------
     def __call__(self, x):
@@ -92,6 +93,10 @@ class Model(nn.Model):
 
         kl = tf.reduce_mean(gated_kl_per_sample)
         kl_weight = tf.reduce_mean(kl_per_sample_detached)      # pure scaling factor, no gradient
+        if kl_weight < self.kl_threshold2:
+            kl_weight = 0
+        else:
+            kl_weight = 1
 
         # ----------------------------------------------------------------
         # Parameter difference norm penalty (gradients flow only through Model_new.param)
