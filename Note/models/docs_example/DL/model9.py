@@ -94,9 +94,9 @@ class Model(nn.Model):
         kl = tf.reduce_mean(gated_kl_per_sample)
         kl_weight = tf.reduce_mean(kl_per_sample_detached)      # pure scaling factor, no gradient
         if kl_weight < self.kl_threshold2:
-            kl_weight = 0
+            weight = 0
         else:
-            kl_weight = 1
+            weight = 1
 
         # ----------------------------------------------------------------
         # Parameter difference norm penalty (gradients flow only through Model_new.param)
@@ -153,7 +153,7 @@ class Model(nn.Model):
 
             penalty = penalty + diff_norm
 
-        return loss + kl + self.lambda_param * kl_weight * param_penalty
+        return loss + kl + self.lambda_param * weight * param_penalty
 
     # ------------------------------------------------------------------
     # Soft update: Model_new ← τ · Model_trained + (1-τ) · Model_new
