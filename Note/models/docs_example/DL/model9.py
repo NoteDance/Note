@@ -91,8 +91,7 @@ class Model(nn.Model):
         gated_kl_per_sample = kl_per_sample_detached + mask * (kl_per_sample - kl_per_sample_detached)  # [B]
 
         kl = tf.reduce_mean(gated_kl_per_sample)
-        mask_ratio = tf.reduce_mean(mask)
-        kl_weight = tf.reduce_mean(kl_per_sample_detached) * mask_ratio      # pure scaling factor, no gradient
+        kl_weight = tf.reduce_mean(kl_per_sample_detached)      # pure scaling factor, no gradient
 
         # ----------------------------------------------------------------
         # Parameter difference norm penalty (gradients flow only through Model_new.param)
