@@ -123,12 +123,9 @@ class Model(nn.Model):
             
             approx_param = tf.matmul(u_param, tf.matmul(tf.linalg.diag(s_param), v_param, adjoint_b=True))
             approx_copy = tf.matmul(u_copy, tf.matmul(tf.linalg.diag(s_copy), v_copy, adjoint_b=True))
-            M = tf.matmul(approx_param, approx_copy, transpose_a=True)
 
-            k_f       = tf.cast(k, tf.float32)
-            diff_norm = tf.sqrt(
-                tf.maximum(2.0 * k_f - 2.0 * tf.reduce_sum(M * M), 1e-12)
-            )
+            k_f = tf.cast(k, tf.float32)
+            diff_norm = tf.norm(approx_param - approx_copy)
 
             penalty = penalty + diff_norm
 

@@ -125,7 +125,7 @@ class Model(nn.Model):
             k = tf.minimum(self.svd_k, tf.minimum(rows, cols))
 
             s_param, u_param, v_param = tf.linalg.svd(p_t_2d,  full_matrices=False)
-            s_param, u_copy,  v_param = tf.linalg.svd(p_n_2d, full_matrices=False)
+            s_copy, u_copy,  v_copy = tf.linalg.svd(p_n_2d, full_matrices=False)
 
             u_param = u_param[:, :k]    # [rows, k]
             u_copy  = u_copy[:,  :k]    # [rows, k]
@@ -139,12 +139,8 @@ class Model(nn.Model):
             s_param = compute_covariance(approx_param)
             s_copy = compute_covariance(approx_copy)
 
-            M = tf.matmul(s_param, s_copy)
-
-            k_f       = tf.cast(k, tf.float32)
-            diff_norm = tf.sqrt(
-                tf.maximum(2.0 * k_f - 2.0 * tf.reduce_sum(M * M), 1e-12)
-            )
+            k_f = tf.cast(k, tf.float32)
+            diff_norm = tf.norm(s_param - s_copy)
 
             penalty = penalty + diff_norm
 
