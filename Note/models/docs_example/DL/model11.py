@@ -127,7 +127,6 @@ class Model(nn.Model):
             dist_param_col = tf.norm(approx_param * approx_param, axis=0)
             dist_copy_col = tf.norm(approx_copy * approx_copy, axis=0)
 
-            k_f = tf.cast(k, tf.float32)
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
 
             penalty = penalty + diff_mean

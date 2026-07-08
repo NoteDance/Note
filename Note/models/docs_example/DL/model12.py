@@ -130,7 +130,6 @@ class Model(nn.Model):
             u_param = u_param[:, :k]    # [rows, k]
             u_copy  = u_copy[:,  :k]    # [rows, k]
 
-            k_f = tf.cast(k, tf.float32)
             diff_norm = tf.norm(u_param - u_copy)
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
 

@@ -139,7 +139,6 @@ class Model(nn.Model):
             s_param = compute_covariance(approx_param)
             s_copy = compute_covariance(approx_copy)
 
-            k_f = tf.cast(k, tf.float32)
             diff_norm = tf.norm(s_param - s_copy)
 
             penalty = penalty + diff_norm
