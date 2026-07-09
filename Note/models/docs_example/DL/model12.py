@@ -130,7 +130,7 @@ class Model(nn.Model):
             u_param = u_param[:, :k]    # [rows, k]
             u_copy  = u_copy[:,  :k]    # [rows, k]
 
-            diff_norm = tf.norm(u_param - u_copy)
+            diff_norm = tf.reduce_mean((u_param - u_copy)**2)
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
 
             penalty = penalty + diff_norm + diff_mean

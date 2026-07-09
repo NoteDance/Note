@@ -124,7 +124,7 @@ class Model(nn.Model):
             approx_param = tf.matmul(u_param, tf.matmul(tf.linalg.diag(s_param), v_param, adjoint_b=True))
             approx_copy = tf.matmul(u_copy, tf.matmul(tf.linalg.diag(s_copy), v_copy, adjoint_b=True))
 
-            diff_norm = tf.norm(approx_param - approx_copy)
+            diff_norm = tf.reduce_mean((approx_param - approx_copy)**2)
 
             penalty = penalty + diff_norm
 
