@@ -46,7 +46,7 @@ class Model(nn.Model):
             k = tf.minimum(self.svd_k, tf.minimum(rows, cols))
 
             s_param, u_param, v_param = tf.linalg.svd(p_2d,  full_matrices=False)
-            s_param, u_copy,  v_param = tf.linalg.svd(pc_2d, full_matrices=False)
+            s_copy, u_copy,  v_copy = tf.linalg.svd(pc_2d, full_matrices=False)
 
             u_param = u_param[:, :k]    # [rows, k]
             u_copy  = u_copy[:,  :k]    # [rows, k]
