@@ -82,7 +82,10 @@ class PR:
         ).astype(np.int32)
 
         self.batch = batch_size
-        return train_data[self.index], train_labels[self.index]
+        if train_labels == None:
+            return train_data[self.index]
+        else:
+            return train_data[self.index], train_labels[self.index]
     
     def update_loss(self, loss=None, index=None):
         if loss is not None:
