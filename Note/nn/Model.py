@@ -920,7 +920,7 @@ class Model:
         return float(ess)
     
     
-    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, parallel_dump=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=1.0, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, jit_compile=True, callbacks=None, p=None):
+    def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, parallel_dump=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, pr_batch_size=None, alpha=None, ess_threshold=None, scale=1.0, num_updates=None, min_num_updates=None, max_num_updates=None, processes=None, jit_compile=True, callbacks=None, p=None):
         if p!=0:
             if p==None:
                 p_=9
@@ -966,6 +966,7 @@ class Model:
         self.PR=PR
         self.train_data=train_data
         self.train_labels=train_labels
+        self.pr_batch_size=pr_batch_size
         self.alpha=alpha
         self.ess_threshold=ess_threshold
         self.scale=scale
@@ -977,6 +978,11 @@ class Model:
             self.prioritized_replay.build(len(train_data), alpha)
             self.prioritized_replay.loss=np.zeros(len(train_data), dtype=np.float32)
             self.prioritized_replay.loss_=tf.Variable(tf.zeros([self.batch_size]))
+        elif pr_batch_size!=None:
+            self.prioritized_replay=PR_()
+            self.prioritized_replay.build(len(self.old_train_data), alpha)
+            self.prioritized_replay.loss=np.zeros(len(self.old_train_data), dtype=np.float32)
+            self.prioritized_replay.loss_=tf.Variable(tf.zeros([pr_batch_size]))
         if test_ds!=None:
             self.test_batch_size=test_ds._batch_size.numpy()
         self.processes=processes
@@ -1056,7 +1062,7 @@ class Model:
                         loss,acc=self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
                     else:
                         loss,acc=self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
-                    if self.PR and epoch % 2 != 0:
+                    if (self.PR and epoch % 2 != 0) or pr_batch_size!=None:
                         self.prioritized_replay.update()
                     elif self.PR:
                         self.prioritized_replay.update_loss(index=(index1, index2))
@@ -1256,7 +1262,7 @@ class Model:
                         loss,acc=self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
                     else:
                         loss,acc=self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer)
-                    if self.PR and i % 2 != 0:
+                    if (self.PR and epoch % 2 != 0) or pr_batch_size!=None:
                         self.prioritized_replay.update()
                     elif self.PR:
                         self.prioritized_replay.update_loss(index=(index1, index2))
@@ -1446,7 +1452,7 @@ class Model:
             return
     
     
-    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, parallel_dump=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
+    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, parallel_training_and_test=False, parallel_training_and_save=False, parallel_dump=False, test_data=None, test_labels=None, test_batch_size=None, test_freq=1, PR=False, train_data=None, train_labels=None, pr_batch_size=None, alpha=None, ess_threshold=None, scale=None, num_updates=None, min_num_updates=None, max_num_updates=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
         if num_epochs!=None:
             epochs=num_epochs
         if p!=0:
@@ -1498,6 +1504,7 @@ class Model:
         self.PR=PR
         self.train_data=train_data
         self.train_labels=train_labels
+        self.pr_batch_size=pr_batch_size
         self.alpha=alpha
         self.ess_threshold=ess_threshold
         self.scale=scale
@@ -1509,6 +1516,11 @@ class Model:
             self.prioritized_replay.build(len(train_data), alpha)
             self.prioritized_replay.loss=np.zeros(len(train_data), dtype=np.float32)
             self.prioritized_replay.loss_=tf.Variable(tf.zeros([self.batch_size]))
+        elif pr_batch_size!=None:
+            self.prioritized_replay=PR_()
+            self.prioritized_replay.build(len(self.old_train_data), alpha)
+            self.prioritized_replay.loss=np.zeros(len(self.old_train_data), dtype=np.float32)
+            self.prioritized_replay.loss_=tf.Variable(tf.zeros([pr_batch_size]))
         self.global_test_batch_size=global_test_batch_size
         self.eval_steps_per_epoch=eval_steps_per_epoch
         self.jit_compile=jit_compile
@@ -1603,7 +1615,7 @@ class Model:
                             loss,acc = self.distributed_train_step(x, self.optimizer, train_accuracy, strategy)
                         else:
                             loss,acc = self.distributed_train_step_(x, self.optimizer, train_accuracy, strategy)
-                        if self.PR and epoch % 2 != 0:
+                        if (self.PR and epoch % 2 != 0) or pr_batch_size!=None:
                             self.prioritized_replay.update()
                         elif self.PR:
                             self.prioritized_replay.update_loss(index=(index1, index2))
@@ -1825,7 +1837,7 @@ class Model:
                             loss,acc = self.distributed_train_step(x, self.optimizer, train_accuracy, strategy)
                         else:
                             loss,acc = self.distributed_train_step_(x, self.optimizer, train_accuracy, strategy)
-                        if self.PR and i % 2 != 0:
+                        if (self.PR and epoch % 2 != 0) or pr_batch_size!=None:
                             self.prioritized_replay.update()
                         elif self.PR:
                             self.prioritized_replay.update_loss(index=(index1, index2))
@@ -2644,7 +2656,7 @@ class Model:
                 loss,acc = self.distributed_train_step(next(iterator), self.optimizer, train_accuracy, strategy)
             else:
                 loss,acc = self.distributed_train_step_(next(iterator), self.optimizer, train_accuracy, strategy)
-            if self.PR and self.total_epoch % 2 != 0:
+            if (self.PR and self.total_epoch % 2 != 0) or self.pr_batch_size != None:
                 self.prioritized_replay.update()
             elif self.PR:
                 self.prioritized_replay.update_loss(index=(index1, index2))
@@ -2769,7 +2781,7 @@ class Model:
                 loss,acc = coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer, train_accuracy, strategy))
             else:
                 loss,acc = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer, train_accuracy, strategy))
-            if self.PR and self.total_epoch % 2 != 0:
+            if (self.PR and self.total_epoch % 2 != 0) or self.pr_batch_size != None:
                 self.prioritized_replay.update()
             elif self.PR:
                 self.prioritized_replay.update_loss(index=(index1, index2))
