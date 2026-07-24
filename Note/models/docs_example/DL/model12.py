@@ -29,7 +29,8 @@ class Model_new(nn.Model):
 
 
 class Model(nn.Model):
-    def __init__(self, input_dim: int, n_train_samples: int, trained_param, kl_threshold: float):
+    def __init__(self, input_dim: int, n_train_samples: int, trained_param, old_train_data, kl_threshold: float):
+        self.old_train_data=old_train_data
         self.Model_trained = Model_trained(input_dim, n_train_samples)
         nn.assign_param(self.Model_trained.param, trained_param)
         self.Model_new = Model_new(input_dim, n_train_samples + 1)
@@ -44,11 +45,12 @@ class Model(nn.Model):
 
     # ------------------------------------------------------------------
     def __call__(self, x):
+        old_data = self.prioritized_replay.sample(self.old_train_data, None, self.alpha, self.pr_batch_size)
         # Old-class samples → knowledge distillation
-        self.distribution_trained = self.Model_trained(x[self.new_class_batch_size:])
-        self.distribution_new     = self.Model_new(x[self.new_class_batch_size:])
+        self.distribution_trained = self.Model_trained(old_data)
+        self.distribution_new = self.Model_new(old_data)
         # New-class samples → main task output (loss comes only from here)
-        return self.Model_new(x[:self.new_class_batch_size])
+        return self.Model_new(x)
 
     # ------------------------------------------------------------------
     def loss_func(self, loss: tf.Tensor) -> tf.Tensor:
@@ -73,6 +75,9 @@ class Model(nn.Model):
         )                                                      
 
         kl_per_sample_detached = tf.stop_gradient(kl_per_sample)
+        
+        if self.pr_batch_size!=None:
+            self.prioritized_replay.loss_.assign(kl_per_sample_detached)
 
         mask = tf.cast(kl_per_sample_detached > self.kl_threshold, kl_per_sample.dtype)
         gated_kl_per_sample = kl_per_sample_detached + mask * (kl_per_sample - kl_per_sample_detached)  # [B]
