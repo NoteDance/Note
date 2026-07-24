@@ -981,7 +981,7 @@ class Model:
         elif pr_batch_size!=None:
             self.prioritized_replay=PR_()
             self.prioritized_replay.build(len(self.old_train_data), alpha)
-            self.prioritized_replay.loss=np.zeros(len(self.old_train_data), dtype=np.float32)
+            self.prioritized_replay.loss=np.full(len(self.old_train_data), self.init_priority, dtype=np.float32)
             self.prioritized_replay.loss_=tf.Variable(tf.zeros([pr_batch_size]))
         if test_ds!=None:
             self.test_batch_size=test_ds._batch_size.numpy()
@@ -1519,7 +1519,7 @@ class Model:
         elif pr_batch_size!=None:
             self.prioritized_replay=PR_()
             self.prioritized_replay.build(len(self.old_train_data), alpha)
-            self.prioritized_replay.loss=np.zeros(len(self.old_train_data), dtype=np.float32)
+            self.prioritized_replay.loss=np.full(len(self.old_train_data), self.init_priority, dtype=np.float32)
             self.prioritized_replay.loss_=tf.Variable(tf.zeros([pr_batch_size]))
         self.global_test_batch_size=global_test_batch_size
         self.eval_steps_per_epoch=eval_steps_per_epoch
