@@ -90,7 +90,6 @@ class Model(nn.Model):
         # Parameter difference norm penalty (gradients flow only through Model_new.param)
         # d3 is truncated to align with the old-class portion
         # ----------------------------------------------------------------
-        param_penalty = tf.constant(0.0, dtype=tf.float32)
         n = len(self.Model_trained.param)
         
         penalty = tf.constant(0.0, dtype=tf.float32)
@@ -141,7 +140,7 @@ class Model(nn.Model):
 
             penalty = penalty + diff_norm + diff_mean
 
-        return loss + kl + self.lambda_param * kl_weight * param_penalty
+        return loss + kl + self.lambda_param * kl_weight * penalty
 
     # ------------------------------------------------------------------
     # Soft update: Model_new ← τ · Model_trained + (1-τ) · Model_new

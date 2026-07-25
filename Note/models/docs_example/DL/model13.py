@@ -29,8 +29,10 @@ class Model_new(nn.Model):
 
 
 class Model(nn.Model):
-    def __init__(self, input_dim: int, n_train_samples: int, trained_param, kl_threshold: float):
+    def __init__(self, input_dim: int, n_train_samples: int, trained_param, old_train_data, kl_threshold: float,
+                     lambda_max: float = 1.0, lambda_min: float = 0.01, total_steps: int = 7000):
         super().__init__()
+        self.old_train_data=old_train_data
         self.Model_trained = Model_trained(input_dim, n_train_samples)
         nn.assign_param(self.Model_trained.param, trained_param)
         self.Model_new = Model_new(input_dim, n_train_samples + 1)
@@ -39,20 +41,40 @@ class Model(nn.Model):
         self.Model_new.param[-1][:-1].assign(trained_param[-1])
         self.new_class_batch_size = 64
         self.param = [self.Model_new.param, [self.Model_new.param[-2][:, -1:], self.Model_new.param[-1][-1:]]]
+        self.init_priority = 1.0
         self.svd_k = tf.Variable(7)
         self.sv_threshold = 1e-7
         self.kl_threshold = tf.constant(kl_threshold1, dtype=tf.float32)
+        self.lambda_max = tf.constant(lambda_max, dtype=tf.float32)
+        self.lambda_min = tf.constant(lambda_min, dtype=tf.float32)
+        self.total_steps = tf.constant(total_steps, dtype=tf.float32)
+        
+        self.current_step = tf.Variable(0, trainable=False, dtype=tf.int32)
+        self.lambda_param = tf.Variable(lambda_max, trainable=False, dtype=tf.float32)
 
     # ------------------------------------------------------------------
     def __call__(self, x):
+        old_data = self.prioritized_replay.sample(self.old_train_data, None, self.alpha, self.pr_batch_size)
         # Old-class samples → knowledge distillation
-        self.distribution_trained = self.Model_trained(x[self.new_class_batch_size:])
-        self.distribution_new     = self.Model_new(x[self.new_class_batch_size:])
+        self.distribution_trained = self.Model_trained(old_data)
+        self.distribution_new = self.Model_new(old_data)
         # New-class samples → main task output (loss comes only from here)
-        return self.Model_new(x[:self.new_class_batch_size])
+        return self.Model_new(x)
+    
+    def update_param(self):
+        self.current_step.assign(self.batch_counter)
+
+        step_f = tf.cast(self.current_step, tf.float32)
+        
+        progress = tf.clip_by_value(step_f / self.total_steps, 0.0, 1.0)
+        cosine_decay = 0.5 * (1.0 + tf.math.cos(3.1415926535 * progress))
+        
+        new_lambda = self.lambda_min + (self.lambda_max - self.lambda_min) * cosine_decay
+        self.lambda_param.assign(new_lambda)
 
     # ------------------------------------------------------------------
     def loss_func(self, loss: tf.Tensor) -> tf.Tensor:
+        self.update_lambda()
         # ----------------------------------------------------------------
         # KL(p_trained || q_new)
         #   Both sides are fully stop_gradient → KL does not affect parameter updates at all
@@ -72,14 +94,14 @@ class Model(nn.Model):
             p * (tf.math.log(p + 1e-8) - tf.math.log(q + 1e-8)),
             axis=-1
         )                                                      
-
-        kl_per_sample_detached = tf.stop_gradient(kl_per_sample)
+        
+        if self.pr_batch_size!=None:
+            self.prioritized_replay.loss_.assign(kl_per_sample_detached)
 
         mask = tf.cast(kl_per_sample_detached > self.kl_threshold, kl_per_sample.dtype)
         gated_kl_per_sample = kl_per_sample_detached + mask * (kl_per_sample - kl_per_sample_detached)  # [B]
 
         kl = tf.reduce_mean(gated_kl_per_sample)
-        kl_weight = tf.reduce_mean(kl_per_sample_detached)      # pure scaling factor, no gradient
 
         # ----------------------------------------------------------------
         # Parameter difference norm penalty (gradients flow only through Model_new.param)
@@ -111,21 +133,31 @@ class Model(nn.Model):
 
             k = tf.minimum(self.svd_k, tf.minimum(rows, cols))
             
-            # Since U is the orthonormal basis of the parameter matrix, when U remains unchanged,
-            # the column space of the parameter matrix remains unchanged. 
-            # Moreover, because Ax = y with both x and y fixed, 
-            # the parameter matrix is uniquely determined.
-            _, u_param, _ = tf.linalg.svd(p_t_2d,  full_matrices=False)
-            _, u_copy,  _ = tf.linalg.svd(p_n_2d, full_matrices=False)
+            s_param, u_param, v_param = tf.linalg.svd(p_t_2d,  full_matrices=False)
+            s_copy, u_copy,  v_copy = tf.linalg.svd(p_n_2d, full_matrices=False)
+
+            u_param = u_param[:, :k]    # [rows, k]
+            u_copy  = u_copy[:,  :k]    # [rows, k]
+            s_param = u_param[:, :k]    # [rows, k]
+            s_copy  = u_copy[:,  :k]    # [rows, k]
+            v_param = u_param[:, :k]    # [rows, k]
+            v_copy  = u_copy[:,  :k]    # [rows, k]
+            
+            approx_param = tf.matmul(u_param, tf.matmul(tf.linalg.diag(s_param), v_param, adjoint_b=True))
+            approx_copy = tf.matmul(u_copy, tf.matmul(tf.linalg.diag(s_copy), v_copy, adjoint_b=True))
+            dot_per_col = tf.reduce_sum(approx_param * approx_copy, axis=0)
+            dist_param_col = tf.norm(approx_param * approx_param, axis=0)
+            dist_copy_col = tf.norm(approx_copy * approx_copy, axis=0)
 
             u_param = u_param[:, :k]    # [rows, k]
             u_copy  = u_copy[:,  :k]    # [rows, k]
 
             diff_norm = tf.reduce_mean((u_param - u_copy)**2)
+            diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
 
-            penalty = penalty + diff_norm
+            penalty = penalty + diff_norm + diff_mean
 
-        return loss + kl + self.lambda_param * kl_weight * penalty
+        return loss + kl + self.lambda_param * penalty
 
     # ------------------------------------------------------------------
     # Soft update: Model_new ← τ · Model_trained + (1-τ) · Model_new
