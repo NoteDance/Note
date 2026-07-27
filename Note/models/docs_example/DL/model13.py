@@ -44,7 +44,7 @@ class Model(nn.Model):
         self.init_priority = 1.0
         self.svd_k = tf.Variable(7)
         self.sv_threshold = 1e-7
-        self.kl_threshold = tf.constant(kl_threshold1, dtype=tf.float32)
+        self.kl_threshold = tf.constant(kl_threshold, dtype=tf.float32)
         self.lambda_max = tf.constant(lambda_max, dtype=tf.float32)
         self.lambda_min = tf.constant(lambda_min, dtype=tf.float32)
         self.total_steps = tf.constant(total_steps, dtype=tf.float32)

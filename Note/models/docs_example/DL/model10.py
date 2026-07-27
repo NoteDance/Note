@@ -41,7 +41,7 @@ class Model(nn.Model):
         self.param = [self.Model_new.param, [self.Model_new.param[-2][:, -1:], self.Model_new.param[-1][-1:]]]
         self.svd_k = tf.Variable(7)
         self.sv_threshold = 1e-7
-        self.kl_threshold = tf.constant(kl_threshold1, dtype=tf.float32)
+        self.kl_threshold = tf.constant(kl_threshold, dtype=tf.float32)
 
     # ------------------------------------------------------------------
     def __call__(self, x):
