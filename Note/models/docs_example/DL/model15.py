@@ -198,10 +198,10 @@ class Model(nn.Model):
             diff_norm = tf.reduce_mean((u_param_k - u_copy_k)**2)
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
 
-            penalty = penalty + diff_norm + diff_mean + (cond_copy_rest - 1)**2
+            penalty = penalty + diff_norm + diff_mean
 
         # Final loss formulation
-        return loss + kl + self.lambda_param * penalty
+        return loss + kl + self.lambda_param * penalty + (cond_copy_rest - 1)**2
 
     # ------------------------------------------------------------------
     # Polyak / Soft Update for Old Class Parameter Stabilization
