@@ -2,20 +2,6 @@ from Note import nn
 import tensorflow as tf
 
 
-class Model_trained(nn.Model):
-    """Pre-trained model representing previous knowledge (10 classes)."""
-    def __init__(self, input_dim: int, n_train_samples: int):
-        super().__init__()
-        self.d1 = nn.dense(128, input_dim, activation='relu')
-        self.d2 = nn.dense(64,  128,       activation='relu')
-        self.d3 = nn.dense(10,  64)
-
-    def __call__(self, x):
-        x = self.d1(x)
-        x = self.d2(x)
-        return self.d3(x)
-
-
 class Model_new(nn.Model):
     """Expanded model for class-incremental learning (11 classes)."""
     def __init__(self, input_dim: int, n_train_samples: int):
@@ -36,14 +22,14 @@ class Model(nn.Model):
     Combines Knowledge Distillation, SVD Parameter Regularization,
     and Adaptive Lambda Annealing based on Cosine Decay + KL Exponential Moving Average (EMA).
     """
-    def __init__(self, input_dim: int, n_train_samples: int, trained_param, old_train_data, kl_threshold: float,
+    def __init__(self, input_dim: int, n_train_samples: int, trained_param, distributions, old_train_data, update_freq, kl_threshold_, kl_threshold: float,
                  lambda_max: float = 1.0, lambda_min: float = 0.01, total_steps: int = 7000, ema_decay: float = 0.9):
         super().__init__()
         self.old_train_data = old_train_data
+        self.distributions = distributions
         
         # Instantiate frozen baseline model and transfer pre-trained parameters
-        self.Model_trained = Model_trained(input_dim, n_train_samples)
-        nn.assign_param(self.Model_trained.param, trained_param)
+        self.trained_param = trained_param
         
         # Instantiate new model and inherit pre-trained parameters
         self.Model_new = Model_new(input_dim, n_train_samples + 1)
@@ -56,6 +42,10 @@ class Model(nn.Model):
         self.init_priority = 1.0
         self.svd_k = tf.Variable(7)
         self.sv_threshold = 1e-7
+        
+        self.update_freq = update_freq
+        self.kl_mean = tf.Variable(0.0, trainable=False, dtype=tf.float32)
+        self.kl_threshold_ = kl_threshold_
         
         # Thresholds & hyper-parameters
         self.kl_threshold = tf.constant(kl_threshold, dtype=tf.float32)
@@ -76,10 +66,9 @@ class Model(nn.Model):
     # ------------------------------------------------------------------
     def __call__(self, x):
         # Sample replay buffer containing old class data
-        old_data = self.prioritized_replay.sample(self.old_train_data, None, self.alpha, self.pr_batch_size)
+        old_data, self.distribution_trained = self.prioritized_replay.sample(self.old_train_data, self.distributions, self.alpha, self.pr_batch_size)
         
         # Forward pass for knowledge distillation
-        self.distribution_trained = self.Model_trained(old_data)
         self.distribution_new = self.Model_new(old_data)
         
         # Main task forward pass on new data batch
@@ -158,10 +147,10 @@ class Model(nn.Model):
         # ----------------------------------------------------------------
         # 2. SVD Parameter Penalty (Regularization)
         # ----------------------------------------------------------------
-        n = len(self.Model_trained.param)
+        n = len(self.trained_param)
         penalty = tf.constant(0.0, dtype=tf.float32)
 
-        for i, (p_t, p_n) in enumerate(zip(self.Model_trained.param, self.Model_new.param)):
+        for i, (p_t, p_n) in enumerate(zip(self.trained_param, self.Model_new.param)):
             p_t = tf.cast(tf.stop_gradient(p_t), tf.float32)
             p_n = tf.cast(p_n, tf.float32)
             
@@ -218,8 +207,8 @@ class Model(nn.Model):
         Soft update rule: Model_new <- tau * Model_trained + (1 - tau) * Model_new
         Pulls Model_new back toward Model_trained to mitigate catastrophic forgetting.
         """
-        n = len(self.Model_trained.param)
-        for i, (p_t, p_n) in enumerate(zip(self.Model_trained.param, self.Model_new.param)):
+        n = len(self.trained_param)
+        for i, (p_t, p_n) in enumerate(zip(self.trained_param, self.Model_new.param)):
             dtype = p_n.dtype
             p_t_c = tf.cast(p_t, dtype)
 
@@ -233,3 +222,7 @@ class Model(nn.Model):
             p_n.assign(self.tau * target + (1.0 - self.tau) * p_n)
     
     def update_param(self):
+        if self.batch_counter % self.update_freq == 0 and self.kl_mean <= self.kl_threshold_:
+            self.kl_mean.assign(0.0)
+            self.lambda_param.assign(self.lambda_max)
+            self.ema_initialized.assign(False)
