@@ -184,7 +184,7 @@ class Model(nn.Model):
             v_copy_k  = v_copy[:, :k]
             
             s_copy_rest  = s_copy[k:]
-            eps = 1e-8
+            eps = 1e-7
             cond_copy_rest  = tf.stop_gradient(s_copy_rest[0]  / (s_copy_rest[-1]  + eps))
             
             # Low-rank approximations
