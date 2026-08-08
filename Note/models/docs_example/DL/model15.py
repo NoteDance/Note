@@ -185,7 +185,7 @@ class Model(nn.Model):
             
             s_copy_rest  = s_copy[k:]
             eps = 1e-7
-            cond_copy_rest  = s_copy_rest[0]  / (s_copy_rest[-1]  + eps)
+            cond_copy_rest  = tf.reduce_sum(s_copy_rest[0])  / (tf.reduce_sum(s_copy_rest[-1])  + eps)
             
             # Low-rank approximations
             approx_param = tf.matmul(u_param_k, tf.matmul(tf.linalg.diag(s_param_k), v_param_k, adjoint_b=True))
