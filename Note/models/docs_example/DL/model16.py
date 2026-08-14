@@ -183,7 +183,8 @@ class Model(nn.Model):
     
     def update_param(self):
         if self.batch_counter % self.update_freq == 0 and self.kl_mean <= self.kl_threshold_:
-            self.z = [tf.Variable(0, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
-            self.u = [tf.Variable(1, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
+            for i in len(self.trained_param):
+                self.z[i].assign(0)
+                self.u[i].assign(1)
             self.diff_norm_old.assign(0)
             self.kl_mean.assign(0.0)
