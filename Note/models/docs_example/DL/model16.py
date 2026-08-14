@@ -50,8 +50,8 @@ class Model(nn.Model):
         # Thresholds & hyper-parameters
         self.kl_threshold = tf.constant(kl_threshold, dtype=tf.float32)
         
-        self.z = [tf.Variable(z, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
-        self.u = [tf.Variable(u, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
+        self.z = [tf.Variable(0, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
+        self.u = [tf.Variable(1, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
         self.lambda_param = lambda_param
         self.diff_norm_old = tf.Variable(0, trainable=False, dtype=tf.float32)
 
@@ -138,7 +138,7 @@ class Model(nn.Model):
             
             s_copy_rest  = s_copy[k:]
             eps = 1e-7
-            cond_copy_rest  = tf.stop_gradient(s_copy_rest[0]  / (s_copy_rest[-1]  + eps))
+            cond_copy_rest  = tf.reduce_sum(s_copy_rest[0])  / (tf.reduce_sum(s_copy_rest[-1])  + eps)
             
             # Low-rank approximations
             approx_param = tf.matmul(u_param_k, tf.matmul(tf.linalg.diag(s_param_k), v_param_k, adjoint_b=True))
@@ -183,6 +183,7 @@ class Model(nn.Model):
     
     def update_param(self):
         if self.batch_counter % self.update_freq == 0 and self.kl_mean <= self.kl_threshold_:
-            self.z = [tf.Variable(z, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
-            self.u = [tf.Variable(u, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
+            self.z = [tf.Variable(0, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
+            self.u = [tf.Variable(1, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
+            self.diff_norm_old.assign(0)
             self.kl_mean.assign(0.0)
