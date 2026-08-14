@@ -53,6 +53,7 @@ class Model(nn.Model):
         self.z = [tf.Variable(z, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
         self.u = [tf.Variable(u, trainable=False, dtype=tf.float32) for _ in len(self.trained_param)]
         self.lambda_param = lambda_param
+        self.diff_norm_old = tf.Variable(0, trainable=False, dtype=tf.float32)
 
     # ------------------------------------------------------------------
     def __call__(self, x):
@@ -67,7 +68,7 @@ class Model(nn.Model):
 
     def update_z_u(self, diff_norm, i) -> None:
         self.z[i].assign(self.z[i] + 2 * self.u[i] * diff_norm)
-        self.u[i].assign(tf.cond(diff_norm < self.lambda_param * diff_norm or diff_norm == diff_norm, lambda: self.u[i], lambda: 2 * self.u[i]))
+        self.u[i].assign(tf.cond(diff_norm < self.lambda_param * self.diff_norm_old or self.diff_norm_old == 0, lambda: self.u[i], lambda: 2 * self.u[i]))
 
     # ------------------------------------------------------------------
     # Loss Function Computation
@@ -149,9 +150,9 @@ class Model(nn.Model):
 
             # After transforming the original problem into an augmented Lagrangian problem, the purpose of parameter tuning has changed.
             diff_norm = tf.reduce_mean((u_param_k - u_copy_k + self.z[i] / 2 * self.u[i])**2)
-            diff_norm = self.u[i] * diff_norm
             self.update_z_u(diff_norm, i)
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
+            self.diff_norm_old.assign(diff_norm)
 
             penalty = penalty + diff_norm + diff_mean
 
