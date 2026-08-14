@@ -147,7 +147,7 @@ class Model(nn.Model):
             dist_param_col = tf.norm(approx_param * approx_param, axis=0)
             dist_copy_col = tf.norm(approx_copy * approx_copy, axis=0)
 
-            diff_norm = tf.reduce_mean((u_param_k - u_copy_k) + self.z[i] / 2 * self.u[i])**2))
+            diff_norm = tf.reduce_mean((u_param_k - u_copy_k + self.z[i] / 2 * self.u[i])**2)
             diff_norm = self.u[i] * diff_norm
             self.update_z_u(diff_norm, i)
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
