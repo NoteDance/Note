@@ -113,14 +113,14 @@ class Model(nn.Model):
         # ----------------------------------------------------------------
         # 1. KL Divergence (p_trained || q_new)
         # ----------------------------------------------------------------
-        p = tf.nn.softmax(self.distribution_trained)   # [B, 10]
-        q_full = tf.nn.softmax(self.distribution_new)  # [B, 11]
+        p = self.distribution_trained
+        index = tf.argmax(p, axis=1)
+        q_full = tf.nn.softmax(self.distribution_new)
+        p = tf.gather(p, index, axis=1, batch_dims=1)
         q = q_full[:, :10]                             # Slice old-class logits
+        q = tf.gather(q, index, axis=1, batch_dims=1)
 
-        kl_per_sample = tf.reduce_sum(
-            p * (tf.math.log(p + 1e-8) - tf.math.log(q + 1e-8)),
-            axis=-1
-        )  
+        kl_per_sample = p * (tf.math.log(p + 1e-8) - tf.math.log(q + 1e-8))
 
         kl_per_sample_detached = tf.stop_gradient(kl_per_sample)
         
