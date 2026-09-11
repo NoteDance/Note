@@ -119,7 +119,7 @@ class Model(nn.Model):
         # ----------------------------------------------------------------
         # 1. KL Divergence (p_trained || q_new)
         # ----------------------------------------------------------------
-        p = tf.nn.softmax(self.distribution_trained)   # [B, 10]
+        p = self.distribution_trained   # [B, 10]
         q_full = tf.nn.softmax(self.distribution_new)  # [B, 11]
         q = q_full[:, :10]                             # Slice old-class logits
 
