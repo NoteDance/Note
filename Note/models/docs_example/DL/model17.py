@@ -23,7 +23,7 @@ class Model(nn.Model):
     and Adaptive Lambda Annealing based on Cosine Decay + KL Exponential Moving Average (EMA).
     """
     def __init__(self, input_dim: int, n_train_samples: int, trained_param, distributions, old_train_data, update_freq, kl_threshold_, kl_threshold: float,
-                 lambda_max: float = 1.0, lambda_min: float = 0.01, total_steps: int = 7000, ema_decay: float = 0.9):
+                 lambda_param_, lambda_max: float = 1.0, lambda_min: float = 0.01, total_steps: int = 7000, ema_decay: float = 0.9):
         super().__init__()
         self.old_train_data = old_train_data
         self.distributions = distributions
@@ -57,6 +57,7 @@ class Model(nn.Model):
         
         self.current_step = tf.Variable(0, trainable=False, dtype=tf.int32)
         self.lambda_param = tf.Variable(lambda_max, trainable=False, dtype=tf.float32)
+        self.lambda_param_ = lambda_param_
         
         # EMA config for tracking KL Divergence drift
         self.ema_decay = tf.constant(ema_decay, dtype=tf.float32)
@@ -195,7 +196,7 @@ class Model(nn.Model):
             penalty = penalty + diff_norm + diff_mean
 
         # Final loss formulation
-        return loss + kl + self.lambda_param * penalty + (cond_copy_rest - 1)**2
+        return loss + kl + self.lambda_param * penalty + self.lambda_param_ * (cond_copy_rest - 1)**2
 
     # ------------------------------------------------------------------
     # Polyak / Soft Update for Old Class Parameter Stabilization
