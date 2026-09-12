@@ -190,6 +190,10 @@ class Model(nn.Model):
             dist_param_col = tf.norm(approx_param * approx_param, axis=0)
             dist_copy_col = tf.norm(approx_copy * approx_copy, axis=0)
 
+            # Since U is the orthonormal basis of the parameter matrix, when U remains unchanged,
+            # the column space of the parameter matrix remains unchanged. 
+            # Moreover, because Ax = y with both x and y fixed, 
+            # the parameter matrix is uniquely determined.
             diff_norm = tf.reduce_mean((u_param_k - u_copy_k)**2)
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
 
