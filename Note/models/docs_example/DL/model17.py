@@ -204,8 +204,8 @@ class Model(nn.Model):
             diff_norm = tf.reduce_mean((u_param_k - u_copy_k)**2)
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
             
-            approx_param_rest = tf.matmul(u_copy_rest, tf.matmul(tf.linalg.diag(s_copy_rest), v_copy_rest, adjoint_b=True))
-            param_l2 += tf.norm(approx_param_rest)
+            approx_copy_rest = tf.matmul(u_copy_rest, tf.matmul(tf.linalg.diag(s_copy_rest), v_copy_rest, adjoint_b=True))
+            param_l2 += tf.norm(approx_copy_rest)
 
             penalty = penalty + diff_norm + diff_mean
 
