@@ -149,6 +149,8 @@ class Model(nn.Model):
         # ----------------------------------------------------------------
         n = len(self.trained_param)
         penalty = tf.constant(0.0, dtype=tf.float32)
+        
+        diff_cond_copy_rest = 0
 
         for i, (p_t, p_n) in enumerate(zip(self.trained_param, self.Model_new.param)):
             p_t = tf.cast(tf.stop_gradient(p_t), tf.float32)
@@ -179,13 +181,14 @@ class Model(nn.Model):
             u_param_k = u_param[:, :k]
             u_copy_k  = u_copy[:, :k]
             s_param_k = s_param[:k]
-            s_copy_k  = s_copy[:k]
+            s_copy_k = s_copy[:k]
             v_param_k = v_param[:, :k]
-            v_copy_k  = v_copy[:, :k]
+            v_copy_k = v_copy[:, :k]
             
-            s_copy_rest  = s_copy[k:]
+            s_copy_rest = s_copy[k:]
             eps = 1e-7
-            cond_copy_rest  = tf.reduce_sum(s_copy_rest[0])  / (tf.reduce_sum(s_copy_rest[-1])  + eps)
+            cond_copy_rest = s_copy_rest[0]  / (s_copy_rest[-1]  + eps)
+            diff_cond_copy_rest += (cond_copy_rest - 1)**2
             
             # Low-rank approximations
             approx_param = tf.matmul(u_param_k, tf.matmul(tf.linalg.diag(s_param_k), v_param_k, adjoint_b=True))
@@ -201,7 +204,7 @@ class Model(nn.Model):
             penalty = penalty + diff_norm + diff_mean
 
         # Final loss formulation
-        return loss + kl + self.lambda_param * penalty + (cond_copy_rest - 1)**2
+        return loss + kl + self.lambda_param * penalty + diff_cond_copy_rest
 
     # ------------------------------------------------------------------
     # Polyak / Soft Update for Old Class Parameter Stabilization

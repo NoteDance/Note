@@ -23,7 +23,7 @@ class Model(nn.Model):
     and Adaptive Lambda Annealing based on Cosine Decay + KL Exponential Moving Average (EMA).
     """
     def __init__(self, input_dim: int, n_train_samples: int, trained_param, distributions, old_train_data, update_freq, kl_threshold_, kl_threshold: float,
-                 lambda_param_, lambda_max: float = 1.0, lambda_min: float = 0.01, total_steps: int = 7000, ema_decay: float = 0.9):
+                 lambda_param2, lambda_param3, lambda_max: float = 1.0, lambda_min: float = 0.01, total_steps: int = 7000, ema_decay: float = 0.9):
         super().__init__()
         self.old_train_data = old_train_data
         self.distributions = distributions
@@ -56,8 +56,9 @@ class Model(nn.Model):
         self.total_steps = tf.constant(total_steps, dtype=tf.float32)
         
         self.current_step = tf.Variable(0, trainable=False, dtype=tf.int32)
-        self.lambda_param = tf.Variable(lambda_max, trainable=False, dtype=tf.float32)
-        self.lambda_param_ = lambda_param_
+        self.lambda_param1 = tf.Variable(lambda_max, trainable=False, dtype=tf.float32)
+        self.lambda_param2 = lambda_param2
+        self.lambda_param3 = lambda_param3
         
         # EMA config for tracking KL Divergence drift
         self.ema_decay = tf.constant(ema_decay, dtype=tf.float32)
@@ -103,9 +104,9 @@ class Model(nn.Model):
         cosine_decay = 0.5 * (1.0 + tf.math.cos(3.1415926535 * progress))
         new_lambda = self.lambda_min + (self.lambda_max - self.lambda_min) * cosine_decay
         
-        new_lambda = tf.cond(self.ema_kl <= self.kl_threshold, lambda: new_lambda, lambda: self.lambda_param)
+        new_lambda = tf.cond(self.ema_kl <= self.kl_threshold, lambda: new_lambda, lambda: self.lambda_param1)
         
-        self.lambda_param.assign(new_lambda)
+        self.lambda_param1.assign(new_lambda)
 
     # ------------------------------------------------------------------
     # Loss Function Computation
@@ -144,6 +145,9 @@ class Model(nn.Model):
         # ----------------------------------------------------------------
         n = len(self.trained_param)
         penalty = tf.constant(0.0, dtype=tf.float32)
+        
+        diff_cond_copy_rest = 0
+        param_l2 = 0
 
         for i, (p_t, p_n) in enumerate(zip(self.trained_param, self.Model_new.param)):
             p_t = tf.cast(tf.stop_gradient(p_t), tf.float32)
@@ -178,13 +182,16 @@ class Model(nn.Model):
             v_param_k = v_param[:, :k]
             v_copy_k  = v_copy[:, :k]
             
-            s_copy_rest  = s_copy[k:]
+            u_copy_rest = u_copy[k:, :]
+            s_copy_rest = s_copy[k:]
+            v_copy_rest = v_copy[k:, :]
             eps = 1e-7
-            cond_copy_rest  = tf.reduce_sum(s_copy_rest[0])  / (tf.reduce_sum(s_copy_rest[-1])  + eps)
+            cond_copy_rest = s_copy_rest[0]  / (s_copy_rest[-1]  + eps)
+            diff_cond_copy_rest += (cond_copy_rest - 1)**2
             
             # Low-rank approximations
             approx_param = tf.matmul(u_param_k, tf.matmul(tf.linalg.diag(s_param_k), v_param_k, adjoint_b=True))
-            approx_copy  = tf.matmul(u_copy_k,  tf.matmul(tf.linalg.diag(s_copy_k),  v_copy_k,  adjoint_b=True))
+            approx_copy = tf.matmul(u_copy_k,  tf.matmul(tf.linalg.diag(s_copy_k),  v_copy_k,  adjoint_b=True))
             
             dot_per_col = tf.reduce_sum(approx_param * approx_copy, axis=0)
             dist_param_col = tf.norm(approx_param * approx_param, axis=0)
@@ -196,11 +203,14 @@ class Model(nn.Model):
             # the parameter matrix is uniquely determined.
             diff_norm = tf.reduce_mean((u_param_k - u_copy_k)**2)
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
+            
+            approx_param_rest = tf.matmul(u_copy_rest, tf.matmul(tf.linalg.diag(s_copy_rest), v_copy_rest, adjoint_b=True))
+            param_l2 += tf.norm(approx_param_rest)
 
             penalty = penalty + diff_norm + diff_mean
 
         # Final loss formulation
-        return loss + kl + self.lambda_param * penalty + self.lambda_param_ * (cond_copy_rest - 1)**2
+        return loss + kl + self.lambda_param1 * penalty + self.lambda_param2 * diff_cond_copy_rest + self.lambda_param3 * param_l2
 
     # ------------------------------------------------------------------
     # Polyak / Soft Update for Old Class Parameter Stabilization
@@ -227,5 +237,5 @@ class Model(nn.Model):
     def update_param(self):
         if self.batch_counter % self.update_freq == 0 and self.kl_mean <= self.kl_threshold_:
             self.kl_mean.assign(0.0)
-            self.lambda_param.assign(self.lambda_max)
+            self.lambda_param1.assign(self.lambda_max)
             self.ema_initialized.assign(False)
