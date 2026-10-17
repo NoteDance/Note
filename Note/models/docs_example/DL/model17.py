@@ -205,7 +205,7 @@ class Model(nn.Model):
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
             
             approx_copy_rest = tf.matmul(u_copy_rest, tf.matmul(tf.linalg.diag(s_copy_rest), v_copy_rest, adjoint_b=True))
-            param_l2 += tf.norm(approx_copy_rest)
+            param_l2 += tf.reduce_sum(tf.square(approx_copy_rest))
 
             penalty = penalty + diff_norm + diff_mean
 
