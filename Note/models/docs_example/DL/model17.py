@@ -201,6 +201,7 @@ class Model(nn.Model):
             # the column space of the parameter matrix remains unchanged. 
             # Moreover, because Ax = y with both x and y fixed, 
             # the parameter matrix is uniquely determined.
+            # u=Av/σ
             diff_norm = tf.reduce_mean((u_param_k - u_copy_k)**2)
             diff_mean = tf.reduce_mean(dot_per_col - dist_param_col * dist_copy_col)
             

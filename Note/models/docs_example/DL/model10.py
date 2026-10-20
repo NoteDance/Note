@@ -115,6 +115,7 @@ class Model(nn.Model):
             # the column space of the parameter matrix remains unchanged. 
             # Moreover, because Ax = y with both x and y fixed, 
             # the parameter matrix is uniquely determined.
+            # u=Av/σ
             _, u_param, _ = tf.linalg.svd(p_t_2d,  full_matrices=False)
             _, u_copy,  _ = tf.linalg.svd(p_n_2d, full_matrices=False)
 
